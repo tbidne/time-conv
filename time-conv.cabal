@@ -1,0 +1,73 @@
+cabal-version:      2.4
+name:               time-conv
+version:            0.1
+license:            MIT
+license-file:       LICENSE
+tested-with:        GHC ==8.10.7 || ==9.0.2 || ==9.2.2
+copyright:          2022 Thomas Bidne
+author:             Thomas Bidne
+maintainer:         tbidne@prontonmail.com
+homepage:           https://github.com/tbidne/time-conv/
+bug-reports:        https://github.com/tbidne/time-conv/issues
+synopsis:           Time, Shell scripting
+description:        Time, Shell scripting
+category:           Time, Shell scripting
+extra-source-files:
+  CHANGELOG.md
+  README.md
+
+source-repository head
+  type:     git
+  location: https://github.com/tbidne/time-conv
+
+common common-exts
+  default-extensions:
+    BangPatterns
+    ConstraintKinds
+    DataKinds
+    DeriveDataTypeable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveTraversable
+    DerivingStrategies
+    DerivingVia
+    FlexibleContexts
+    FlexibleInstances
+    FunctionalDependencies
+    GADTs
+    GeneralizedNewtypeDeriving
+    ImportQualifiedPost
+    InstanceSigs
+    LambdaCase
+    MultiParamTypeClasses
+    MultiWayIf
+    NamedFieldPuns
+    NumericUnderscores
+    OverloadedStrings
+    PatternSynonyms
+    RankNTypes
+    ScopedTypeVariables
+    StandaloneDeriving
+    StandaloneKindSignatures
+    TupleSections
+    TypeApplications
+    TypeFamilyDependencies
+    TypeOperators
+
+library
+  import:           common-exts
+  exposed-modules:  Lib
+  build-depends:    base >=4.14.0.0 && <4.17
+  hs-source-dirs:   src
+  default-language: Haskell2010
+
+executable time-conv
+  import:           common-exts
+  main-is:          Main.hs
+  build-depends:
+    , base
+    , time-conv
+
+  hs-source-dirs:   app
+  ghc-options:      -threaded -with-rtsopts=-N
+  default-language: Haskell2010

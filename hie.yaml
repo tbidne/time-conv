@@ -1,0 +1,7 @@
+cradle:
+  cabal:
+    - path: "./src"
+      component: "lib:time-conv"
+
+    - path: "./app/Main.hs"
+      component: "time-conv:exe:time-conv"
