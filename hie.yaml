@@ -5,3 +5,6 @@ cradle:
 
     - path: "./app/Main.hs"
       component: "time-conv:exe:time-conv"
+
+    - path: "./app/Args.hs"
+      component: "time-conv:exe:time-conv"
