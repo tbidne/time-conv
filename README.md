@@ -14,3 +14,186 @@
 [![9.2.2](https://img.shields.io/github/workflow/status/tbidne/time-conv/9.2.2/main?label=9.2.2&logo=haskell&logoColor=904d8c&labelColor=2f353c)](https://github.com/tbidne/time-conv/actions/workflows/ghc_9-2.yaml)
 
 </div>
+
+---
+
+### Table of Contents
+
+* [Introduction](#introduction)
+* [Options](#options)
+  * [Format](#format)
+  * [Source Timezone](#source-timezone)
+  * [Destination Timezone](#destination-timezone)
+* [Building](#building)
+  * [Prerequisites](#prerequisites)
+  * [Cabal](#cabal)
+  * [Stack](#stack)
+  * [Nix](#nix)
+
+# Introduction
+
+`time-conv` is a tool for converting between timezones.
+
+```
+time-conv: A tool for timezone conversions.
+
+Usage: time-conv [-f|--format STR] [-s|--src-tz <local | literal | tz_database>]
+                 [-d|--dest-tz <local | tz_database>] STRING [-v|--version]
+
+time-conv reads time strings and converts between timezones. For the src and dest options, tz_database refers to labels like America/New_York. See https://en.wikipedia.org/wiki/Tz_database.
+
+Available options:
+  -f,--format STR          Glibc-style format string e.g. %Y-%m-%d for
+                           yyyy-mm-dd. Defaults to %H:%Mi.e. 24-hr hour:minute.
+                           See 'man date' for basic examples, and
+                           https://hackage.haskell.org/package/time-1.13/docs/Data-Time-Format.html#v:formatTime
+                           for the exact spec.
+  -s,--src-tz <local | literal | tz_database>
+                           Timezone in which to read the string. Can be 'local',
+                           'literal' or a tz database label. Defaults to local.
+                           The literal option means we read the (possibly empty)
+                           timezone from the string itself e.g. '7:00 EST'. If a
+                           timezone is included, then a formatter using the '%Z'
+                           flag should be present. If literal is specified and
+                           no timezone is included then we assume UTC.
+  -d,--dest-tz <local | tz_database>
+                           Timezone in which to convert the read string. Can be
+                           'local' or a tz database label. Defaults to local.
+  -h,--help                Show this help text
+
+Version: 0.1
+```
+
+# Options
+
+## Format
+
+**Arg:** `-f,--format STR`
+
+**Description:** This option allows one to set an explicit format string. By default we use the format `%H-%M` which is 24-hour `hours:minutes`.
+
+**Examples:**
+
+```
+$ time-conv "08:30"
+1970-01-01 08:30:00 NZST
+
+$ time-conv -f "%Y-%m-%d %H:%M" "2022-06-15 08:30"
+2022-06-15 08:30:00 NZST
+```
+
+## Source Timezone
+
+**Arg:** `-s,--src-tz <local | literal | tz_database>`
+
+**Description:** This option allows on to change how the time string is interpreted. By default, we interpret the time string in the system's local timezone. The literal option is used for reading the timezone in the string itself e.g. `07:00 EST`. If a timezone is included then a formatter using the `%Z` flag should be present. If `literal` is specified and no timezone is included then we assume UTC.
+
+**Examples:**
+
+```
+# this is the default, equivalent to leaving off '-s local'
+$ time-conv -s local "08:30"
+1970-01-01 08:30:00 EST
+
+# notice the literal is overridden unless '-s literal' is added
+$ time-conv -f "%H:%M %Z" "08:30 EST"
+1970-01-01 08:30:00 NZST
+
+$ time-conv -f "%H:%M %Z" -s literal "08:30 EST"
+1970-01-02 01:30:00 NZST
+
+# using tz database name
+$ time-conv -s America/New_York 08:30
+1970-01-02 01:30:00 NZST
+```
+
+## Destination Timezone
+
+**Arg:** `-d,--dest-tz <local | tz_database>`
+
+**Description:** This option allows on to convert the read timezone. By default, we convert to the local timezone.
+
+**Examples:**
+
+```
+# this is the default, equivalent to leaving off '-s local'
+$ time-conv -d local 08:30
+1970-01-01 08:30:00 NZST
+
+# using tz database name
+$ time-conv -d America/New_York 08:30
+1969-12-31 15:30:00 EST
+
+$ time-conv -s America/New_York -d Etc/UTC 08:30
+1970-01-01 13:30:00 UTC
+```
+
+# Building
+
+## Prerequisites
+
+You will need one of:
+
+* [cabal-install 2.4+](https://www.haskell.org/cabal/download.html) and one of:
+  * [ghc 8.10.7](https://www.haskell.org/ghc/download_ghc_8_10_7.html)
+  * [ghc 9.0.2](https://www.haskell.org/ghc/download_ghc_9_0_2.html)
+  * [ghc 9.2.2](https://www.haskell.org/ghc/download_ghc_9_2_2.html)
+* [stack](https://docs.haskellstack.org/en/stable/README/#how-to-install)
+* [nix](https://nixos.org/download.html)
+
+If you have never built a haskell program before, `stack` is probably the best choice.
+
+## Cabal
+
+You will need `ghc` and `cabal-install`. From there `time-conv` can be built with `cabal build` or installed globally (i.e. `~/.cabal/bin/`) with `cabal install`.
+
+## Stack
+
+
+Like `cabal`, `time-conv` can be built locally or installed globally (e.g. `~/.local/bin/`) with `stack build` and `stack install`, respectively.
+
+## Nix
+
+Because `time-conv` is a flake, it can be built as part of a nix expression. For instance, if you want to add `time-conv` to `NixOS`, your `flake.nix` might look something like:
+
+```nix
+{
+  description = "My flake";
+
+  inputs = {
+    nixpkgs.url = "github:nixpkgs/nixos-unstable";
+    time-conv-src.url= "github:tbidne/time-conv/main";
+  };
+
+  outputs = { self, nixpkgs, time-conv-src, ... }:
+    let
+      system = "x86_64-linux";
+      pkgs = import nixpkgs {
+        system = system;
+      };
+      time-conv = time-conv-src.defaultPackage.${system};
+    in
+    {
+      nixosConfigurations = {
+        nixos = nixpkgs.lib.nixosSystem {
+          system = system;
+          modules = [
+            (import ./configuration.nix { inherit pkgs time-conv; })
+          ];
+        };
+      };
+    };
+}
+```
+
+Then in `configuration.nix` you can simply have:
+
+```nix
+{ pkgs, time-conv, ... }:
+
+{
+  environment.systemPackages = [
+    time-conv
+  ];
+}
+```
