@@ -72,7 +72,7 @@ lint_ck:
 
 .PHONY: haddock
 haddock:
-	cabal haddock
+	cabal haddock --haddock-hyperlink-source
 
 .PHONY: haddock_ck
 haddock_ck:

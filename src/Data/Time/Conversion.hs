@@ -5,8 +5,9 @@
 --
 -- @since 0.1
 module Data.Time.Conversion
-  ( -- * General Read/Convert
+  ( -- * High-level parsing/conversion
     readConvertTime,
+    -- ** Types
     TimeBuilder (..),
     SrcTZ (..),
     Types._SrcTZConv,
@@ -29,11 +30,13 @@ module Data.Time.Conversion
     Types.hmTZ,
     Types.hmTZ12h,
 
-    -- * Reading Time Strings
+    -- * Low-level functions
+
+    -- ** Parsing time strings
     readInLocalTimeZone,
     readTimeFormat,
 
-    -- * Converting ZonedTime
+    -- ** Converting ZonedTime
     convertZoned,
     convertZonedLabel,
 
@@ -72,12 +75,12 @@ import Data.Time.Zones.All qualified as All
 import Optics.Core ((%), (^.))
 
 -- | Reads the given time string based on the 'TimeBuilder'. For
--- @readConvertTime builder timeStr@, the semantics are:
+-- @readConvertTime builder@, the semantics are:
 --
 -- * If 'srcTZ' is @'SrcTZConv' 'TZConvDatabase'@ then we manually append the
 --   timezone data onto the time string and format. That is, only use this if:
 --
---      * @timeStr@ does __not__ contain a timezone like @EST@.
+--      * @timeString@ does __not__ contain a timezone like @EST@.
 --      * @format@ does __not__ mention the timezone option @%Z@.
 --
 -- __Throws:__
