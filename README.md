@@ -86,7 +86,7 @@ $ time-conv -f "%Y-%m-%d %H:%M" "2022-06-15 08:30"
 
 **Arg:** `-s,--src-tz <local | literal | tz_database>`
 
-**Description:** This option allows on to change how the time string is interpreted. By default, we interpret the time string in the system's local timezone. The literal option is used for reading the timezone in the string itself e.g. `07:00 EST`. If a timezone is included then a formatter using the `%Z` flag should be present. If `literal` is specified and no timezone is included then we assume UTC.
+**Description:** This option allows one to change how the time string is interpreted. By default, we interpret the time string in the system's local timezone. The literal option is used for reading the timezone in the string itself e.g. `07:00 EST`. If a timezone is included then a formatter using the `%Z` flag should be present. If `literal` is specified and no timezone is included then we assume UTC.
 
 **Examples:**
 
@@ -111,7 +111,7 @@ $ time-conv -s America/New_York 08:30
 
 **Arg:** `-d,--dest-tz <local | tz_database>`
 
-**Description:** This option allows on to convert the read timezone. By default, we convert to the local timezone.
+**Description:** This option allows one to convert the read timezone. By default, we convert to the local timezone.
 
 **Examples:**
 
