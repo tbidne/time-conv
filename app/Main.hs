@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedLabels #-}
-
 -- | Main module.
 --
 -- @since 0.1
@@ -9,7 +7,6 @@ import Args (Args (..), parserInfo)
 import Control.Exception (Exception (..), throwIO)
 import Control.Exception.Base (SomeAsyncException (..), SomeException, catch)
 import Data.Time.Conversion qualified as Conv
-import Optics.Core ((^.))
 import Options.Applicative qualified as OApp
 
 -- | Executable entry-point.
@@ -22,8 +19,8 @@ main = do
     putStrLn $ displayException e
 
 runConv :: Args -> IO ()
-runConv args = do
-  time <- Conv.readConvertTime (args ^. #builder) (args ^. #timeString)
+runConv MkArgs {builder, timeString} = do
+  time <- Conv.readConvertTime builder timeString
   print time
 
 safeCatch :: IO a -> (SomeException -> IO a) -> IO a

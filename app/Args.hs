@@ -1,7 +1,4 @@
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE UndecidableInstances #-}
 
 module Args
   ( parserInfo,
@@ -23,7 +20,6 @@ import Data.Time.Conversion.Types
 import Data.Time.Conversion.Types qualified as Types
 import Data.Version.Package qualified as PV
 import Development.GitRev qualified as GitRev
-import Optics.TH (makeFieldLabelsNoPrefix)
 import Options.Applicative
   ( Parser,
     ParserInfo (..),
@@ -37,8 +33,6 @@ data Args = MkArgs
   { builder :: !TimeBuilder,
     timeString :: !Text
   }
-
-makeFieldLabelsNoPrefix ''Args
 
 -- | Optparse-Applicative info.
 parserInfo :: ParserInfo Args
