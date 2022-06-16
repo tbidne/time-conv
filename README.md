@@ -82,10 +82,10 @@ Version: 0.1
 
 ```
 $ time-conv "08:30"
-1970-01-01 08:30:00 NZST
+08:30
 
 $ time-conv -f "%Y-%m-%d %H:%M" "2022-06-15 08:30"
-2022-06-15 08:30:00 NZST
+2022-06-15 08:30
 ```
 
 ## Source Timezone
@@ -99,18 +99,18 @@ $ time-conv -f "%Y-%m-%d %H:%M" "2022-06-15 08:30"
 ```
 # this is the default, equivalent to leaving off '-s local'
 $ time-conv -s local "08:30"
-1970-01-01 08:30:00 EST
+08:30
 
 # notice the literal is overridden unless '-s literal' is added
 $ time-conv -f "%H:%M %Z" "08:30 EST"
-1970-01-01 08:30:00 NZST
+08:30 NZST
 
 $ time-conv -f "%H:%M %Z" -s literal "08:30 EST"
-1970-01-02 01:30:00 NZST
+01:30:00 NZST
 
 # using tz database name
 $ time-conv -s America/New_York 08:30
-1970-01-02 01:30:00 NZST
+01:30
 ```
 
 ## Destination Timezone
@@ -124,14 +124,14 @@ $ time-conv -s America/New_York 08:30
 ```
 # this is the default, equivalent to leaving off '-s local'
 $ time-conv -d local 08:30
-1970-01-01 08:30:00 NZST
+08:30
 
 # using tz database name
 $ time-conv -d America/New_York 08:30
-1969-12-31 15:30:00 EST
+15:30
 
 $ time-conv -s America/New_York -d Etc/UTC 08:30
-1970-01-01 13:30:00 UTC
+13:30
 ```
 
 ## Time String
