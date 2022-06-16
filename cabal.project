@@ -6,3 +6,10 @@ package time-conv
     -Wincomplete-record-updates -Wincomplete-uni-patterns
     -Wmissing-home-modules -Wmissing-export-lists -Wpartial-fields
     -Wredundant-constraints -Wunused-packages -Wmissing-deriving-strategies
+
+source-repository-package
+    type: git
+    location: https://github.com/tbidne/env-guard.git
+    tag: 57c2be47346085a0bd48df129da578d44452904b
+
+optimization: 2

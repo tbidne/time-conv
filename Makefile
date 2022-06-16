@@ -66,6 +66,10 @@ lint:
 lint_ck:
 	nix run github:tbidne/nix-hs-tools/0.4#hlint
 
+.PHONY: haddock
+haddock:
+	cabal haddock
+
 .PHONY: haddock_ck
 haddock_ck:
 	nix run github:tbidne/nix-hs-tools/0.4#haddock -- .

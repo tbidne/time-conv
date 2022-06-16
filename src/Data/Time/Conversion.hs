@@ -38,6 +38,9 @@ module Data.Time.Conversion
     Types._TimeErrorParseTime,
     Types._TimeErrorParseTZDatabase,
     Types._TimeErrorLocalTimeZone,
+
+    -- * Miscellaneous
+    Types.timeLocaleAllZones,
   )
 where
 
@@ -69,19 +72,39 @@ import Data.Time.Zones.All (TZLabel (..))
 import Data.Time.Zones.All qualified as All
 import Optics.Core ((^.))
 
+-- $setup
+-- >>> import Data.Default (Default (def))
+-- >>> import Optics.Core qualified as Optics
+
 -- | Reads the given time string based on the 'TimeBuilder'. For
--- @readConvertTime timeStr builder@ The semantics are:
+-- @readConvertTime builder timeStr@, the semantics are:
 --
--- * If 'srcTZ' is 'SrcTZLabel' then we manually append the timezone data
---   onto the time string and format. That is, do not use this option unless:
---    * @timeStr@ does __not__ contain a timezone like @EST@.
---    * @format@ does __not__ mention the timezone option @%Z@.
+-- * If 'srcTZ' is @'SrcTZConv' 'TZConvDatabase'@ then we manually append the
+--   timezone data onto the time string and format. That is, only use this if:
+--
+--      * @timeStr@ does __not__ contain a timezone like @EST@.
+--      * @format@ does __not__ mention the timezone option @%Z@.
 --
 -- __Throws:__
 --
 -- * 'TimeErrorParseTime': Error parsing the time string.
 -- * 'TimeErrorParseTZDatabase': Error parsing the tz database name.
 -- * 'TimeErrorLocalTimeZone': Error retrieving local timezone.
+--
+-- ==== __Examples__
+-- >>> let toUtcBuilder = def { destTZ = TZConvDatabase (TZDatabaseLabel Etc__UTC) }
+-- >>> let litToUtcBuilder = toUtcBuilder { srcTZ = SrcTZLiteral }
+-- >>> -- literal + no src time zone = utc
+-- >>> readConvertTime litToUtcBuilder "17:24"
+-- 1970-01-01 17:24:00 UTC
+--
+-- >>> -- literal + convert from est
+-- >>> readConvertTime (litToUtcBuilder { format = Types.hmTZ }) "17:24 EST"
+-- 1970-01-01 22:24:00 UTC
+--
+-- >>> let nyToUtcBuilder = toUtcBuilder { srcTZ = SrcTZConv (TZConvDatabase $ TZDatabaseLabel America__New_York) }
+-- >>> readConvertTime nyToUtcBuilder "08:15"
+-- 1970-01-01 13:15:00 UTC
 --
 -- @since 0.1
 readConvertTime :: TimeBuilder -> Text -> IO ZonedTime
@@ -115,7 +138,7 @@ readConvertTime builder timeStr = do
         Just result -> pure result
         Nothing -> throwIO $ TimeErrorParseTime f t
 
--- | @readInLocalTimeZone format timeStr@ attempts to parse the
+-- | @readInLocalTimeZone locale format timeStr@ attempts to parse the
 -- @timeStr@ given the expected @format@. We parse into the current
 -- system time zone, so:
 --
@@ -123,7 +146,7 @@ readConvertTime builder timeStr = do
 -- * @timeStr@ should __not__ contain time zone information.
 --
 -- @
--- λ. readInLocalTimeZone "%H" "17"
+-- λ. readInLocalTimeZone Types.timeLocaleAllZones "%H" "17"
 -- Just 1970-01-01 17:00:00 NZST
 -- @
 --
@@ -142,17 +165,22 @@ readInLocalTimeZone locale format timeStr = do
   where
     format' = format <> " %Z"
 
--- | @readTimeFormat format timeStr@ attempts to parse the @timeStr@ given
+-- | @readTimeFormat locale format timeStr@ attempts to parse the @timeStr@ given
 -- the expected @format@. No timezone is assumed, so if it is left off then
 -- the result is UTC.
 --
--- @
--- λ. readTimeFormat "%H %Z" "17 EST"
--- Just 1970-01-01 17:00:00 EST
+-- ==== __Examples__
+-- >>> readTimeFormat Types.timeLocaleAllZones Types.hm "17:24"
+-- Just 1970-01-01 17:24:00 +0000
 --
--- λ. readTimeFormat "%H" "17"
--- Just 1970-01-01 17:00:00 +0000
--- @
+-- >>> readTimeFormat Types.timeLocaleAllZones Types.hm12h "07:24 pm"
+-- Just 1970-01-01 19:24:00 +0000
+--
+-- >>> readTimeFormat Types.timeLocaleAllZones Types.hmTZ "07:24 CET"
+-- Just 1970-01-01 07:24:00 CET
+--
+-- >>> readTimeFormat Types.timeLocaleAllZones Types.hmTZ12h "07:24 pm EST"
+-- Just 1970-01-01 19:24:00 EST
 --
 -- @since 0.1
 readTimeFormat :: TimeLocale -> TimeFormat -> Text -> Maybe ZonedTime
@@ -163,11 +191,23 @@ readTimeFormat locale (MkTimeFormat format) timeStr = Format.parseTimeM True loc
 
 -- | Converts a zoned time to the given timezone.
 --
+-- >>> let (Just sixPmUtc) = readTimeFormat Types.timeLocaleAllZones Types.hm "18:00"
+-- >>> convertZoned sixPmUtc "America/New_York"
+-- Just 1970-01-01 13:00:00 EST
+--
+-- >>> convertZoned sixPmUtc "bad tz label"
+-- Nothing
+--
 -- @since 0.1
 convertZoned :: ZonedTime -> Text -> Maybe ZonedTime
 convertZoned zt = fmap (convertZonedLabel zt) . txtToTZLabel
 
 -- | Converts a zoned time to the given timezone.
+--
+-- ==== __Examples__
+-- >>> let (Just sixPmUtc) = readTimeFormat Types.timeLocaleAllZones Types.hm "18:00"
+-- >>> convertZonedLabel sixPmUtc America__New_York
+-- 1970-01-01 13:00:00 EST
 --
 -- @since 0.1
 convertZonedLabel :: ZonedTime -> TZLabel -> ZonedTime

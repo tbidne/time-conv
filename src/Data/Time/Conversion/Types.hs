@@ -48,7 +48,13 @@ import Data.Time.Zones.All qualified as All
 import Optics.Core (A_Lens, LabelOptic (..), Prism', Review)
 import Optics.Core qualified as O
 
--- | Determines how read and convert a time string.
+-- | Determines how to read and convert a time string. The 'Default' instance
+-- uses:
+--
+-- * @format = "%H:%M"@ (24hr hours:minutes)
+-- * @srzTZ = 'SrcTZConv' 'TZConvLocal'@ (local)
+-- * @destTZ = 'TZConvLocal'@ (local)
+-- * @locale = 'timeLocaleAllZones'@ (all locales)
 --
 -- @since 0.1
 data TimeBuilder = MkTimeBuilder
@@ -110,6 +116,13 @@ instance Default TimeBuilder where
 
 -- | Conversion timezone options.
 --
+-- ==== __Examples__
+-- >>> def :: TZConv
+-- TZConvLocal
+--
+-- >>> TZConvDatabase $ TZDatabaseLabel America__New_York
+-- TZConvDatabase (TZDatabaseLabel America__New_York)
+--
 -- @since 0.1
 data TZConv
   = -- | Represents the local timezone.
@@ -120,7 +133,12 @@ data TZConv
     --
     -- @since 0.1
     TZConvDatabase TZDatabase
-  deriving stock (Eq, Show)
+  deriving stock
+    ( -- | @since 0.1
+      Eq,
+      -- | @since 0.1
+      Show
+    )
 
 -- | @since 0.1
 _TZConvLocal :: Prism' TZConv ()
@@ -141,6 +159,10 @@ instance Default TZConv where
   def = TZConvLocal
 
 -- | Determines what timezone we use when reading a time string.
+--
+-- ==== __Examples__
+-- >>> def :: SrcTZ
+-- SrcTZConv TZConvLocal
 --
 -- @since 0.1
 data SrcTZ
@@ -181,6 +203,13 @@ instance Default SrcTZ where
 
 -- | Options for interpreting a timezone.
 --
+-- ==== __Examples__
+-- >>> TZDatabaseLabel America__New_York
+-- TZDatabaseLabel America__New_York
+--
+-- >>> TZDatabaseText "America/New_York"
+-- TZDatabaseText "America/New_York"
+--
 -- @since 0.1
 data TZDatabase
   = -- | Uses a 'TZLabel'. This option should be preferred as it enables
@@ -214,8 +243,10 @@ _TZDatabaseText = O.prism TZDatabaseText from
     from (TZDatabaseText t) = Right t
     from other = Left other
 
--- | Time formatting string. The 'Monoid' identity is 'hm'. Otherwise we
--- take the LHS.
+-- | Time formatting string.
+--
+-- >>> def :: TimeFormat
+-- MkTimeFormat {unTimeFormat = "%H:%M"}
 --
 -- @since 0.1
 newtype TimeFormat = MkTimeFormat
@@ -251,52 +282,44 @@ instance
 instance Default TimeFormat where
   def = hm
 
--- | @%H:%M@. Format for 24-hour @hours:minutes@.
+-- | Format for 24-hour @hours:minutes@.
 --
--- @
--- λ. readTimeFormat hm "17:24"
--- Just 1970-01-01 17:24:00 +0000
--- @
+-- >>> hm
+-- MkTimeFormat {unTimeFormat = "%H:%M"}
 --
 -- @since 0.1
 hm :: TimeFormat
 hm = "%H:%M"
 
--- | @%I:%M %P@. Format for 12-hour @hours:minutes@.
+-- | Format for 12-hour @hours:minutes am/pm@.
 --
--- @
--- λ. readTimeFormat hm12h "07:24 pm"
--- Just 1970-01-01 19:24:00 +0000
--- @
+-- >>> hm12h
+-- MkTimeFormat {unTimeFormat = "%I:%M %P"}
 --
 -- @since 0.1
 hm12h :: TimeFormat
 hm12h = "%I:%M %P"
 
--- | %H:%M %Z@. Format for 24-hour @hours:minutes TZ@.
+-- | Format for 24-hour @hours:minutes TZ@.
 --
--- @
--- λ. readTimeFormat hmTZ "07:24 CET"
--- Just 1970-01-01 07:24:00 CET
--- @
+-- >>> hmTZ
+-- MkTimeFormat {unTimeFormat = "%H:%M %Z"}
 --
 -- @since 0.1
 hmTZ :: TimeFormat
 hmTZ = "%H:%M %Z"
 
--- | @%I:%M %P %Z@. Format for 12-hour @hours:minutes TZ@.
+-- | Format for 12-hour @hours:minutes am/pm TZ@.
 --
--- @
--- λ. readTimeFormat hmTZ12h "07:24 pm CET"
--- Just 1970-01-01 19:24:00 CET
--- @
+-- >>> hmTZ12h
+-- MkTimeFormat {unTimeFormat = "%I:%M %P %Z"}
 --
 -- @since 0.1
 hmTZ12h :: TimeFormat
 hmTZ12h = "%I:%M %P %Z"
 
--- | 'Format.defaultTimeLocale' with the date format switched to @%d/%m/%y@
--- and knowledge of _all_ timezones, per 'TZLabel'. Using this, we can parse
+-- | 'Format.defaultTimeLocale' with the date format switched to @%d\/%m\/%y@
+-- and knowledge of __all__ timezones, per 'TZLabel'. Using this, we can parse
 -- non-American labels like @CES@ and @NZST@.
 --
 -- @since 0.1

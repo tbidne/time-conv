@@ -8,3 +8,6 @@ cradle:
 
     - path: "./app/Args.hs"
       component: "time-conv:exe:time-conv"
+
+    - path: "./test/doctest"
+      component: "time-conv:test:doctest"
