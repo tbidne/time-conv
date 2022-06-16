@@ -46,6 +46,7 @@ module Data.Time.Conversion
     Types._TimeErrorParseTime,
     Types._TimeErrorParseTZDatabase,
     Types._TimeErrorLocalTimeZone,
+    Types._TimeErrorLocalSystemTime,
 
     -- * Miscellaneous
     Utils.timeLocaleAllZones,
@@ -75,8 +76,8 @@ import Data.Time.Zones.All (TZLabel (..))
 import Data.Time.Zones.All qualified as All
 import Optics.Core ((%), (^.))
 
--- | Reads the given time string based on the 'TimeBuilder'. For
--- @readConvertTime builder@, the semantics are:
+-- | Reads the given time string based on the 'TimeBuilder'.
+-- The semantics are:
 --
 -- * If 'srcTZ' is @'SrcTZConv' 'TZConvDatabase'@ then we manually append the
 --   timezone data onto the time string and format. That is, only use this if:
