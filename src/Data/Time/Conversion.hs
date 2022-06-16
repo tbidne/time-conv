@@ -7,6 +7,7 @@
 module Data.Time.Conversion
   ( -- * High-level parsing/conversion
     readConvertTime,
+
     -- ** Types
     TimeBuilder (..),
     SrcTZ (..),
@@ -83,11 +84,14 @@ import Optics.Core ((%), (^.))
 --      * @timeString@ does __not__ contain a timezone like @EST@.
 --      * @format@ does __not__ mention the timezone option @%Z@.
 --
+-- * If 'timeString' is 'Nothing' then we retrieve the local system time.
+--
 -- __Throws:__
 --
 -- * 'TimeErrorParseTime': Error parsing the time string.
 -- * 'TimeErrorParseTZDatabase': Error parsing the tz database name.
 -- * 'TimeErrorLocalTimeZone': Error retrieving local timezone.
+-- * 'TimeErrorLocalSystemTime': Error retrieving local system time.
 --
 -- ==== __Examples__
 -- >>> import Data.Default (Default (def))
@@ -109,7 +113,9 @@ import Optics.Core ((%), (^.))
 readConvertTime :: TimeBuilder -> IO ZonedTime
 readConvertTime builder = do
   inTime <- case builder ^. #timeString of
-    Nothing -> Local.getZonedTime
+    Nothing ->
+      Local.getZonedTime
+        `Utils.catchSync` \(e :: SomeException) -> throwIO $ TimeErrorLocalSystemTime e
     Just timeStr -> readTimeString format locale (builder ^. #srcTZ) timeStr
 
   case builder ^. #destTZ of

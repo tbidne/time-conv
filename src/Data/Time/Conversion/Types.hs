@@ -31,6 +31,7 @@ module Data.Time.Conversion.Types
     _TimeErrorParseTime,
     _TimeErrorParseTZDatabase,
     _TimeErrorLocalTimeZone,
+    _TimeErrorLocalSystemTime,
   )
 where
 
@@ -394,6 +395,10 @@ data TimeError
     --
     -- @since 0.1
     forall e. Exception e => TimeErrorLocalTimeZone e
+  | -- | Error retrieving the local system time.
+    --
+    -- @since 0.1
+    forall e. Exception e => TimeErrorLocalSystemTime e
 
 -- | @since 0.1
 deriving stock instance Show TimeError
@@ -412,6 +417,8 @@ instance Exception TimeError where
       <> ">. Wanted a name like America/New_York."
   displayException (TimeErrorLocalTimeZone e) =
     "Local timezone exception: " <> displayException e
+  displayException (TimeErrorLocalSystemTime e) =
+    "Local system time exception: " <> displayException e
 
 -- | @since 0.1
 _TimeErrorParseTime :: Prism' TimeError (TimeFormat, Text)
@@ -430,3 +437,7 @@ _TimeErrorParseTZDatabase = O.prism TimeErrorParseTZDatabase from
 -- | @since 0.1
 _TimeErrorLocalTimeZone :: Exception e => Review TimeError e
 _TimeErrorLocalTimeZone = O.unto TimeErrorLocalTimeZone
+
+-- | @since 0.1
+_TimeErrorLocalSystemTime :: Exception e => Review TimeError e
+_TimeErrorLocalSystemTime = O.unto TimeErrorLocalSystemTime
