@@ -34,37 +34,37 @@ format: cabalfmt hsformat nixpkgsfmt
 
 .PHONY: hsformat
 hsformat:
-	nix run github:tbidne/nix-hs-tools/0.4#ormolu -- --mode inplace
+	nix run github:tbidne/nix-hs-tools/0.5#ormolu -- --mode inplace
 
 .PHONY: hsformat_ck
 hsformat_ck:
-	nix run github:tbidne/nix-hs-tools/0.4#ormolu -- --mode check
+	nix run github:tbidne/nix-hs-tools/0.5#ormolu -- --mode check
 
 .PHONY: cabalfmt
 cabalfmt:
-	nix run github:tbidne/nix-hs-tools/0.4#cabal-fmt -- --inplace
+	nix run github:tbidne/nix-hs-tools/0.5#cabal-fmt -- --inplace
 
 .PHONY: cabalfmt_ck
 cabalfmt_ck:
-	nix run github:tbidne/nix-hs-tools/0.4#cabal-fmt -- --check
+	nix run github:tbidne/nix-hs-tools/0.5#cabal-fmt -- --check
 
 .PHONY: nixpkgsfmt
 nixpkgsfmt:
-	nix run github:tbidne/nix-hs-tools/0.4#nixpkgs-fmt
+	nix run github:tbidne/nix-hs-tools/0.5#nixpkgs-fmt
 
 .PHONY: nixpkgsfmt_ck
 nixpkgsfmt_ck:
-	nix run github:tbidne/nix-hs-tools/0.4#nixpkgs-fmt -- --check
+	nix run github:tbidne/nix-hs-tools/0.5#nixpkgs-fmt -- --check
 
 # linting
 
 .PHONY: lint
 lint:
-	nix run github:tbidne/nix-hs-tools/0.4#hlint -- --refact
+	nix run github:tbidne/nix-hs-tools/0.5#hlint -- --refact
 
 .PHONY: lint_ck
 lint_ck:
-	nix run github:tbidne/nix-hs-tools/0.4#hlint
+	nix run github:tbidne/nix-hs-tools/0.5#hlint
 
 .PHONY: haddock
 haddock:
@@ -72,4 +72,4 @@ haddock:
 
 .PHONY: haddock_ck
 haddock_ck:
-	nix run github:tbidne/nix-hs-tools/0.4#haddock -- .
+	nix run github:tbidne/nix-hs-tools/0.5#haddock -- .
