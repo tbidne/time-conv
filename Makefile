@@ -6,7 +6,11 @@ build:
 
 .PHONY: test
 test:
-	cabal test
+	RUN_DOCTEST=1 cabal test
+
+.PHONY: doctest
+doctest:
+	RUN_DOCTEST=1 cabal run doctest
 
 .PHONY: repl
 repl:

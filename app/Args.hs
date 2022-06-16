@@ -2,7 +2,6 @@
 
 module Args
   ( parserInfo,
-    Args (..),
   )
 where
 
@@ -17,9 +16,11 @@ import Data.Time.Conversion.Types
     TimeBuilder (..),
     TimeFormat (..),
   )
+import Data.Time.Conversion.Types qualified as Types
 import Data.Time.Conversion.Utils qualified as Utils
 import Data.Version.Package qualified as PV
 import Development.GitRev qualified as GitRev
+import Optics.Core ((^.))
 import Options.Applicative
   ( Parser,
     ParserInfo (..),
@@ -35,10 +36,10 @@ data Args = MkArgs
   }
 
 -- | Optparse-Applicative info.
-parserInfo :: ParserInfo Args
+parserInfo :: ParserInfo TimeBuilder
 parserInfo =
   ParserInfo
-    { infoParser = argParser,
+    { infoParser = parseBuilder,
       infoFullDesc = True,
       infoProgDesc = Chunk desc,
       infoHeader = Chunk header,
@@ -55,14 +56,6 @@ parserInfo =
           <> " For the src and dest options, tz_database refers to labels like"
           <> " America/New_York. See https://en.wikipedia.org/wiki/Tz_database."
 
-argParser :: Parser Args
-argParser =
-  MkArgs
-    <$> parseBuilder
-    <*> parseTimeStr
-    <**> OApp.helper
-    <**> version
-
 parseBuilder :: Parser TimeBuilder
 parseBuilder =
   MkTimeBuilder
@@ -70,6 +63,9 @@ parseBuilder =
     <*> parseSrcTZ
     <*> parseDestTZ
     <*> pure Utils.timeLocaleAllZones
+    <*> parseTimeStr
+    <**> OApp.helper
+    <**> version
 
 parseDestTZ :: Parser TZConv
 parseDestTZ =
@@ -94,20 +90,26 @@ parseDestTZ =
 parseFormat :: Parser TimeFormat
 parseFormat =
   OApp.option
-    OApp.str
+    readFormat
     ( OApp.value def
         <> OApp.long "format"
         <> OApp.short 'f'
-        <> OApp.metavar "STR"
+        <> OApp.metavar "<full | STRING>"
         <> OApp.help helpTxt
     )
   where
     helpTxt =
       "Glibc-style format string e.g. %Y-%m-%d for yyyy-mm-dd. Defaults to "
         <> defFormatStr
-        <> "i.e. 24-hr hour:minute. See 'man date' for basic examples, and "
+        <> "i.e. 24-hr hour:minute. If the string 'full' is given then we use"
+        <> " RFC822. See 'man date' for basic examples, and "
         <> " https://hackage.haskell.org/package/time-1.13/docs/Data-Time-Format.html#v:formatTime for the exact spec."
-    defFormatStr = T.unpack $ unTimeFormat def
+    defFormatStr = def ^. Types.timeFormatStringIso
+    readFormat = do
+      s <- OApp.str
+      pure $ case s of
+        "full" -> TimeFormatFull
+        other -> TimeFormatManual (T.pack other)
 
 parseSrcTZ :: Parser SrcTZ
 parseSrcTZ = do
@@ -134,8 +136,17 @@ parseSrcTZ = do
         "literal" -> pure SrcTZLiteral
         other -> pure $ SrcTZConv $ TZConvDatabase $ TZDatabaseText other
 
-parseTimeStr :: Parser Text
-parseTimeStr = T.pack <$> OApp.argument OApp.str (OApp.metavar "STRING")
+parseTimeStr :: Parser (Maybe Text)
+parseTimeStr =
+  OApp.optional $
+    T.pack
+      <$> OApp.argument
+        OApp.str
+        (OApp.metavar "STRING" <> OApp.help helpTxt)
+  where
+    helpTxt =
+      "Time string to parse. If none is given then we parse the"
+        <> " local system time."
 
 version :: Parser (a -> a)
 version = OApp.infoOption txt (OApp.long "version" <> OApp.short 'v')

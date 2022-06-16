@@ -3,9 +3,10 @@
 -- @since 0.1
 module Main (main) where
 
-import Args (Args (..), parserInfo)
+import Args (parserInfo)
 import Control.Exception (Exception (..))
 import Control.Exception.Base (SomeException)
+import Data.Time.Conversion (TimeBuilder)
 import Data.Time.Conversion qualified as Conv
 import Data.Time.Conversion.Utils qualified as Utils
 import Options.Applicative qualified as OApp
@@ -15,11 +16,11 @@ import Options.Applicative qualified as OApp
 -- @since 0.1
 main :: IO ()
 main = do
-  args <- OApp.execParser parserInfo
-  runConv args `Utils.catchSync` \(e :: SomeException) ->
+  builder <- OApp.execParser parserInfo
+  runConv builder `Utils.catchSync` \(e :: SomeException) ->
     putStrLn $ displayException e
 
-runConv :: Args -> IO ()
-runConv MkArgs {builder, timeString} = do
-  time <- Conv.readConvertTime builder timeString
-  print time
+runConv :: TimeBuilder -> IO ()
+runConv builder = do
+  time <- Conv.readConvertTime builder
+  putStrLn $ Conv.formatTimeBuilder builder time

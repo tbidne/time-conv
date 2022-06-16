@@ -83,6 +83,7 @@ executable time-conv
     , base
     , data-default
     , gitrev                >=1.2.0    && <1.4
+    , optics-core
     , optparse-applicative  >=0.16.1.0 && <0.18
     , package-version       ^>=0.1.0.0
     , text

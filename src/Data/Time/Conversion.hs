@@ -18,8 +18,12 @@ module Data.Time.Conversion
     Types._TZDatabaseLabel,
     Types._TZDatabaseText,
     TimeFormat (..),
+    Types._TimeFormatManual,
+    Types._TimeFormatFull,
+    Types.timeFormatStringIso,
 
-    -- ** Formats
+    -- ** Formatting
+    formatTimeBuilder,
     Types.hm,
     Types.hm12h,
     Types.hmTZ,
@@ -65,11 +69,7 @@ import Data.Time.LocalTime qualified as Local
 import Data.Time.Zones qualified as Zones
 import Data.Time.Zones.All (TZLabel (..))
 import Data.Time.Zones.All qualified as All
-import Optics.Core ((^.))
-
--- $setup
--- >>> import Data.Default (Default (def))
--- >>> import Optics.Core qualified as Optics
+import Optics.Core ((%), (^.))
 
 -- | Reads the given time string based on the 'TimeBuilder'. For
 -- @readConvertTime builder timeStr@, the semantics are:
@@ -87,34 +87,27 @@ import Optics.Core ((^.))
 -- * 'TimeErrorLocalTimeZone': Error retrieving local timezone.
 --
 -- ==== __Examples__
+-- >>> import Data.Default (Default (def))
 -- >>> let toUtcBuilder = def { destTZ = TZConvDatabase (TZDatabaseLabel Etc__UTC) }
 -- >>> let litToUtcBuilder = toUtcBuilder { srcTZ = SrcTZLiteral }
 -- >>> -- literal + no src time zone = utc
--- >>> readConvertTime litToUtcBuilder "17:24"
+-- >>> readConvertTime (litToUtcBuilder { timeString = Just "17:24" })
 -- 1970-01-01 17:24:00 UTC
 --
 -- >>> -- literal + convert from est
--- >>> readConvertTime (litToUtcBuilder { format = Types.hmTZ }) "17:24 EST"
+-- >>> readConvertTime (litToUtcBuilder { format = Types.hmTZ, timeString = Just "17:24 EST" })
 -- 1970-01-01 22:24:00 UTC
 --
 -- >>> let nyToUtcBuilder = toUtcBuilder { srcTZ = SrcTZConv (TZConvDatabase $ TZDatabaseLabel America__New_York) }
--- >>> readConvertTime nyToUtcBuilder "08:15"
+-- >>> readConvertTime (nyToUtcBuilder { timeString = Just "08:15" })
 -- 1970-01-01 13:15:00 UTC
 --
 -- @since 0.1
-readConvertTime :: TimeBuilder -> Text -> IO ZonedTime
-readConvertTime builder timeStr = do
-  inTime <- case builder ^. #srcTZ of
-    SrcTZLiteral ->
-      readOrThrow (\f t -> pure $ readTimeFormat locale f t) format timeStr
-    SrcTZConv TZConvLocal ->
-      readOrThrow (readInLocalTimeZone locale) format timeStr
-    SrcTZConv (TZConvDatabase tzdb) -> do
-      lbl <- tzDatabaseToTZLabel tzdb
-      let name = tzLabelToTimeZoneName lbl
-          timeStr' = timeStr <> " " <> name
-          format' = format <> " %Z"
-      readOrThrow (\f t -> pure $ readTimeFormat locale f t) format' timeStr'
+readConvertTime :: TimeBuilder -> IO ZonedTime
+readConvertTime builder = do
+  inTime <- case builder ^. #timeString of
+    Nothing -> Local.getZonedTime
+    Just timeStr -> readTimeString format locale (builder ^. #srcTZ) timeStr
 
   case builder ^. #destTZ of
     TZConvDatabase tzdb -> do
@@ -127,6 +120,21 @@ readConvertTime builder timeStr = do
   where
     format = builder ^. #format
     locale = builder ^. #locale
+
+readTimeString :: TimeFormat -> TimeLocale -> SrcTZ -> Text -> IO ZonedTime
+readTimeString format locale srcTZ timeStr = do
+  case srcTZ of
+    SrcTZLiteral ->
+      readOrThrow (\f t -> pure $ readTimeFormat locale f t) format timeStr
+    SrcTZConv TZConvLocal ->
+      readOrThrow (readInLocalTimeZone locale) format timeStr
+    SrcTZConv (TZConvDatabase tzdb) -> do
+      lbl <- tzDatabaseToTZLabel tzdb
+      let name = tzLabelToTimeZoneName lbl
+          timeStr' = timeStr <> " " <> name
+          format' = format <> " %Z"
+      readOrThrow (\f t -> pure $ readTimeFormat locale f t) format' timeStr'
+  where
     readOrThrow reader f t = do
       mresult <- reader f t
       case mresult of
@@ -165,28 +173,29 @@ readInLocalTimeZone locale format timeStr = do
 -- the result is UTC.
 --
 -- ==== __Examples__
--- >>> readTimeFormat Types.timeLocaleAllZones Types.hm "17:24"
+-- >>> readTimeFormat Utils.timeLocaleAllZones Types.hm "17:24"
 -- Just 1970-01-01 17:24:00 +0000
 --
--- >>> readTimeFormat Types.timeLocaleAllZones Types.hm12h "07:24 pm"
+-- >>> readTimeFormat Utils.timeLocaleAllZones Types.hm12h "07:24 pm"
 -- Just 1970-01-01 19:24:00 +0000
 --
--- >>> readTimeFormat Types.timeLocaleAllZones Types.hmTZ "07:24 CET"
+-- >>> readTimeFormat Utils.timeLocaleAllZones Types.hmTZ "07:24 CET"
 -- Just 1970-01-01 07:24:00 CET
 --
--- >>> readTimeFormat Types.timeLocaleAllZones Types.hmTZ12h "07:24 pm EST"
+-- >>> readTimeFormat Utils.timeLocaleAllZones Types.hmTZ12h "07:24 pm EST"
 -- Just 1970-01-01 19:24:00 EST
 --
 -- @since 0.1
 readTimeFormat :: TimeLocale -> TimeFormat -> Text -> Maybe ZonedTime
-readTimeFormat locale (MkTimeFormat format) timeStr = Format.parseTimeM True locale format' timeStr'
+readTimeFormat locale format timeStr = Format.parseTimeM True locale format' timeStr'
   where
-    format' = T.unpack format
+    format' = format ^. Types.timeFormatStringIso
     timeStr' = T.unpack timeStr
 
 -- | Converts a zoned time to the given timezone.
 --
--- >>> let (Just sixPmUtc) = readTimeFormat Types.timeLocaleAllZones Types.hm "18:00"
+-- ==== __Examples__
+-- >>> let (Just sixPmUtc) = readTimeFormat Utils.timeLocaleAllZones Types.hm "18:00"
 -- >>> convertZoned sixPmUtc "America/New_York"
 -- Just 1970-01-01 13:00:00 EST
 --
@@ -200,7 +209,7 @@ convertZoned zt = fmap (convertZonedLabel zt) . txtToTZLabel
 -- | Converts a zoned time to the given timezone.
 --
 -- ==== __Examples__
--- >>> let (Just sixPmUtc) = readTimeFormat Types.timeLocaleAllZones Types.hm "18:00"
+-- >>> let (Just sixPmUtc) = readTimeFormat Utils.timeLocaleAllZones Types.hm "18:00"
 -- >>> convertZonedLabel sixPmUtc America__New_York
 -- 1970-01-01 13:00:00 EST
 --
@@ -224,3 +233,19 @@ tzLabelToTimeZoneName = T.pack . Local.timeZoneName . Utils.tzLabelToTimeZone
 
 txtToTZLabel :: Text -> Maybe TZLabel
 txtToTZLabel = All.fromTZName . TEnc.encodeUtf8
+
+-- | Uses the 'TimeBuilder'\'s 'locale' and 'format' to format the given
+-- 'ZonedTime'.
+--
+-- ==== __Examples__
+-- >>> import Data.Default (Default (def))
+-- >>> let (Just zt) = readTimeFormat Utils.timeLocaleAllZones Types.hm "17:24"
+-- >>> formatTimeBuilder def zt
+-- "17:24"
+--
+-- @since 0.1
+formatTimeBuilder :: TimeBuilder -> ZonedTime -> String
+formatTimeBuilder builder = Format.formatTime locale format
+  where
+    locale = builder ^. #locale
+    format = builder ^. #format % Types.timeFormatStringIso

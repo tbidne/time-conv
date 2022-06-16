@@ -24,6 +24,7 @@
   * [Format](#format)
   * [Source Timezone](#source-timezone)
   * [Destination Timezone](#destination-timezone)
+  * [Time String](#time-string)
 * [Building](#building)
   * [Prerequisites](#prerequisites)
   * [Cabal](#cabal)
@@ -37,15 +38,18 @@
 ```
 time-conv: A tool for timezone conversions.
 
-Usage: time-conv [-f|--format STR] [-s|--src-tz <local | literal | tz_database>]
-                 [-d|--dest-tz <local | tz_database>] STRING [-v|--version]
+Usage: time-conv [-f|--format <full | STRING>]
+                 [-s|--src-tz <local | literal | tz_database>]
+                 [-d|--dest-tz <local | tz_database>] [STRING] [-v|--version]
 
 time-conv reads time strings and converts between timezones. For the src and dest options, tz_database refers to labels like America/New_York. See https://en.wikipedia.org/wiki/Tz_database.
 
 Available options:
-  -f,--format STR          Glibc-style format string e.g. %Y-%m-%d for
+  -f,--format <full | STRING>
+                           Glibc-style format string e.g. %Y-%m-%d for
                            yyyy-mm-dd. Defaults to %H:%Mi.e. 24-hr hour:minute.
-                           See 'man date' for basic examples, and
+                           If the string 'full' is given then we use RFC822. See
+                           'man date' for basic examples, and
                            https://hackage.haskell.org/package/time-1.13/docs/Data-Time-Format.html#v:formatTime
                            for the exact spec.
   -s,--src-tz <local | literal | tz_database>
@@ -59,6 +63,8 @@ Available options:
   -d,--dest-tz <local | tz_database>
                            Timezone in which to convert the read string. Can be
                            'local' or a tz database label. Defaults to local.
+  STRING                   Time string to parse. If none is given then we parse
+                           the local system time.
   -h,--help                Show this help text
 
 Version: 0.1
@@ -68,9 +74,9 @@ Version: 0.1
 
 ## Format
 
-**Arg:** `-f,--format STR`
+**Arg:** `-f,--format <full | STRING>`
 
-**Description:** This option allows one to set an explicit format string. By default we use the format `%H-%M` which is 24-hour `hours:minutes`.
+**Description:** This option allows one to set an explicit format string. By default we use the format `%H-%M` which is 24-hour `hours:minutes`. If the string `full` is given, we use the time string as defined by RFC822: `%a, %_d %b %Y %H:%M:%S %Z`.
 
 **Examples:**
 
@@ -126,6 +132,22 @@ $ time-conv -d America/New_York 08:30
 
 $ time-conv -s America/New_York -d Etc/UTC 08:30
 1970-01-01 13:30:00 UTC
+```
+
+## Time String
+
+**Arg:** `STRING`
+
+**Description:** This is the time string to parse. If none is given then we parse the local system time. Naturally, this overrides the `--src-tz` option.
+
+**Examples:**
+
+```
+$ time-conv
+21:30
+
+$ time-conv -f full -d Europe/Paris
+Thu, 16 Jun 2022 12:30:00 CEST
 ```
 
 # Building
