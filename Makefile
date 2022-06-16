@@ -22,16 +22,16 @@ watch:
 
 # ci
 
-.PHONY: ci_ck
-ci_ck: format_ck lint_ck haddock_ck
+.PHONY: cic
+cic: formatc lintc haddockc
 
 .PHONY: ci
 ci: format lint
 
 # formatting
 
-.PHONY: format_ck
-format_ck: cabalfmt_ck hsformat_ck nixpkgsfmt_ck
+.PHONY: formatc
+formatc: cabalfmtc hsformatc nixpkgsfmtc
 
 .PHONY: format
 format: cabalfmt hsformat nixpkgsfmt
@@ -40,24 +40,24 @@ format: cabalfmt hsformat nixpkgsfmt
 hsformat:
 	nix run github:tbidne/nix-hs-tools/0.5#ormolu -- --mode inplace
 
-.PHONY: hsformat_ck
-hsformat_ck:
+.PHONY: hsformatc
+hsformatc:
 	nix run github:tbidne/nix-hs-tools/0.5#ormolu -- --mode check
 
 .PHONY: cabalfmt
 cabalfmt:
 	nix run github:tbidne/nix-hs-tools/0.5#cabal-fmt -- --inplace
 
-.PHONY: cabalfmt_ck
-cabalfmt_ck:
+.PHONY: cabalfmtc
+cabalfmtc:
 	nix run github:tbidne/nix-hs-tools/0.5#cabal-fmt -- --check
 
 .PHONY: nixpkgsfmt
 nixpkgsfmt:
 	nix run github:tbidne/nix-hs-tools/0.5#nixpkgs-fmt
 
-.PHONY: nixpkgsfmt_ck
-nixpkgsfmt_ck:
+.PHONY: nixpkgsfmtc
+nixpkgsfmtc:
 	nix run github:tbidne/nix-hs-tools/0.5#nixpkgs-fmt -- --check
 
 # linting
@@ -66,14 +66,17 @@ nixpkgsfmt_ck:
 lint:
 	nix run github:tbidne/nix-hs-tools/0.5#hlint -- --refact
 
-.PHONY: lint_ck
-lint_ck:
+.PHONY: lintc
+lintc:
 	nix run github:tbidne/nix-hs-tools/0.5#hlint
 
 .PHONY: haddock
 haddock:
-	cabal haddock --haddock-hyperlink-source
+	cabal haddock --haddock-hyperlink-source --haddock-quickjump ;\
+	mkdir -p docs/ ;\
+	find docs/ -type f | xargs -I % sh -c "rm -r %" ;\
+	cp -r dist-newstyle/build/x86_64-linux/ghc-9.2.2/time-conv-0.1/opt/doc/html/time-conv/* docs/
 
-.PHONY: haddock_ck
-haddock_ck:
+.PHONY: haddockc
+haddockc:
 	nix run github:tbidne/nix-hs-tools/0.5#haddock -- .
