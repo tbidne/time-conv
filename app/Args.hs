@@ -17,7 +17,7 @@ import Data.Time.Conversion.Types
     TimeBuilder (..),
     TimeFormat (..),
   )
-import Data.Time.Conversion.Types qualified as Types
+import Data.Time.Conversion.Utils qualified as Utils
 import Data.Version.Package qualified as PV
 import Development.GitRev qualified as GitRev
 import Options.Applicative
@@ -69,7 +69,7 @@ parseBuilder =
     <$> parseFormat
     <*> parseSrcTZ
     <*> parseDestTZ
-    <*> pure Types.timeLocaleAllZones
+    <*> pure Utils.timeLocaleAllZones
 
 parseDestTZ :: Parser TZConv
 parseDestTZ =

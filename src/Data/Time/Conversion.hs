@@ -40,17 +40,11 @@ module Data.Time.Conversion
     Types._TimeErrorLocalTimeZone,
 
     -- * Miscellaneous
-    Types.timeLocaleAllZones,
+    Utils.timeLocaleAllZones,
   )
 where
 
-import Control.Exception
-  ( Exception (..),
-    SomeAsyncException (..),
-    SomeException (..),
-    catch,
-    throwIO,
-  )
+import Control.Exception (SomeException (..), throwIO)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TEnc
@@ -63,9 +57,10 @@ import Data.Time.Conversion.Types
     TimeFormat (..),
   )
 import Data.Time.Conversion.Types qualified as Types
+import Data.Time.Conversion.Utils qualified as Utils
 import Data.Time.Format (TimeLocale (..))
 import Data.Time.Format qualified as Format
-import Data.Time.LocalTime (TimeZone, ZonedTime)
+import Data.Time.LocalTime (ZonedTime)
 import Data.Time.LocalTime qualified as Local
 import Data.Time.Zones qualified as Zones
 import Data.Time.Zones.All (TZLabel (..))
@@ -157,7 +152,7 @@ readInLocalTimeZone locale format timeStr = do
     T.pack
       . show
       <$> Local.getCurrentTimeZone
-      `safeCatch` (throwIO . TimeErrorLocalTimeZone)
+      `Utils.catchSync` (\(e :: SomeException) -> throwIO $ TimeErrorLocalTimeZone e)
   let timeStr' = timeStr <> " " <> tzStr
   case readTimeFormat locale format' timeStr' of
     Just zt -> pure $ Just zt
@@ -225,17 +220,7 @@ tzDatabaseToTZLabel (TZDatabaseText txt) =
     Nothing -> throwIO $ TimeErrorParseTZDatabase txt
 
 tzLabelToTimeZoneName :: TZLabel -> Text
-tzLabelToTimeZoneName = T.pack . Local.timeZoneName . tzLabelToTimeZone
-
-tzLabelToTimeZone :: TZLabel -> TimeZone
-tzLabelToTimeZone = (`Zones.timeZoneForPOSIX` 0) . All.tzByLabel
+tzLabelToTimeZoneName = T.pack . Local.timeZoneName . Utils.tzLabelToTimeZone
 
 txtToTZLabel :: Text -> Maybe TZLabel
 txtToTZLabel = All.fromTZName . TEnc.encodeUtf8
-
-safeCatch :: IO a -> (SomeException -> IO a) -> IO a
-safeCatch io handler =
-  io `catch` \ex ->
-    case fromException (toException ex) of
-      Just (SomeAsyncException _) -> throwIO ex
-      Nothing -> handler ex

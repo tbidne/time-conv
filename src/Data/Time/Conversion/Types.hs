@@ -28,9 +28,6 @@ module Data.Time.Conversion.Types
     _TimeErrorParseTime,
     _TimeErrorParseTZDatabase,
     _TimeErrorLocalTimeZone,
-
-    -- * Miscellaneous
-    timeLocaleAllZones,
   )
 where
 
@@ -39,12 +36,9 @@ import Data.Default (Default (..))
 import Data.String (IsString)
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Time.Conversion.Utils qualified as Utils
 import Data.Time.Format (TimeLocale (..))
-import Data.Time.Format qualified as Format
-import Data.Time.LocalTime (TimeZone)
-import Data.Time.Zones qualified as Zones
 import Data.Time.Zones.All (TZLabel (..))
-import Data.Time.Zones.All qualified as All
 import Optics.Core (A_Lens, LabelOptic (..), Prism', Review)
 import Optics.Core qualified as O
 
@@ -112,7 +106,7 @@ instance
 
 -- | @since 0.1
 instance Default TimeBuilder where
-  def = MkTimeBuilder def def def timeLocaleAllZones
+  def = MkTimeBuilder def def def Utils.timeLocaleAllZones
 
 -- | Conversion timezone options.
 --
@@ -317,27 +311,6 @@ hmTZ = "%H:%M %Z"
 -- @since 0.1
 hmTZ12h :: TimeFormat
 hmTZ12h = "%I:%M %P %Z"
-
--- | 'Format.defaultTimeLocale' with the date format switched to @%d\/%m\/%y@
--- and knowledge of __all__ timezones, per 'TZLabel'. Using this, we can parse
--- non-American labels like @CES@ and @NZST@.
---
--- @since 0.1
-timeLocaleAllZones :: TimeLocale
-timeLocaleAllZones =
-  Format.defaultTimeLocale
-    { dateFmt = "%d/%m/%y",
-      knownTimeZones = allTimeZones
-    }
-
-allTimeZones :: [TimeZone]
-allTimeZones = tzLabelToTimeZone <$> allTZLabels
-
-allTZLabels :: [TZLabel]
-allTZLabels = [minBound .. maxBound]
-
-tzLabelToTimeZone :: TZLabel -> TimeZone
-tzLabelToTimeZone = (`Zones.timeZoneForPOSIX` 0) . All.tzByLabel
 
 -- | Errors that can occur when reading/converting times.
 --
