@@ -22,6 +22,7 @@
 * [Introduction](#introduction)
 * [Options](#options)
   * [Format](#format)
+  * [Format Out](#format-out)
   * [Source Timezone](#source-timezone)
   * [Destination Timezone](#destination-timezone)
   * [Time String](#time-string)
@@ -38,7 +39,7 @@
 ```
 time-conv: A tool for timezone conversions.
 
-Usage: time-conv [-f|--format <full | STRING>]
+Usage: time-conv [-f|--format <full | STRING>] [-o|--format-out <full | STRING>]
                  [-s|--src-tz <local | literal | tz_database>]
                  [-d|--dest-tz <local | tz_database>] [STRING] [-v|--version]
 
@@ -52,6 +53,10 @@ Available options:
                            'man date' for basic examples, and
                            https://hackage.haskell.org/package/time-1.13/docs/Data-Time-Format.html#v:formatTime
                            for the exact spec.
+  -o,--format-out <full | STRING>
+                           Like --format, but used for the output. If this is
+                           not present then --format is used for both input and
+                           output.
   -s,--src-tz <local | literal | tz_database>
                            Timezone in which to read the string. Can be 'local',
                            'literal' or a tz database label. Defaults to local.
@@ -86,6 +91,27 @@ $ time-conv "08:30"
 
 $ time-conv -f "%Y-%m-%d %H:%M" "2022-06-15 08:30"
 2022-06-15 08:30
+```
+
+## Format Out
+
+**Arg:** `-o,--format-out <full | STRING>`
+
+**Description:** The same as `--format` except it applies to the output format only. If `--format-out` is not given then the output is formatted via `--format`.
+
+**Examples:**
+
+```
+# using implicit %H-%M format for both input and output
+$ time-conv 08:30
+08:30
+
+# override input format for output
+$ time-conv -o full 08:30
+Thu,  1 Jan 1970 08:30:00 NZST
+
+$ time-conv -o full
+Fri, 17 Jun 2022 16:05:01 NZST
 ```
 
 ## Source Timezone

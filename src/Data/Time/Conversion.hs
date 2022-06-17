@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedLabels #-}
-
 -- | This module provides functions for reading time strings. We also provide
 -- functions for converting between time zones.
 --
@@ -25,7 +23,6 @@ module Data.Time.Conversion
     Types.timeFormatStringIso,
 
     -- ** Formatting
-    formatTimeBuilder,
     Types.hm,
     Types.hm12h,
     Types.hmTZ,
@@ -74,7 +71,7 @@ import Data.Time.LocalTime qualified as Local
 import Data.Time.Zones qualified as Zones
 import Data.Time.Zones.All (TZLabel (..))
 import Data.Time.Zones.All qualified as All
-import Optics.Core ((%), (^.))
+import Optics.Core ((^.))
 
 -- | Reads the given time string based on the 'TimeBuilder'.
 -- The semantics are:
@@ -243,19 +240,3 @@ tzLabelToTimeZoneName = T.pack . Local.timeZoneName . Utils.tzLabelToTimeZone
 
 txtToTZLabel :: Text -> Maybe TZLabel
 txtToTZLabel = All.fromTZName . TEnc.encodeUtf8
-
--- | Uses the 'TimeBuilder'\'s 'locale' and 'format' to format the given
--- 'ZonedTime'.
---
--- ==== __Examples__
--- >>> import Data.Default (Default (def))
--- >>> let (Just zt) = readTimeFormat Utils.timeLocaleAllZones Types.hm "17:24"
--- >>> formatTimeBuilder def zt
--- "17:24"
---
--- @since 0.1
-formatTimeBuilder :: TimeBuilder -> ZonedTime -> String
-formatTimeBuilder builder = Format.formatTime locale format
-  where
-    locale = builder ^. #locale
-    format = builder ^. #format % Types.timeFormatStringIso

@@ -3,12 +3,14 @@
 -- @since 0.1
 module Main (main) where
 
-import Args (parserInfo)
+import Args (Args, argsToBuilder, parserInfo)
 import Control.Exception (Exception (..))
 import Control.Exception.Base (SomeException)
-import Data.Time.Conversion (TimeBuilder)
+import Data.Maybe (fromMaybe)
 import Data.Time.Conversion qualified as Conv
 import Data.Time.Conversion.Utils qualified as Utils
+import Data.Time.Format qualified as Format
+import Optics.Core ((^.))
 import Options.Applicative qualified as OApp
 
 -- | Executable entry-point.
@@ -16,11 +18,19 @@ import Options.Applicative qualified as OApp
 -- @since 0.1
 main :: IO ()
 main = do
-  builder <- OApp.execParser parserInfo
-  runConv builder `Utils.catchSync` \(e :: SomeException) ->
+  args <- OApp.execParser parserInfo
+  runConv args `Utils.catchSync` \(e :: SomeException) ->
     putStrLn $ displayException e
 
-runConv :: TimeBuilder -> IO ()
-runConv builder = do
+runConv :: Args -> IO ()
+runConv args = do
   time <- Conv.readConvertTime builder
-  putStrLn $ Conv.formatTimeBuilder builder time
+  putStrLn $
+    Format.formatTime
+      (builder ^. #locale)
+      formatStr
+      time
+  where
+    builder = args ^. argsToBuilder
+    format = fromMaybe (builder ^. #format) (args ^. #formatOut)
+    formatStr = format ^. Conv.timeFormatStringIso

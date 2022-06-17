@@ -1,7 +1,11 @@
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Args
-  ( parserInfo,
+  ( Args (..),
+    argsToBuilder,
+    parserInfo,
   )
 where
 
@@ -20,7 +24,9 @@ import Data.Time.Conversion.Types qualified as Types
 import Data.Time.Conversion.Utils qualified as Utils
 import Data.Version.Package qualified as PV
 import Development.GitRev qualified as GitRev
-import Optics.Core ((^.))
+import Optics.Core (Getter, (^.))
+import Optics.Core qualified as O
+import Optics.TH (makeFieldLabelsNoPrefix)
 import Options.Applicative
   ( Parser,
     ParserInfo (..),
@@ -28,18 +34,28 @@ import Options.Applicative
   )
 import Options.Applicative qualified as OApp
 import Options.Applicative.Help (Chunk (..))
-import Options.Applicative.Types (ArgPolicy (..))
+import Options.Applicative.Types (ArgPolicy (..), ReadM)
 
+-- Very nearly identical to TimeBuilder. The reason we manually reimplement
+-- this type rather than just use reuse TimeBuilder is so we can control the
+-- order of the arguments in the help page (order depends on argument order
+-- in the below definition).
 data Args = MkArgs
-  { builder :: !TimeBuilder,
-    timeString :: !Text
+  { format :: TimeFormat,
+    formatOut :: Maybe TimeFormat,
+    srcTZ :: SrcTZ,
+    destTZ :: TZConv,
+    timeString :: Maybe Text
   }
+  deriving stock (Eq, Show)
+
+makeFieldLabelsNoPrefix ''Args
 
 -- | Optparse-Applicative info.
-parserInfo :: ParserInfo TimeBuilder
+parserInfo :: ParserInfo Args
 parserInfo =
   ParserInfo
-    { infoParser = parseBuilder,
+    { infoParser = parseArgs,
       infoFullDesc = True,
       infoProgDesc = Chunk desc,
       infoHeader = Chunk header,
@@ -56,6 +72,29 @@ parserInfo =
           <> " For the src and dest options, tz_database refers to labels like"
           <> " America/New_York. See https://en.wikipedia.org/wiki/Tz_database."
 
+parseArgs :: Parser Args
+parseArgs =
+  MkArgs
+    <$> parseFormat
+    <*> parseFormatOut
+    <*> parseSrcTZ
+    <*> parseDestTZ
+    <*> parseTimeStr
+    <**> OApp.helper
+    <**> version
+
+argsToBuilder :: Getter Args TimeBuilder
+argsToBuilder = O.to to
+  where
+    to args =
+      MkTimeBuilder
+        { format = args ^. #format,
+          srcTZ = args ^. #srcTZ,
+          destTZ = args ^. #destTZ,
+          locale = Utils.timeLocaleAllZones,
+          timeString = args ^. #timeString
+        }
+
 parseBuilder :: Parser TimeBuilder
 parseBuilder =
   MkTimeBuilder
@@ -64,8 +103,6 @@ parseBuilder =
     <*> parseDestTZ
     <*> pure Utils.timeLocaleAllZones
     <*> parseTimeStr
-    <**> OApp.helper
-    <**> version
 
 parseDestTZ :: Parser TZConv
 parseDestTZ =
@@ -105,11 +142,28 @@ parseFormat =
         <> " RFC822. See 'man date' for basic examples, and "
         <> " https://hackage.haskell.org/package/time-1.13/docs/Data-Time-Format.html#v:formatTime for the exact spec."
     defFormatStr = def ^. Types.timeFormatStringIso
-    readFormat = do
-      s <- OApp.str
-      pure $ case s of
-        "full" -> TimeFormatFull
-        other -> TimeFormatManual (T.pack other)
+
+parseFormatOut :: Parser (Maybe TimeFormat)
+parseFormatOut =
+  OApp.optional $
+    OApp.option
+      readFormat
+      ( OApp.long "format-out"
+          <> OApp.short 'o'
+          <> OApp.metavar "<full | STRING>"
+          <> OApp.help helpTxt
+      )
+  where
+    helpTxt =
+      "Like --format, but used for the output. If this is not"
+        <> " present then --format is used for both input and output."
+
+readFormat :: ReadM TimeFormat
+readFormat = do
+  s <- OApp.str
+  pure $ case s of
+    "full" -> TimeFormatFull
+    other -> TimeFormatManual (T.pack other)
 
 parseSrcTZ :: Parser SrcTZ
 parseSrcTZ = do
