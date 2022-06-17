@@ -2,7 +2,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Args
+module TimeConv.Args
   ( Args (..),
     argsToBuilder,
     parserInfo,

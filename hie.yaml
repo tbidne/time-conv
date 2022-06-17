@@ -3,6 +3,9 @@ cradle:
     - path: "./src"
       component: "lib:time-conv"
 
+    - path: "./exe-internal"
+      component: "time-conv:lib:time-conv-exe-internal"
+
     - path: "./app/Main.hs"
       component: "time-conv:exe:time-conv"
 
