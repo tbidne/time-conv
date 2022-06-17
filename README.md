@@ -34,7 +34,10 @@
 
 # Introduction
 
-`time-conv` is a tool for converting between timezones.
+`time-conv` is a tool for converting between timezones. There are two use-cases:
+
+1. Converting local system time into a different timezone.
+2. Converting a "time string" from one timezone to another, where the timezone can either be the local one or arbitrary, based on the tz_database. See https://en.wikipedia.org/wiki/Tz_database for more information.
 
 ```
 time-conv: A tool for timezone conversions.
