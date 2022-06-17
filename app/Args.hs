@@ -45,6 +45,7 @@ data Args = MkArgs
     formatOut :: Maybe TimeFormat,
     srcTZ :: SrcTZ,
     destTZ :: TZConv,
+    today :: Bool,
     timeString :: Maybe Text
   }
   deriving stock (Eq, Show)
@@ -79,6 +80,7 @@ parseArgs =
     <*> parseFormatOut
     <*> parseSrcTZ
     <*> parseDestTZ
+    <*> parseToday
     <*> parseTimeStr
     <**> OApp.helper
     <**> version
@@ -92,17 +94,9 @@ argsToBuilder = O.to to
           srcTZ = args ^. #srcTZ,
           destTZ = args ^. #destTZ,
           locale = Utils.timeLocaleAllZones,
+          today = args ^. #today,
           timeString = args ^. #timeString
         }
-
-parseBuilder :: Parser TimeBuilder
-parseBuilder =
-  MkTimeBuilder
-    <$> parseFormat
-    <*> parseSrcTZ
-    <*> parseDestTZ
-    <*> pure Utils.timeLocaleAllZones
-    <*> parseTimeStr
 
 parseDestTZ :: Parser TZConv
 parseDestTZ =
@@ -189,6 +183,22 @@ parseSrcTZ = do
         "local" -> pure $ SrcTZConv TZConvLocal
         "literal" -> pure SrcTZLiteral
         other -> pure $ SrcTZConv $ TZConvDatabase $ TZDatabaseText other
+
+parseToday :: Parser Bool
+parseToday =
+  OApp.switch $
+    mconcat
+      [ OApp.long "today",
+        OApp.short 't',
+        OApp.help helpTxt
+      ]
+  where
+    helpTxt =
+      mconcat
+        [ "Used when reading a time string, adds the local date. This is a",
+          " convenience option and should only be used if the time string",
+          " and format do not explicitly mention date."
+        ]
 
 parseTimeStr :: Parser (Maybe Text)
 parseTimeStr =

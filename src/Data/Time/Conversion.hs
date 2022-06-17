@@ -55,6 +55,7 @@ module Data.Time.Conversion
 where
 
 import Control.Exception (SomeException (..), throwIO)
+import Data.String (IsString)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TEnc
@@ -121,7 +122,7 @@ readConvertTime builder = do
     Nothing ->
       Local.getZonedTime
         `Utils.catchSync` \(e :: SomeException) -> throwIO $ MkLocalSystemTimeException e
-    Just timeStr -> readTimeString format locale (builder ^. #srcTZ) timeStr
+    Just timeStr -> readTimeString builder timeStr
 
   case builder ^. #destTZ of
     TZConvDatabase tzdb -> do
@@ -131,35 +132,70 @@ readConvertTime builder = do
       let inTimeUtc = Local.zonedTimeToUTC inTime
       currTZ <- Local.getCurrentTimeZone
       pure $ Local.utcToZonedTime currTZ inTimeUtc
-  where
-    format = builder ^. #format
-    locale = builder ^. #locale
 
-readTimeString :: TimeFormat -> TimeLocale -> SrcTZ -> Text -> IO ZonedTime
-readTimeString format locale srcTZ timeStr = do
-  case srcTZ of
+readTimeString :: TimeBuilder -> Text -> IO ZonedTime
+readTimeString builder timeStr = do
+  case builder ^. #srcTZ of
     -- read in local time zone
-    SrcTZConv TZConvLocal -> readInLocalTimeZone locale format timeStr
+    SrcTZConv TZConvLocal -> do
+      -- add system date if specified
+      (timeStrDate, formatDate) <- maybeAddDate Nothing
+      readInLocalTimeZone locale formatDate timeStrDate
     -- remaining two cases work similarly, though we need to account for a
     -- manually specified timezone
     other -> do
-      (timeStr', format') <- case hasTzdb other of
+      -- add timezone if specified
+      (timeStrDateTZ, formatDateTZ) <- case hasTzdb other of
         -- This is a SrcTZLiteral, leave timeStr and format as-is
-        Nothing -> pure (timeStr, format)
+        Nothing -> do
+          -- add system date if specified
+          (timeStrDate, formatDate) <- maybeAddDate Nothing
+          pure (timeStrDate, formatDate)
         -- We have a timezone to read in, modify the timeStr and format
         Just tzdb -> do
           lbl <- tzDatabaseToTZLabel tzdb
+          -- add src date if specified
+          (timeStrDate, formatDate) <- maybeAddDate (Just lbl)
+
           let name = tzLabelToTimeZoneName lbl
-          pure (timeStr <> " " <> name, format <> " %Z")
+          pure (timeStrDate +-+ name, formatDate +-+ tzString)
+
       maybe
-        (throwParseEx format' timeStr')
+        (throwParseEx formatDateTZ timeStrDateTZ)
         pure
-        (readTimeFormat locale format' timeStr')
+        (readTimeFormat locale formatDateTZ timeStrDateTZ)
   where
+    format = builder ^. #format
+    locale = builder ^. #locale
     hasTzdb :: SrcTZ -> Maybe TZDatabase
     hasTzdb x = x ^? Types._SrcTZConv % Types._TZConvDatabase
 
     throwParseEx f = throwIO . MkParseTimeException f
+
+    maybeAddDate mlabel = do
+      if builder ^. #today
+        then do
+          currDateStr <- currentDate locale mlabel
+          pure (T.pack currDateStr +-+ timeStr, dateString +-+ format)
+        else pure (timeStr, format)
+
+currentDate :: TimeLocale -> Maybe TZLabel -> IO String
+currentDate locale mlabel = do
+  currTime <-
+    Local.getZonedTime
+      `Utils.catchSync` \(e :: SomeException) -> throwIO $ MkLocalSystemTimeException e
+
+  -- Convert into the given label if present. Otherwise keep in system
+  -- timezone.
+  let currTime' = maybe currTime (convertZonedLabel currTime) mlabel
+
+  pure $ Format.formatTime locale dateString currTime'
+
+dateString :: IsString s => s
+dateString = "%Y-%m-%d"
+
+tzString :: IsString s => s
+tzString = "%Z"
 
 -- | @readInLocalTimeZone locale format timeStr@ attempts to parse the
 -- @timeStr@ given the expected @format@. We parse into the current
@@ -186,12 +222,12 @@ readInLocalTimeZone locale format timeStr = do
       . show
       <$> Local.getCurrentTimeZone
       `Utils.catchSync` (\(e :: SomeException) -> throwIO $ MkLocalTimeZoneException e)
-  let timeStr' = timeStr <> " " <> tzStr
+  let timeStr' = timeStr +-+ tzStr
   case readTimeFormat locale format' timeStr' of
     Just zt -> pure zt
     Nothing -> throwIO $ MkParseTimeException format' timeStr'
   where
-    format' = format <> " %Z"
+    format' = format +-+ tzString
 
 -- | @readTimeFormat locale format timeStr@ attempts to parse the @timeStr@ given
 -- the expected @format@. No timezone is assumed, so if it is left off then
@@ -258,3 +294,9 @@ tzLabelToTimeZoneName = T.pack . Local.timeZoneName . Utils.tzLabelToTimeZone
 
 txtToTZLabel :: Text -> Maybe TZLabel
 txtToTZLabel = All.fromTZName . TEnc.encodeUtf8
+
+-- concat with a space
+(+-+) :: (Semigroup a, IsString a) => a -> a -> a
+xs +-+ ys = xs <> " " <> ys
+
+infixr 5 +-+

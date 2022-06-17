@@ -53,6 +53,7 @@ import Optics.Core qualified as O
 -- * @srzTZ = 'SrcTZConv' 'TZConvLocal'@ (local)
 -- * @destTZ = 'TZConvLocal'@ (local)
 -- * @locale = 'Utils.timeLocaleAllZones'@ (all locales)
+-- * @today = 'False'@ (do not automatically add current day)
 -- * @timeString = 'Nothing'@ (read system time)
 --
 -- @since 0.1
@@ -73,6 +74,11 @@ data TimeBuilder = MkTimeBuilder
     --
     -- @since 0.1
     locale :: TimeLocale,
+    -- | 'True' if this is the current day. This is a convenient way to parse
+    -- the string as if it includes the current day's date.
+    --
+    -- @since 0.1
+    today :: Bool,
     -- | The time string to parse. If empty, we retrieve the local system
     -- time instead.
     --
@@ -116,6 +122,13 @@ instance
 
 -- | @since 0.1
 instance
+  (k ~ A_Lens, a ~ Bool, b ~ Bool) =>
+  LabelOptic "today" k TimeBuilder TimeBuilder a b
+  where
+  labelOptic = O.lens today (\tb b -> tb {today = b})
+
+-- | @since 0.1
+instance
   (k ~ A_Lens, a ~ Maybe Text, b ~ Maybe Text) =>
   LabelOptic "timeString" k TimeBuilder TimeBuilder a b
   where
@@ -123,7 +136,7 @@ instance
 
 -- | @since 0.1
 instance Default TimeBuilder where
-  def = MkTimeBuilder def def def Utils.timeLocaleAllZones Nothing
+  def = MkTimeBuilder def def def Utils.timeLocaleAllZones False Nothing
 
 -- | Conversion timezone options.
 --

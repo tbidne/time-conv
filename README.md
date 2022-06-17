@@ -25,6 +25,7 @@
   * [Format Out](#format-out)
   * [Source Timezone](#source-timezone)
   * [Destination Timezone](#destination-timezone)
+  * [Today](#today)
   * [Time String](#time-string)
 * [Building](#building)
   * [Prerequisites](#prerequisites)
@@ -44,7 +45,8 @@ time-conv: A tool for timezone conversions.
 
 Usage: time-conv [-f|--format <full | STRING>] [-o|--format-out <full | STRING>]
                  [-s|--src-tz <local | literal | tz_database>]
-                 [-d|--dest-tz <local | tz_database>] [STRING] [-v|--version]
+                 [-d|--dest-tz <local | tz_database>] [-t|--today] [STRING]
+                 [-v|--version]
 
 time-conv reads time strings and converts between timezones. For the src and dest options, tz_database refers to labels like America/New_York. See https://en.wikipedia.org/wiki/Tz_database.
 
@@ -71,6 +73,10 @@ Available options:
   -d,--dest-tz <local | tz_database>
                            Timezone in which to convert the read string. Can be
                            'local' or a tz database label. Defaults to local.
+  -t,--today               Used when reading a time string, adds the local date.
+                           This is a convenience option and should only be used
+                           if the time string and format do not explicitly
+                           mention date.
   STRING                   Time string to parse. If none is given then we parse
                            the local system time.
   -h,--help                Show this help text
@@ -161,6 +167,22 @@ $ time-conv -d America/New_York 08:30
 
 $ time-conv -s America/New_York -d Etc/UTC 08:30
 13:30
+```
+
+## Today
+
+**Arg:** `-t,--today`
+
+**Description:** This option interprets the time string with today's date, as determined by the `--src-tz` option. This is useful when converting timezones, as the conversion can depend on the date (e.g. daylight savings time).
+
+**Examples:**
+
+```
+$ time-conv -o full 08:30
+Thu,  1 Jan 1970 08:30:00 NZST
+
+$ time-conv -t -o full 08:30
+Fri, 17 Jun 2022 08:30:00 NZST
 ```
 
 ## Time String
