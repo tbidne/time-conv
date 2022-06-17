@@ -71,7 +71,7 @@ import Data.Time.LocalTime qualified as Local
 import Data.Time.Zones qualified as Zones
 import Data.Time.Zones.All (TZLabel (..))
 import Data.Time.Zones.All qualified as All
-import Optics.Core ((^.))
+import Optics.Core ((%), (^.), (^?))
 
 -- | Reads the given time string based on the 'TimeBuilder'.
 -- The semantics are:
@@ -131,22 +131,28 @@ readConvertTime builder = do
 readTimeString :: TimeFormat -> TimeLocale -> SrcTZ -> Text -> IO ZonedTime
 readTimeString format locale srcTZ timeStr = do
   case srcTZ of
-    SrcTZLiteral ->
-      readOrThrow (\f t -> pure $ readTimeFormat locale f t) format timeStr
-    SrcTZConv TZConvLocal ->
-      readOrThrow (readInLocalTimeZone locale) format timeStr
-    SrcTZConv (TZConvDatabase tzdb) -> do
-      lbl <- tzDatabaseToTZLabel tzdb
-      let name = tzLabelToTimeZoneName lbl
-          timeStr' = timeStr <> " " <> name
-          format' = format <> " %Z"
-      readOrThrow (\f t -> pure $ readTimeFormat locale f t) format' timeStr'
+    -- read in local time zone
+    SrcTZConv TZConvLocal -> readInLocalTimeZone locale format timeStr
+    -- remaining two cases work similarly, though we need to account for a
+    -- manually specified timezone
+    other -> do
+      (timeStr', format') <- case hasTzdb other of
+        -- This is a SrcTZLiteral, leave timeStr and format as-is
+        Nothing -> pure (timeStr, format)
+        -- We have a timezone to read in, modify the timeStr and format
+        Just tzdb -> do
+          lbl <- tzDatabaseToTZLabel tzdb
+          let name = tzLabelToTimeZoneName lbl
+          pure (timeStr <> " " <> name, format <> " %Z")
+      maybe
+        (throwParseEx format' timeStr')
+        pure
+        (readTimeFormat locale format' timeStr')
   where
-    readOrThrow reader f t = do
-      mresult <- reader f t
-      case mresult of
-        Just result -> pure result
-        Nothing -> throwIO $ TimeErrorParseTime f t
+    hasTzdb :: SrcTZ -> Maybe TZDatabase
+    hasTzdb x = x ^? Types._SrcTZConv % Types._TZConvDatabase
+
+    throwParseEx f = throwIO . TimeErrorParseTime f
 
 -- | @readInLocalTimeZone locale format timeStr@ attempts to parse the
 -- @timeStr@ given the expected @format@. We parse into the current
@@ -161,7 +167,7 @@ readTimeString format locale srcTZ timeStr = do
 -- @
 --
 -- @since 0.1
-readInLocalTimeZone :: TimeLocale -> TimeFormat -> Text -> IO (Maybe ZonedTime)
+readInLocalTimeZone :: TimeLocale -> TimeFormat -> Text -> IO ZonedTime
 readInLocalTimeZone locale format timeStr = do
   tzStr <-
     T.pack
@@ -170,7 +176,7 @@ readInLocalTimeZone locale format timeStr = do
       `Utils.catchSync` (\(e :: SomeException) -> throwIO $ TimeErrorLocalTimeZone e)
   let timeStr' = timeStr <> " " <> tzStr
   case readTimeFormat locale format' timeStr' of
-    Just zt -> pure $ Just zt
+    Just zt -> pure zt
     Nothing -> throwIO $ TimeErrorParseTime format' timeStr'
   where
     format' = format <> " %Z"
