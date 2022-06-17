@@ -1,0 +1,1043 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE RecordWildCards #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE UndecidableInstances #-}</span><span>
+</span><span id="line-3"></span><span>
+</span><span id="line-4"></span><span class="hs-comment">-- | This module provides types for reading / converting</span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- between timezones.</span><span>
+</span><span id="line-6"></span><span class="hs-comment">--</span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-8"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.Time.Conversion.Types</span><span>
+</span><span id="line-9"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeReader"><span class="hs-identifier">TimeReader</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-10"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.html#defaultTimeReader"><span class="hs-identifier">defaultTimeReader</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-11"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.html#SrcTZ"><span class="hs-identifier">SrcTZ</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-12"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TZDatabase"><span class="hs-identifier">TZDatabase</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Formatting</span></span><span>
+</span><span id="line-15"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeFormat"><span class="hs-identifier">TimeFormat</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-16"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.html#hm"><span class="hs-identifier">hm</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-17"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.html#hm12h"><span class="hs-identifier">hm12h</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.html#hmTZ"><span class="hs-identifier">hmTZ</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.html#hmTZ12h"><span class="hs-identifier">hmTZ12h</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.html#rfc822"><span class="hs-identifier">rfc822</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-21"></span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Errors</span></span><span>
+</span><span id="line-23"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.html#ParseTimeException"><span class="hs-identifier">ParseTimeException</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-24"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.html#ParseTZDatabaseException"><span class="hs-identifier">ParseTZDatabaseException</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.html#LocalTimeZoneException"><span class="hs-identifier">LocalTimeZoneException</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-26"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.html#LocalSystemTimeException"><span class="hs-identifier">LocalSystemTimeException</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Optics</span></span><span>
+</span><span id="line-29"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.html#_SrcTZDatabase"><span class="hs-identifier">_SrcTZDatabase</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-30"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.html#_SrcTZLiteral"><span class="hs-identifier">_SrcTZLiteral</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.html#_TZDatabaseLabel"><span class="hs-identifier">_TZDatabaseLabel</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-32"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.html#_TZDatabaseText"><span class="hs-identifier">_TZDatabaseText</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.html#_MkTimeFormat"><span class="hs-identifier">_MkTimeFormat</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-34"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.html#_ParseTZDatabaseException"><span class="hs-identifier">_ParseTZDatabaseException</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-35"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.html#_LocalTimeZoneException"><span class="hs-identifier">_LocalTimeZoneException</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-36"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.html#_LocalSystemTimeException"><span class="hs-identifier">_LocalSystemTimeException</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-37"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-38"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-39"></span><span>
+</span><span id="line-40"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/deepseq-1.4.6.1/src/Control.DeepSeq.html"><span class="hs-identifier">Control.DeepSeq</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/deepseq-1.4.6.1/src/Control.DeepSeq.html#NFData"><span class="hs-identifier">NFData</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/deepseq-1.4.6.1/src/Control.DeepSeq.html#deepseq"><span class="hs-identifier">deepseq</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-41"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/Control.Exception.html"><span class="hs-identifier">Control.Exception</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Exception.Type.html#Exception"><span class="hs-identifier">Exception</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-42"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///nix/store/i3y6bns6bvdx865954qij1xvw9qghkc1-data-default-0.7.1.1-doc/share/doc/data-default-0.7.1.1/html/src/Data.Default.html"><span class="hs-identifier">Data.Default</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/jaimif5swl0d6rl1h45m65bayxcyq9zi-data-default-class-0.1.2.0-doc/share/doc/data-default-class-0.1.2.0/html/src/Data.Default.Class.html#Default"><span class="hs-identifier">Default</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-43"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/Data.String.html"><span class="hs-identifier">Data.String</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/Data.String.html#IsString"><span class="hs-identifier">IsString</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-44"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/text-1.2.5.0/src/Data.Text.html"><span class="hs-identifier">Data.Text</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/text-1.2.5.0/src/Data.Text.Internal.html#Text"><span class="hs-identifier">Text</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-45"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/text-1.2.5.0/src/Data.Text.html"><span class="hs-identifier">Data.Text</span></a></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">T</span></span><span>
+</span><span id="line-46"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Utils.html"><span class="hs-identifier">Data.Time.Conversion.Utils</span></a></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Utils</span></span><span>
+</span><span id="line-47"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/time-1.11.1.1/src/Data.Time.Format.html"><span class="hs-identifier">Data.Time.Format</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/time-1.11.1.1/src/Data.Time.Format.Locale.html#TimeLocale"><span class="hs-identifier">TimeLocale</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-48"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///nix/store/bfsy9s3pha300dmm1k7c9kiky90bp9d5-tz-0.1.3.6-doc/share/doc/tz-0.1.3.6/html/src/Data.Time.Zones.All.html"><span class="hs-identifier">Data.Time.Zones.All</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/iyzpjn3kj1w0v3rmgizv0dc48hm94w6w-tzdata-0.2.20220315.0-doc/share/doc/tzdata-0.2.20220315.0/html/src/Data.Time.Zones.DB.html#TZLabel"><span class="hs-identifier">TZLabel</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Generics.html"><span class="hs-identifier">GHC.Generics</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Generics.html#Generic"><span class="hs-identifier">Generic</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-50"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Core.html"><span class="hs-identifier">Optics.Core</span></a></span><span>
+</span><span id="line-51"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Internal.Optic.Types.html#A_Lens"><span class="hs-identifier">A_Lens</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-52"></span><span>    </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Iso.html#Iso%27"><span class="hs-identifier">Iso'</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-53"></span><span>    </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Label.html#LabelOptic"><span class="hs-identifier">LabelOptic</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-54"></span><span>    </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Prism.html#Prism%27"><span class="hs-identifier">Prism'</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-55"></span><span>    </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Review.html#Review"><span class="hs-identifier">Review</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-56"></span><span>    </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Iso.html#iso"><span class="hs-identifier">iso</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-57"></span><span>    </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Lens.html#lens"><span class="hs-identifier">lens</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-58"></span><span>    </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Prism.html#prism"><span class="hs-identifier">prism</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-59"></span><span>    </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Review.html#unto"><span class="hs-identifier">unto</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-60"></span><span>    </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Operators.html#%5E."><span class="hs-operator">(^.)</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-61"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-62"></span><span>
+</span><span id="line-63"></span><span class="hs-comment">-- | Determines how to read a time string.</span><span>
+</span><span id="line-64"></span><span class="hs-comment">--</span><span>
+</span><span id="line-65"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-66"></span><span id="local-6989586621679076758"><span id="local-6989586621679076759"></span></span><span class="hs-keyword">data</span><span> </span><span id="TimeReader"><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeReader"><span class="hs-identifier hs-var">TimeReader</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="MkTimeReader"><span class="annot"><a href="Data.Time.Conversion.Types.html#MkTimeReader"><span class="hs-identifier hs-var">MkTimeReader</span></a></span></span><span>
+</span><span id="line-67"></span><span>  </span><span class="hs-special">{</span><span> </span><span class="hs-comment">-- | Format used when parsing the time string.</span><span>
+</span><span id="line-68"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-69"></span><span>    </span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-70"></span><span>    </span><span id="format"><span class="annot"><span class="annottext">TimeReader -&gt; TimeFormat
+</span><a href="Data.Time.Conversion.Types.html#format"><span class="hs-identifier hs-var hs-var">format</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeFormat"><span class="hs-identifier hs-type">TimeFormat</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-71"></span><span>    </span><span class="hs-comment">-- | Timezone in which to read the string. 'Nothing' corresponds to</span><span>
+</span><span id="line-72"></span><span>    </span><span class="hs-comment">-- local timezone. If 'srcTZ' is 'SrcTZDatabase' then:</span><span>
+</span><span id="line-73"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-74"></span><span>    </span><span class="hs-comment">--     * 'timeString' should __not__ contain a timezone like @EST@.</span><span>
+</span><span id="line-75"></span><span>    </span><span class="hs-comment">--     * 'format' should __not__ mention the timezone option @%Z@.</span><span>
+</span><span id="line-76"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-77"></span><span>    </span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-78"></span><span>    </span><span id="srcTZ"><span class="annot"><span class="annottext">TimeReader -&gt; Maybe SrcTZ
+</span><a href="Data.Time.Conversion.Types.html#srcTZ"><span class="hs-identifier hs-var hs-var">srcTZ</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Maybe.html#Maybe"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#SrcTZ"><span class="hs-identifier hs-type">SrcTZ</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-79"></span><span>    </span><span class="hs-comment">-- | Locale to use when parsing.</span><span>
+</span><span id="line-80"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-81"></span><span>    </span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-82"></span><span>    </span><span id="locale"><span class="annot"><span class="annottext">TimeReader -&gt; TimeLocale
+</span><a href="Data.Time.Conversion.Types.html#locale"><span class="hs-identifier hs-var hs-var">locale</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/time-1.11.1.1/src/Data.Time.Format.Locale.html#TimeLocale"><span class="hs-identifier hs-type">TimeLocale</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-83"></span><span>    </span><span class="hs-comment">-- | 'True' if this is the current day. This is a convenient way to parse</span><span>
+</span><span id="line-84"></span><span>    </span><span class="hs-comment">-- the string as if it includes the current day's date.</span><span>
+</span><span id="line-85"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-86"></span><span>    </span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-87"></span><span>    </span><span id="today"><span class="annot"><span class="annottext">TimeReader -&gt; Bool
+</span><a href="Data.Time.Conversion.Types.html#today"><span class="hs-identifier hs-var hs-var">today</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Types.html#Bool"><span class="hs-identifier hs-type">Bool</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-88"></span><span>    </span><span class="hs-comment">-- | The time string to parse.</span><span>
+</span><span id="line-89"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-90"></span><span>    </span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-91"></span><span>    </span><span id="timeString"><span class="annot"><span class="annottext">TimeReader -&gt; Text
+</span><a href="Data.Time.Conversion.Types.html#timeString"><span class="hs-identifier hs-var hs-var">timeString</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/text-1.2.5.0/src/Data.Text.Internal.html#Text"><span class="hs-identifier hs-type">Text</span></a></span><span>
+</span><span id="line-92"></span><span>  </span><span class="hs-special">}</span><span>
+</span><span id="line-93"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span>
+</span><span id="line-94"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-95"></span><span>      </span><span id="local-6989586621679076738"><span id="local-6989586621679076750"><span class="annot"><span class="annottext">TimeReader -&gt; TimeReader -&gt; Bool
+(TimeReader -&gt; TimeReader -&gt; Bool)
+-&gt; (TimeReader -&gt; TimeReader -&gt; Bool) -&gt; Eq TimeReader
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: TimeReader -&gt; TimeReader -&gt; Bool
+$c/= :: TimeReader -&gt; TimeReader -&gt; Bool
+== :: TimeReader -&gt; TimeReader -&gt; Bool
+$c== :: TimeReader -&gt; TimeReader -&gt; Bool
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Classes.html#Eq"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-96"></span><span>      </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-97"></span><span>      </span><span class="annot"><span class="annottext">(forall x. TimeReader -&gt; Rep TimeReader x)
+-&gt; (forall x. Rep TimeReader x -&gt; TimeReader) -&gt; Generic TimeReader
+forall x. Rep TimeReader x -&gt; TimeReader
+forall x. TimeReader -&gt; Rep TimeReader x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cto :: forall x. Rep TimeReader x -&gt; TimeReader
+$cfrom :: forall x. TimeReader -&gt; Rep TimeReader x
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Generics.html#Generic"><span class="hs-identifier hs-var hs-var hs-var hs-var">Generic</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-98"></span><span>      </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-99"></span><span>      </span><span id="local-6989586621679076716"><span id="local-6989586621679076718"><span id="local-6989586621679076731"><span class="annot"><span class="annottext">Int -&gt; TimeReader -&gt; ShowS
+[TimeReader] -&gt; ShowS
+TimeReader -&gt; String
+(Int -&gt; TimeReader -&gt; ShowS)
+-&gt; (TimeReader -&gt; String)
+-&gt; ([TimeReader] -&gt; ShowS)
+-&gt; Show TimeReader
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [TimeReader] -&gt; ShowS
+$cshowList :: [TimeReader] -&gt; ShowS
+show :: TimeReader -&gt; String
+$cshow :: TimeReader -&gt; String
+showsPrec :: Int -&gt; TimeReader -&gt; ShowS
+$cshowsPrec :: Int -&gt; TimeReader -&gt; ShowS
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Show.html#Show"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span>
+</span><span id="line-100"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-101"></span><span>
+</span><span id="line-102"></span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-103"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/deepseq-1.4.6.1/src/Control.DeepSeq.html#NFData"><span class="hs-identifier hs-type">NFData</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeReader"><span class="hs-identifier hs-type">TimeReader</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-104"></span><span>  </span><span id="local-6989586621679076704"><span class="annot"><span class="annottext">rnf :: TimeReader -&gt; ()
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/deepseq-1.4.6.1/src/Control.DeepSeq.html#rnf"><span class="hs-identifier hs-var hs-var hs-var hs-var">rnf</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Time.Conversion.Types.html#MkTimeReader"><span class="hs-identifier hs-type">MkTimeReader</span></a></span><span> </span><span id="local-6989586621679076702"><span class="annot"><span class="annottext">TimeFormat
+</span><a href="#local-6989586621679076702"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679076701"><span class="annot"><span class="annottext">Maybe SrcTZ
+</span><a href="#local-6989586621679076701"><span class="hs-identifier hs-var">s</span></a></span></span><span> </span><span id="local-6989586621679076700"><span class="annot"><span class="annottext">TimeLocale
+</span><a href="#local-6989586621679076700"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span id="local-6989586621679076699"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679076699"><span class="hs-identifier hs-var">td</span></a></span></span><span> </span><span id="local-6989586621679076698"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679076698"><span class="hs-identifier hs-var">ts</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-105"></span><span>    </span><span class="annot"><span class="annottext">TimeFormat
+</span><a href="#local-6989586621679076702"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">TimeFormat -&gt; Maybe SrcTZ -&gt; Maybe SrcTZ
+forall a b. NFData a =&gt; a -&gt; b -&gt; b
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/deepseq-1.4.6.1/src/Control.DeepSeq.html#deepseq"><span class="hs-operator hs-var">`deepseq`</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe SrcTZ
+</span><a href="#local-6989586621679076701"><span class="hs-identifier hs-var">s</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe SrcTZ -&gt; TimeLocale -&gt; TimeLocale
+forall a b. NFData a =&gt; a -&gt; b -&gt; b
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/deepseq-1.4.6.1/src/Control.DeepSeq.html#deepseq"><span class="hs-operator hs-var">`deepseq`</span></a></span><span> </span><span class="annot"><span class="annottext">TimeLocale
+</span><a href="#local-6989586621679076700"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">TimeLocale -&gt; Bool -&gt; Bool
+forall b. TimeLocale -&gt; b -&gt; b
+</span><a href="Data.Time.Conversion.Types.html#evalLocale"><span class="hs-operator hs-var">`evalLocale`</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679076699"><span class="hs-identifier hs-var">td</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Text -&gt; Text
+forall a b. NFData a =&gt; a -&gt; b -&gt; b
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/deepseq-1.4.6.1/src/Control.DeepSeq.html#deepseq"><span class="hs-operator hs-var">`deepseq`</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679076698"><span class="hs-identifier hs-var">ts</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; () -&gt; ()
+forall a b. NFData a =&gt; a -&gt; b -&gt; b
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/deepseq-1.4.6.1/src/Control.DeepSeq.html#deepseq"><span class="hs-operator hs-var">`deepseq`</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-106"></span><span>
+</span><span id="line-107"></span><span class="hs-comment">-- because TimeLocale does not have an NFData instance</span><span>
+</span><span id="line-108"></span><span id="local-6989586621679077120"><span class="annot"><a href="Data.Time.Conversion.Types.html#evalLocale"><span class="hs-identifier hs-type">evalLocale</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/time-1.11.1.1/src/Data.Time.Format.Locale.html#TimeLocale"><span class="hs-identifier hs-type">TimeLocale</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679077120"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679077120"><span class="hs-identifier hs-type">b</span></a></span></span><span>
+</span><span id="line-109"></span><span id="evalLocale"><span class="annot"><span class="annottext">evalLocale :: forall b. TimeLocale -&gt; b -&gt; b
+</span><a href="Data.Time.Conversion.Types.html#evalLocale"><span class="hs-identifier hs-var hs-var">evalLocale</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/time-1.11.1.1/src/Data.Time.Format.Locale.html#TimeLocale"><span class="hs-identifier hs-type">TimeLocale</span></a></span><span> </span><span class="hs-special">{</span><span id="local-6989586621679076674"><span id="local-6989586621679076675"><span id="local-6989586621679076676"><span id="local-6989586621679076677"><span id="local-6989586621679076678"><span id="local-6989586621679076679"><span id="local-6989586621679076680"><span id="local-6989586621679076681"><span class="annot"><span class="annottext">String
+[(String, String)]
+[TimeZone]
+(String, String)
+amPm :: TimeLocale -&gt; (String, String)
+dateFmt :: TimeLocale -&gt; String
+dateTimeFmt :: TimeLocale -&gt; String
+knownTimeZones :: TimeLocale -&gt; [TimeZone]
+months :: TimeLocale -&gt; [(String, String)]
+time12Fmt :: TimeLocale -&gt; String
+timeFmt :: TimeLocale -&gt; String
+wDays :: TimeLocale -&gt; [(String, String)]
+knownTimeZones :: [TimeZone]
+time12Fmt :: String
+timeFmt :: String
+dateFmt :: String
+dateTimeFmt :: String
+amPm :: (String, String)
+months :: [(String, String)]
+wDays :: [(String, String)]
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/time-1.11.1.1/src/Data.Time.Format.Locale.html#amPm"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span></span></span></span></span><span class="hs-special">}</span><span class="hs-special">)</span><span> </span><span id="local-6989586621679076665"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679076665"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-110"></span><span>  </span><span class="annot"><span class="annottext">[(String, String)]
+</span><a href="#local-6989586621679076681"><span class="hs-identifier hs-var">wDays</span></a></span><span> </span><span class="annot"><span class="annottext">[(String, String)] -&gt; [(String, String)] -&gt; [(String, String)]
+forall a b. NFData a =&gt; a -&gt; b -&gt; b
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/deepseq-1.4.6.1/src/Control.DeepSeq.html#deepseq"><span class="hs-operator hs-var">`deepseq`</span></a></span><span>
+</span><span id="line-111"></span><span>    </span><span class="annot"><span class="annottext">[(String, String)]
+</span><a href="#local-6989586621679076680"><span class="hs-identifier hs-var">months</span></a></span><span> </span><span class="annot"><span class="annottext">[(String, String)] -&gt; (String, String) -&gt; (String, String)
+forall a b. NFData a =&gt; a -&gt; b -&gt; b
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/deepseq-1.4.6.1/src/Control.DeepSeq.html#deepseq"><span class="hs-operator hs-var">`deepseq`</span></a></span><span>
+</span><span id="line-112"></span><span>      </span><span class="annot"><span class="annottext">(String, String)
+</span><a href="#local-6989586621679076679"><span class="hs-identifier hs-var">amPm</span></a></span><span> </span><span class="annot"><span class="annottext">(String, String) -&gt; ShowS
+forall a b. NFData a =&gt; a -&gt; b -&gt; b
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/deepseq-1.4.6.1/src/Control.DeepSeq.html#deepseq"><span class="hs-operator hs-var">`deepseq`</span></a></span><span>
+</span><span id="line-113"></span><span>        </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679076678"><span class="hs-identifier hs-var">dateTimeFmt</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a b. NFData a =&gt; a -&gt; b -&gt; b
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/deepseq-1.4.6.1/src/Control.DeepSeq.html#deepseq"><span class="hs-operator hs-var">`deepseq`</span></a></span><span>
+</span><span id="line-114"></span><span>          </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679076677"><span class="hs-identifier hs-var">dateFmt</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a b. NFData a =&gt; a -&gt; b -&gt; b
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/deepseq-1.4.6.1/src/Control.DeepSeq.html#deepseq"><span class="hs-operator hs-var">`deepseq`</span></a></span><span>
+</span><span id="line-115"></span><span>            </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679076676"><span class="hs-identifier hs-var">timeFmt</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a b. NFData a =&gt; a -&gt; b -&gt; b
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/deepseq-1.4.6.1/src/Control.DeepSeq.html#deepseq"><span class="hs-operator hs-var">`deepseq`</span></a></span><span>
+</span><span id="line-116"></span><span>              </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679076675"><span class="hs-identifier hs-var">time12Fmt</span></a></span><span> </span><span class="annot"><span class="annottext">String -&gt; [TimeZone] -&gt; [TimeZone]
+forall a b. NFData a =&gt; a -&gt; b -&gt; b
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/deepseq-1.4.6.1/src/Control.DeepSeq.html#deepseq"><span class="hs-operator hs-var">`deepseq`</span></a></span><span>
+</span><span id="line-117"></span><span>                </span><span class="annot"><span class="annottext">[TimeZone]
+</span><a href="#local-6989586621679076674"><span class="hs-identifier hs-var">knownTimeZones</span></a></span><span> </span><span class="annot"><span class="annottext">[TimeZone] -&gt; b -&gt; b
+forall a b. NFData a =&gt; a -&gt; b -&gt; b
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/deepseq-1.4.6.1/src/Control.DeepSeq.html#deepseq"><span class="hs-operator hs-var">`deepseq`</span></a></span><span>
+</span><span id="line-118"></span><span>                  </span><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679076665"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-119"></span><span>
+</span><span id="line-120"></span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-121"></span><span class="hs-keyword">instance</span><span>
+</span><span id="line-122"></span><span>  </span><span id="local-6989586621679077099"><span id="local-6989586621679077100"><span id="local-6989586621679077101"><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679077101"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Types.html#~"><span class="hs-operator hs-type">~</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Internal.Optic.Types.html#A_Lens"><span class="hs-identifier hs-type">A_Lens</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679077100"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Types.html#~"><span class="hs-operator hs-type">~</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeFormat"><span class="hs-identifier hs-type">TimeFormat</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679077099"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Types.html#~"><span class="hs-operator hs-type">~</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeFormat"><span class="hs-identifier hs-type">TimeFormat</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-123"></span><span>  </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Label.html#LabelOptic"><span class="hs-identifier hs-type">LabelOptic</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;format&quot;</span></span><span> </span><span class="annot"><a href="#local-6989586621679077101"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeReader"><span class="hs-identifier hs-type">TimeReader</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeReader"><span class="hs-identifier hs-type">TimeReader</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679077100"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679077099"><span class="hs-identifier hs-type">b</span></a></span></span></span></span><span>
+</span><span id="line-124"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-125"></span><span>  </span><span id="local-6989586621679076655"><span class="annot"><span class="annottext">labelOptic :: Optic k NoIx TimeReader TimeReader a b
+</span><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Label.html#labelOptic"><span class="hs-identifier hs-var hs-var hs-var hs-var">labelOptic</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(TimeReader -&gt; a)
+-&gt; (TimeReader -&gt; b -&gt; TimeReader)
+-&gt; Lens TimeReader TimeReader a b
+forall s a b t. (s -&gt; a) -&gt; (s -&gt; b -&gt; t) -&gt; Lens s t a b
+</span><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Lens.html#lens"><span class="hs-identifier hs-var">lens</span></a></span><span> </span><span class="annot"><span class="annottext">TimeReader -&gt; a
+TimeReader -&gt; TimeFormat
+</span><a href="Data.Time.Conversion.Types.html#format"><span class="hs-identifier hs-var">format</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679076653"><span class="annot"><span class="annottext">TimeReader
+</span><a href="#local-6989586621679076653"><span class="hs-identifier hs-var">tb</span></a></span></span><span> </span><span id="local-6989586621679076652"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679076652"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TimeReader
+</span><a href="#local-6989586621679076653"><span class="hs-identifier hs-var">tb</span></a></span><span> </span><span class="hs-special">{</span><span class="annot"><span class="annottext">format :: TimeFormat
+</span><a href="Data.Time.Conversion.Types.html#format"><span class="hs-identifier hs-var">format</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">b
+TimeFormat
+</span><a href="#local-6989586621679076652"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">}</span><span class="hs-special">)</span><span>
+</span><span id="line-126"></span><span>
+</span><span id="line-127"></span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-128"></span><span class="hs-keyword">instance</span><span>
+</span><span id="line-129"></span><span>  </span><span id="local-6989586621679077088"><span id="local-6989586621679077089"><span id="local-6989586621679077090"><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679077090"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Types.html#~"><span class="hs-operator hs-type">~</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Internal.Optic.Types.html#A_Lens"><span class="hs-identifier hs-type">A_Lens</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679077089"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Types.html#~"><span class="hs-operator hs-type">~</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Maybe.html#Maybe"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#SrcTZ"><span class="hs-identifier hs-type">SrcTZ</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679077088"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Types.html#~"><span class="hs-operator hs-type">~</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Maybe.html#Maybe"><span class="hs-identifier hs-type">Maybe</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#SrcTZ"><span class="hs-identifier hs-type">SrcTZ</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-130"></span><span>  </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Label.html#LabelOptic"><span class="hs-identifier hs-type">LabelOptic</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;srcTZ&quot;</span></span><span> </span><span class="annot"><a href="#local-6989586621679077090"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeReader"><span class="hs-identifier hs-type">TimeReader</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeReader"><span class="hs-identifier hs-type">TimeReader</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679077089"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679077088"><span class="hs-identifier hs-type">b</span></a></span></span></span></span><span>
+</span><span id="line-131"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-132"></span><span>  </span><span id="local-6989586621679076643"><span class="annot"><span class="annottext">labelOptic :: Optic k NoIx TimeReader TimeReader a b
+</span><a href="#local-6989586621679076643"><span class="hs-identifier hs-var hs-var hs-var hs-var">labelOptic</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(TimeReader -&gt; a)
+-&gt; (TimeReader -&gt; b -&gt; TimeReader)
+-&gt; Lens TimeReader TimeReader a b
+forall s a b t. (s -&gt; a) -&gt; (s -&gt; b -&gt; t) -&gt; Lens s t a b
+</span><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Lens.html#lens"><span class="hs-identifier hs-var">lens</span></a></span><span> </span><span class="annot"><span class="annottext">TimeReader -&gt; a
+TimeReader -&gt; Maybe SrcTZ
+</span><a href="Data.Time.Conversion.Types.html#srcTZ"><span class="hs-identifier hs-var">srcTZ</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679076642"><span class="annot"><span class="annottext">TimeReader
+</span><a href="#local-6989586621679076642"><span class="hs-identifier hs-var">tb</span></a></span></span><span> </span><span id="local-6989586621679076641"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679076641"><span class="hs-identifier hs-var">tz</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TimeReader
+</span><a href="#local-6989586621679076642"><span class="hs-identifier hs-var">tb</span></a></span><span> </span><span class="hs-special">{</span><span class="annot"><span class="annottext">srcTZ :: Maybe SrcTZ
+</span><a href="Data.Time.Conversion.Types.html#srcTZ"><span class="hs-identifier hs-var">srcTZ</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">b
+Maybe SrcTZ
+</span><a href="#local-6989586621679076641"><span class="hs-identifier hs-var">tz</span></a></span><span class="hs-special">}</span><span class="hs-special">)</span><span>
+</span><span id="line-133"></span><span>
+</span><span id="line-134"></span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-135"></span><span class="hs-keyword">instance</span><span>
+</span><span id="line-136"></span><span>  </span><span id="local-6989586621679077082"><span id="local-6989586621679077083"><span id="local-6989586621679077084"><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679077084"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Types.html#~"><span class="hs-operator hs-type">~</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Internal.Optic.Types.html#A_Lens"><span class="hs-identifier hs-type">A_Lens</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679077083"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Types.html#~"><span class="hs-operator hs-type">~</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/time-1.11.1.1/src/Data.Time.Format.Locale.html#TimeLocale"><span class="hs-identifier hs-type">TimeLocale</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679077082"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Types.html#~"><span class="hs-operator hs-type">~</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/time-1.11.1.1/src/Data.Time.Format.Locale.html#TimeLocale"><span class="hs-identifier hs-type">TimeLocale</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-137"></span><span>  </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Label.html#LabelOptic"><span class="hs-identifier hs-type">LabelOptic</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;locale&quot;</span></span><span> </span><span class="annot"><a href="#local-6989586621679077084"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeReader"><span class="hs-identifier hs-type">TimeReader</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeReader"><span class="hs-identifier hs-type">TimeReader</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679077083"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679077082"><span class="hs-identifier hs-type">b</span></a></span></span></span></span><span>
+</span><span id="line-138"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-139"></span><span>  </span><span id="local-6989586621679076632"><span class="annot"><span class="annottext">labelOptic :: Optic k NoIx TimeReader TimeReader a b
+</span><a href="#local-6989586621679076632"><span class="hs-identifier hs-var hs-var hs-var hs-var">labelOptic</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(TimeReader -&gt; a)
+-&gt; (TimeReader -&gt; b -&gt; TimeReader)
+-&gt; Lens TimeReader TimeReader a b
+forall s a b t. (s -&gt; a) -&gt; (s -&gt; b -&gt; t) -&gt; Lens s t a b
+</span><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Lens.html#lens"><span class="hs-identifier hs-var">lens</span></a></span><span> </span><span class="annot"><span class="annottext">TimeReader -&gt; a
+TimeReader -&gt; TimeLocale
+</span><a href="Data.Time.Conversion.Types.html#locale"><span class="hs-identifier hs-var">locale</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679076631"><span class="annot"><span class="annottext">TimeReader
+</span><a href="#local-6989586621679076631"><span class="hs-identifier hs-var">tb</span></a></span></span><span> </span><span id="local-6989586621679076630"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679076630"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TimeReader
+</span><a href="#local-6989586621679076631"><span class="hs-identifier hs-var">tb</span></a></span><span> </span><span class="hs-special">{</span><span class="annot"><span class="annottext">locale :: TimeLocale
+</span><a href="Data.Time.Conversion.Types.html#locale"><span class="hs-identifier hs-var">locale</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">b
+TimeLocale
+</span><a href="#local-6989586621679076630"><span class="hs-identifier hs-var">l</span></a></span><span class="hs-special">}</span><span class="hs-special">)</span><span>
+</span><span id="line-140"></span><span>
+</span><span id="line-141"></span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-142"></span><span class="hs-keyword">instance</span><span>
+</span><span id="line-143"></span><span>  </span><span id="local-6989586621679077076"><span id="local-6989586621679077077"><span id="local-6989586621679077078"><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679077078"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Types.html#~"><span class="hs-operator hs-type">~</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Internal.Optic.Types.html#A_Lens"><span class="hs-identifier hs-type">A_Lens</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679077077"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Types.html#~"><span class="hs-operator hs-type">~</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Types.html#Bool"><span class="hs-identifier hs-type">Bool</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679077076"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Types.html#~"><span class="hs-operator hs-type">~</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Types.html#Bool"><span class="hs-identifier hs-type">Bool</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-144"></span><span>  </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Label.html#LabelOptic"><span class="hs-identifier hs-type">LabelOptic</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;today&quot;</span></span><span> </span><span class="annot"><a href="#local-6989586621679077078"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeReader"><span class="hs-identifier hs-type">TimeReader</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeReader"><span class="hs-identifier hs-type">TimeReader</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679077077"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679077076"><span class="hs-identifier hs-type">b</span></a></span></span></span></span><span>
+</span><span id="line-145"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-146"></span><span>  </span><span id="local-6989586621679076621"><span class="annot"><span class="annottext">labelOptic :: Optic k NoIx TimeReader TimeReader a b
+</span><a href="#local-6989586621679076621"><span class="hs-identifier hs-var hs-var hs-var hs-var">labelOptic</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(TimeReader -&gt; a)
+-&gt; (TimeReader -&gt; b -&gt; TimeReader)
+-&gt; Lens TimeReader TimeReader a b
+forall s a b t. (s -&gt; a) -&gt; (s -&gt; b -&gt; t) -&gt; Lens s t a b
+</span><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Lens.html#lens"><span class="hs-identifier hs-var">lens</span></a></span><span> </span><span class="annot"><span class="annottext">TimeReader -&gt; a
+TimeReader -&gt; Bool
+</span><a href="Data.Time.Conversion.Types.html#today"><span class="hs-identifier hs-var">today</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679076620"><span class="annot"><span class="annottext">TimeReader
+</span><a href="#local-6989586621679076620"><span class="hs-identifier hs-var">tb</span></a></span></span><span> </span><span id="local-6989586621679076619"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679076619"><span class="hs-identifier hs-var">b</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TimeReader
+</span><a href="#local-6989586621679076620"><span class="hs-identifier hs-var">tb</span></a></span><span> </span><span class="hs-special">{</span><span class="annot"><span class="annottext">today :: Bool
+</span><a href="Data.Time.Conversion.Types.html#today"><span class="hs-identifier hs-var">today</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">b
+Bool
+</span><a href="#local-6989586621679076619"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">}</span><span class="hs-special">)</span><span>
+</span><span id="line-147"></span><span>
+</span><span id="line-148"></span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-149"></span><span class="hs-keyword">instance</span><span>
+</span><span id="line-150"></span><span>  </span><span id="local-6989586621679077070"><span id="local-6989586621679077071"><span id="local-6989586621679077072"><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679077072"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Types.html#~"><span class="hs-operator hs-type">~</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Internal.Optic.Types.html#A_Lens"><span class="hs-identifier hs-type">A_Lens</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679077071"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Types.html#~"><span class="hs-operator hs-type">~</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/text-1.2.5.0/src/Data.Text.Internal.html#Text"><span class="hs-identifier hs-type">Text</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679077070"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Types.html#~"><span class="hs-operator hs-type">~</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/text-1.2.5.0/src/Data.Text.Internal.html#Text"><span class="hs-identifier hs-type">Text</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-151"></span><span>  </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Label.html#LabelOptic"><span class="hs-identifier hs-type">LabelOptic</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;timeString&quot;</span></span><span> </span><span class="annot"><a href="#local-6989586621679077072"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeReader"><span class="hs-identifier hs-type">TimeReader</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeReader"><span class="hs-identifier hs-type">TimeReader</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679077071"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679077070"><span class="hs-identifier hs-type">b</span></a></span></span></span></span><span>
+</span><span id="line-152"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-153"></span><span>  </span><span id="local-6989586621679076610"><span class="annot"><span class="annottext">labelOptic :: Optic k NoIx TimeReader TimeReader a b
+</span><a href="#local-6989586621679076610"><span class="hs-identifier hs-var hs-var hs-var hs-var">labelOptic</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(TimeReader -&gt; a)
+-&gt; (TimeReader -&gt; b -&gt; TimeReader)
+-&gt; Lens TimeReader TimeReader a b
+forall s a b t. (s -&gt; a) -&gt; (s -&gt; b -&gt; t) -&gt; Lens s t a b
+</span><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Lens.html#lens"><span class="hs-identifier hs-var">lens</span></a></span><span> </span><span class="annot"><span class="annottext">TimeReader -&gt; a
+TimeReader -&gt; Text
+</span><a href="Data.Time.Conversion.Types.html#timeString"><span class="hs-identifier hs-var">timeString</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679076609"><span class="annot"><span class="annottext">TimeReader
+</span><a href="#local-6989586621679076609"><span class="hs-identifier hs-var">tb</span></a></span></span><span> </span><span id="local-6989586621679076608"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679076608"><span class="hs-identifier hs-var">ts</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TimeReader
+</span><a href="#local-6989586621679076609"><span class="hs-identifier hs-var">tb</span></a></span><span> </span><span class="hs-special">{</span><span class="annot"><span class="annottext">timeString :: Text
+</span><a href="Data.Time.Conversion.Types.html#timeString"><span class="hs-identifier hs-var">timeString</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">b
+Text
+</span><a href="#local-6989586621679076608"><span class="hs-identifier hs-var">ts</span></a></span><span class="hs-special">}</span><span class="hs-special">)</span><span>
+</span><span id="line-154"></span><span>
+</span><span id="line-155"></span><span class="hs-comment">-- | Given a time string, returns a default time reader.</span><span>
+</span><span id="line-156"></span><span class="hs-comment">--</span><span>
+</span><span id="line-157"></span><span class="hs-comment">-- * @format = &quot;%H:%M&quot;@: 24hr hours:minutes</span><span>
+</span><span id="line-158"></span><span class="hs-comment">-- * @srzTZ = 'Nothing'@: local</span><span>
+</span><span id="line-159"></span><span class="hs-comment">-- * @locale = 'Utils.timeLocaleAllZones'@: all locales</span><span>
+</span><span id="line-160"></span><span class="hs-comment">-- * @today = 'False'@: do not automatically add current day</span><span>
+</span><span id="line-161"></span><span class="hs-comment">--</span><span>
+</span><span id="line-162"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-163"></span><span class="annot"><a href="Data.Time.Conversion.Types.html#defaultTimeReader"><span class="hs-identifier hs-type">defaultTimeReader</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/text-1.2.5.0/src/Data.Text.Internal.html#Text"><span class="hs-identifier hs-type">Text</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeReader"><span class="hs-identifier hs-type">TimeReader</span></a></span><span>
+</span><span id="line-164"></span><span id="defaultTimeReader"><span class="annot"><span class="annottext">defaultTimeReader :: Text -&gt; TimeReader
+</span><a href="Data.Time.Conversion.Types.html#defaultTimeReader"><span class="hs-identifier hs-var hs-var">defaultTimeReader</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TimeFormat
+-&gt; Maybe SrcTZ -&gt; TimeLocale -&gt; Bool -&gt; Text -&gt; TimeReader
+</span><a href="Data.Time.Conversion.Types.html#MkTimeReader"><span class="hs-identifier hs-var">MkTimeReader</span></a></span><span> </span><span class="annot"><span class="annottext">TimeFormat
+forall a. Default a =&gt; a
+</span><a href="file:///nix/store/jaimif5swl0d6rl1h45m65bayxcyq9zi-data-default-class-0.1.2.0-doc/share/doc/data-default-class-0.1.2.0/html/src/Data.Default.Class.html#def"><span class="hs-identifier hs-var">def</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe SrcTZ
+forall a. Maybe a
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Maybe.html#Nothing"><span class="hs-identifier hs-var">Nothing</span></a></span><span> </span><span class="annot"><span class="annottext">TimeLocale
+</span><a href="Data.Time.Conversion.Utils.html#timeLocaleAllZones"><span class="hs-identifier hs-var">Utils.timeLocaleAllZones</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Types.html#False"><span class="hs-identifier hs-var">False</span></a></span><span>
+</span><span id="line-165"></span><span>
+</span><span id="line-166"></span><span class="hs-comment">-- | Determines what timezone we use when reading a time string.</span><span>
+</span><span id="line-167"></span><span class="hs-comment">--</span><span>
+</span><span id="line-168"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-169"></span><span id="local-6989586621679076604"><span id="local-6989586621679076605"></span></span><span class="hs-keyword">data</span><span> </span><span id="SrcTZ"><span class="annot"><a href="Data.Time.Conversion.Types.html#SrcTZ"><span class="hs-identifier hs-var">SrcTZ</span></a></span></span><span>
+</span><span id="line-170"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="hs-comment">-- | Use the 'TZDatabase' to determine which timezone to use.</span><span>
+</span><span id="line-171"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-172"></span><span>    </span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-173"></span><span>    </span><span id="SrcTZDatabase"><span class="annot"><a href="Data.Time.Conversion.Types.html#SrcTZDatabase"><span class="hs-identifier hs-var">SrcTZDatabase</span></a></span></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TZDatabase"><span class="hs-identifier hs-type">TZDatabase</span></a></span><span>
+</span><span id="line-174"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="hs-comment">-- | Timezones are not given any extra consideration. This is useful</span><span>
+</span><span id="line-175"></span><span>    </span><span class="hs-comment">-- when either the string itself contains a timezone (e.g. &quot;15:03 EST&quot;)</span><span>
+</span><span id="line-176"></span><span>    </span><span class="hs-comment">-- or we want UTC.</span><span>
+</span><span id="line-177"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-178"></span><span>    </span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-179"></span><span>    </span><span id="SrcTZLiteral"><span class="annot"><a href="Data.Time.Conversion.Types.html#SrcTZLiteral"><span class="hs-identifier hs-var">SrcTZLiteral</span></a></span></span><span>
+</span><span id="line-180"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span>
+</span><span id="line-181"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-182"></span><span>      </span><span id="local-6989586621679076597"><span id="local-6989586621679076600"><span class="annot"><span class="annottext">SrcTZ -&gt; SrcTZ -&gt; Bool
+(SrcTZ -&gt; SrcTZ -&gt; Bool) -&gt; (SrcTZ -&gt; SrcTZ -&gt; Bool) -&gt; Eq SrcTZ
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: SrcTZ -&gt; SrcTZ -&gt; Bool
+$c/= :: SrcTZ -&gt; SrcTZ -&gt; Bool
+== :: SrcTZ -&gt; SrcTZ -&gt; Bool
+$c== :: SrcTZ -&gt; SrcTZ -&gt; Bool
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Classes.html#Eq"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-183"></span><span>      </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-184"></span><span>      </span><span class="annot"><span class="annottext">(forall x. SrcTZ -&gt; Rep SrcTZ x)
+-&gt; (forall x. Rep SrcTZ x -&gt; SrcTZ) -&gt; Generic SrcTZ
+forall x. Rep SrcTZ x -&gt; SrcTZ
+forall x. SrcTZ -&gt; Rep SrcTZ x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cto :: forall x. Rep SrcTZ x -&gt; SrcTZ
+$cfrom :: forall x. SrcTZ -&gt; Rep SrcTZ x
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Generics.html#Generic"><span class="hs-identifier hs-var hs-var hs-var hs-var">Generic</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-185"></span><span>      </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-186"></span><span>      </span><span id="local-6989586621679076587"><span id="local-6989586621679076589"><span id="local-6989586621679076593"><span class="annot"><span class="annottext">Int -&gt; SrcTZ -&gt; ShowS
+[SrcTZ] -&gt; ShowS
+SrcTZ -&gt; String
+(Int -&gt; SrcTZ -&gt; ShowS)
+-&gt; (SrcTZ -&gt; String) -&gt; ([SrcTZ] -&gt; ShowS) -&gt; Show SrcTZ
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [SrcTZ] -&gt; ShowS
+$cshowList :: [SrcTZ] -&gt; ShowS
+show :: SrcTZ -&gt; String
+$cshow :: SrcTZ -&gt; String
+showsPrec :: Int -&gt; SrcTZ -&gt; ShowS
+$cshowsPrec :: Int -&gt; SrcTZ -&gt; ShowS
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Show.html#Show"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span>
+</span><span id="line-187"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-188"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span>
+</span><span id="line-189"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-190"></span><span>      </span><span id="local-6989586621679076585"><span class="annot"><span class="annottext">SrcTZ -&gt; ()
+(SrcTZ -&gt; ()) -&gt; NFData SrcTZ
+forall a. (a -&gt; ()) -&gt; NFData a
+rnf :: SrcTZ -&gt; ()
+$crnf :: SrcTZ -&gt; ()
+</span><a href="#local-6989586621679076585"><span class="hs-identifier hs-var hs-var hs-var hs-var">NFData</span></a></span></span><span>
+</span><span id="line-191"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-192"></span><span>
+</span><span id="line-193"></span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-194"></span><span class="annot"><a href="Data.Time.Conversion.Types.html#_SrcTZDatabase"><span class="hs-identifier hs-type">_SrcTZDatabase</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Prism.html#Prism%27"><span class="hs-identifier hs-type">Prism'</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#SrcTZ"><span class="hs-identifier hs-type">SrcTZ</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TZDatabase"><span class="hs-identifier hs-type">TZDatabase</span></a></span><span>
+</span><span id="line-195"></span><span id="_SrcTZDatabase"><span class="annot"><span class="annottext">_SrcTZDatabase :: Prism' SrcTZ TZDatabase
+</span><a href="Data.Time.Conversion.Types.html#_SrcTZDatabase"><span class="hs-identifier hs-var hs-var">_SrcTZDatabase</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(TZDatabase -&gt; SrcTZ)
+-&gt; (SrcTZ -&gt; Either SrcTZ TZDatabase) -&gt; Prism' SrcTZ TZDatabase
+forall b t s a. (b -&gt; t) -&gt; (s -&gt; Either t a) -&gt; Prism s t a b
+</span><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Prism.html#prism"><span class="hs-identifier hs-var">prism</span></a></span><span> </span><span class="annot"><span class="annottext">TZDatabase -&gt; SrcTZ
+</span><a href="Data.Time.Conversion.Types.html#SrcTZDatabase"><span class="hs-identifier hs-var">SrcTZDatabase</span></a></span><span> </span><span class="annot"><span class="annottext">SrcTZ -&gt; Either SrcTZ TZDatabase
+</span><a href="#local-6989586621679076584"><span class="hs-identifier hs-var">from</span></a></span><span>
+</span><span id="line-196"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-197"></span><span>    </span><span id="local-6989586621679076584"><span class="annot"><span class="annottext">from :: SrcTZ -&gt; Either SrcTZ TZDatabase
+</span><a href="#local-6989586621679076584"><span class="hs-identifier hs-var hs-var">from</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Time.Conversion.Types.html#SrcTZDatabase"><span class="hs-identifier hs-type">SrcTZDatabase</span></a></span><span> </span><span id="local-6989586621679076583"><span class="annot"><span class="annottext">TZDatabase
+</span><a href="#local-6989586621679076583"><span class="hs-identifier hs-var">tzdb</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TZDatabase -&gt; Either SrcTZ TZDatabase
+forall a b. b -&gt; Either a b
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/Data.Either.html#Right"><span class="hs-identifier hs-var">Right</span></a></span><span> </span><span class="annot"><span class="annottext">TZDatabase
+</span><a href="#local-6989586621679076583"><span class="hs-identifier hs-var">tzdb</span></a></span><span>
+</span><span id="line-198"></span><span>    </span><span class="annot"><a href="#local-6989586621679076584"><span class="hs-identifier hs-var">from</span></a></span><span> </span><span id="local-6989586621679076582"><span class="annot"><span class="annottext">SrcTZ
+</span><a href="#local-6989586621679076582"><span class="hs-identifier hs-var">other</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SrcTZ -&gt; Either SrcTZ TZDatabase
+forall a b. a -&gt; Either a b
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/Data.Either.html#Left"><span class="hs-identifier hs-var">Left</span></a></span><span> </span><span class="annot"><span class="annottext">SrcTZ
+</span><a href="#local-6989586621679076582"><span class="hs-identifier hs-var">other</span></a></span><span>
+</span><span id="line-199"></span><span>
+</span><span id="line-200"></span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-201"></span><span class="annot"><a href="Data.Time.Conversion.Types.html#_SrcTZLiteral"><span class="hs-identifier hs-type">_SrcTZLiteral</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Prism.html#Prism%27"><span class="hs-identifier hs-type">Prism'</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#SrcTZ"><span class="hs-identifier hs-type">SrcTZ</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-202"></span><span id="_SrcTZLiteral"><span class="annot"><span class="annottext">_SrcTZLiteral :: Prism' SrcTZ ()
+</span><a href="Data.Time.Conversion.Types.html#_SrcTZLiteral"><span class="hs-identifier hs-var hs-var">_SrcTZLiteral</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(() -&gt; SrcTZ) -&gt; (SrcTZ -&gt; Either SrcTZ ()) -&gt; Prism' SrcTZ ()
+forall b t s a. (b -&gt; t) -&gt; (s -&gt; Either t a) -&gt; Prism s t a b
+</span><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Prism.html#prism"><span class="hs-identifier hs-var">prism</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SrcTZ -&gt; () -&gt; SrcTZ
+forall a b. a -&gt; b -&gt; a
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Base.html#const"><span class="hs-identifier hs-var">const</span></a></span><span> </span><span class="annot"><span class="annottext">SrcTZ
+</span><a href="Data.Time.Conversion.Types.html#SrcTZLiteral"><span class="hs-identifier hs-var">SrcTZLiteral</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">SrcTZ -&gt; Either SrcTZ ()
+</span><a href="#local-6989586621679076580"><span class="hs-identifier hs-var">from</span></a></span><span>
+</span><span id="line-203"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-204"></span><span>    </span><span id="local-6989586621679076580"><span class="annot"><span class="annottext">from :: SrcTZ -&gt; Either SrcTZ ()
+</span><a href="#local-6989586621679076580"><span class="hs-identifier hs-var hs-var">from</span></a></span></span><span> </span><span class="annot"><span class="annottext">SrcTZ
+</span><a href="Data.Time.Conversion.Types.html#SrcTZLiteral"><span class="hs-identifier hs-var">SrcTZLiteral</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">() -&gt; Either SrcTZ ()
+forall a b. b -&gt; Either a b
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/Data.Either.html#Right"><span class="hs-identifier hs-var">Right</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-205"></span><span>    </span><span class="annot"><a href="#local-6989586621679076580"><span class="hs-identifier hs-var">from</span></a></span><span> </span><span id="local-6989586621679076579"><span class="annot"><span class="annottext">SrcTZ
+</span><a href="#local-6989586621679076579"><span class="hs-identifier hs-var">other</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">SrcTZ -&gt; Either SrcTZ ()
+forall a b. a -&gt; Either a b
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/Data.Either.html#Left"><span class="hs-identifier hs-var">Left</span></a></span><span> </span><span class="annot"><span class="annottext">SrcTZ
+</span><a href="#local-6989586621679076579"><span class="hs-identifier hs-var">other</span></a></span><span>
+</span><span id="line-206"></span><span>
+</span><span id="line-207"></span><span class="hs-comment">-- | Options for interpreting a timezone.</span><span>
+</span><span id="line-208"></span><span class="hs-comment">--</span><span>
+</span><span id="line-209"></span><span class="hs-comment">-- ==== __Examples__</span><span>
+</span><span id="line-210"></span><span class="hs-comment">-- &gt;&gt;&gt; TZDatabaseLabel America__New_York</span><span>
+</span><span id="line-211"></span><span class="hs-comment">-- TZDatabaseLabel America__New_York</span><span>
+</span><span id="line-212"></span><span class="hs-comment">--</span><span>
+</span><span id="line-213"></span><span class="hs-comment">-- &gt;&gt;&gt; TZDatabaseText &quot;America/New_York&quot;</span><span>
+</span><span id="line-214"></span><span class="hs-comment">-- TZDatabaseText &quot;America/New_York&quot;</span><span>
+</span><span id="line-215"></span><span class="hs-comment">--</span><span>
+</span><span id="line-216"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-217"></span><span id="local-6989586621679076577"><span id="local-6989586621679076578"></span></span><span class="hs-keyword">data</span><span> </span><span id="TZDatabase"><span class="annot"><a href="Data.Time.Conversion.Types.html#TZDatabase"><span class="hs-identifier hs-var">TZDatabase</span></a></span></span><span>
+</span><span id="line-218"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="hs-comment">-- | Uses a 'TZLabel'. This option should be preferred as it enables</span><span>
+</span><span id="line-219"></span><span>    </span><span class="hs-comment">-- total conversions.</span><span>
+</span><span id="line-220"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-221"></span><span>    </span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-222"></span><span>    </span><span id="TZDatabaseLabel"><span class="annot"><a href="Data.Time.Conversion.Types.html#TZDatabaseLabel"><span class="hs-identifier hs-var">TZDatabaseLabel</span></a></span></span><span> </span><span class="annot"><a href="file:///nix/store/iyzpjn3kj1w0v3rmgizv0dc48hm94w6w-tzdata-0.2.20220315.0-doc/share/doc/tzdata-0.2.20220315.0/html/src/Data.Time.Zones.DB.html#TZLabel"><span class="hs-identifier hs-type">TZLabel</span></a></span><span>
+</span><span id="line-223"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="hs-comment">-- | Interprets the 'Text' as a tz database name e.g. America/New_York.</span><span>
+</span><span id="line-224"></span><span>    </span><span class="hs-comment">-- Obviously such conversions cannot be total.</span><span>
+</span><span id="line-225"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-226"></span><span>    </span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-227"></span><span>    </span><span id="TZDatabaseText"><span class="annot"><a href="Data.Time.Conversion.Types.html#TZDatabaseText"><span class="hs-identifier hs-var">TZDatabaseText</span></a></span></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/text-1.2.5.0/src/Data.Text.Internal.html#Text"><span class="hs-identifier hs-type">Text</span></a></span><span>
+</span><span id="line-228"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span>
+</span><span id="line-229"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-230"></span><span>      </span><span id="local-6989586621679076568"><span id="local-6989586621679076573"><span class="annot"><span class="annottext">TZDatabase -&gt; TZDatabase -&gt; Bool
+(TZDatabase -&gt; TZDatabase -&gt; Bool)
+-&gt; (TZDatabase -&gt; TZDatabase -&gt; Bool) -&gt; Eq TZDatabase
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: TZDatabase -&gt; TZDatabase -&gt; Bool
+$c/= :: TZDatabase -&gt; TZDatabase -&gt; Bool
+== :: TZDatabase -&gt; TZDatabase -&gt; Bool
+$c== :: TZDatabase -&gt; TZDatabase -&gt; Bool
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Classes.html#Eq"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-231"></span><span>      </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-232"></span><span>      </span><span class="annot"><span class="annottext">(forall x. TZDatabase -&gt; Rep TZDatabase x)
+-&gt; (forall x. Rep TZDatabase x -&gt; TZDatabase) -&gt; Generic TZDatabase
+forall x. Rep TZDatabase x -&gt; TZDatabase
+forall x. TZDatabase -&gt; Rep TZDatabase x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cto :: forall x. Rep TZDatabase x -&gt; TZDatabase
+$cfrom :: forall x. TZDatabase -&gt; Rep TZDatabase x
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Generics.html#Generic"><span class="hs-identifier hs-var hs-var hs-var hs-var">Generic</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-233"></span><span>      </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-234"></span><span>      </span><span id="local-6989586621679076555"><span id="local-6989586621679076557"><span id="local-6989586621679076564"><span class="annot"><span class="annottext">Int -&gt; TZDatabase -&gt; ShowS
+[TZDatabase] -&gt; ShowS
+TZDatabase -&gt; String
+(Int -&gt; TZDatabase -&gt; ShowS)
+-&gt; (TZDatabase -&gt; String)
+-&gt; ([TZDatabase] -&gt; ShowS)
+-&gt; Show TZDatabase
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [TZDatabase] -&gt; ShowS
+$cshowList :: [TZDatabase] -&gt; ShowS
+show :: TZDatabase -&gt; String
+$cshow :: TZDatabase -&gt; String
+showsPrec :: Int -&gt; TZDatabase -&gt; ShowS
+$cshowsPrec :: Int -&gt; TZDatabase -&gt; ShowS
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Show.html#Show"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span>
+</span><span id="line-235"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-236"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span>
+</span><span id="line-237"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-238"></span><span>      </span><span id="local-6989586621679076553"><span class="annot"><span class="annottext">TZDatabase -&gt; ()
+(TZDatabase -&gt; ()) -&gt; NFData TZDatabase
+forall a. (a -&gt; ()) -&gt; NFData a
+rnf :: TZDatabase -&gt; ()
+$crnf :: TZDatabase -&gt; ()
+</span><a href="#local-6989586621679076553"><span class="hs-identifier hs-var hs-var hs-var hs-var">NFData</span></a></span></span><span>
+</span><span id="line-239"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-240"></span><span>
+</span><span id="line-241"></span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-242"></span><span class="annot"><a href="Data.Time.Conversion.Types.html#_TZDatabaseLabel"><span class="hs-identifier hs-type">_TZDatabaseLabel</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Prism.html#Prism%27"><span class="hs-identifier hs-type">Prism'</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TZDatabase"><span class="hs-identifier hs-type">TZDatabase</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/iyzpjn3kj1w0v3rmgizv0dc48hm94w6w-tzdata-0.2.20220315.0-doc/share/doc/tzdata-0.2.20220315.0/html/src/Data.Time.Zones.DB.html#TZLabel"><span class="hs-identifier hs-type">TZLabel</span></a></span><span>
+</span><span id="line-243"></span><span id="_TZDatabaseLabel"><span class="annot"><span class="annottext">_TZDatabaseLabel :: Prism' TZDatabase TZLabel
+</span><a href="Data.Time.Conversion.Types.html#_TZDatabaseLabel"><span class="hs-identifier hs-var hs-var">_TZDatabaseLabel</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(TZLabel -&gt; TZDatabase)
+-&gt; (TZDatabase -&gt; Either TZDatabase TZLabel)
+-&gt; Prism' TZDatabase TZLabel
+forall b t s a. (b -&gt; t) -&gt; (s -&gt; Either t a) -&gt; Prism s t a b
+</span><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Prism.html#prism"><span class="hs-identifier hs-var">prism</span></a></span><span> </span><span class="annot"><span class="annottext">TZLabel -&gt; TZDatabase
+</span><a href="Data.Time.Conversion.Types.html#TZDatabaseLabel"><span class="hs-identifier hs-var">TZDatabaseLabel</span></a></span><span> </span><span class="annot"><span class="annottext">TZDatabase -&gt; Either TZDatabase TZLabel
+</span><a href="#local-6989586621679076552"><span class="hs-identifier hs-var">from</span></a></span><span>
+</span><span id="line-244"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-245"></span><span>    </span><span id="local-6989586621679076552"><span class="annot"><span class="annottext">from :: TZDatabase -&gt; Either TZDatabase TZLabel
+</span><a href="#local-6989586621679076552"><span class="hs-identifier hs-var hs-var">from</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Time.Conversion.Types.html#TZDatabaseLabel"><span class="hs-identifier hs-type">TZDatabaseLabel</span></a></span><span> </span><span id="local-6989586621679076551"><span class="annot"><span class="annottext">TZLabel
+</span><a href="#local-6989586621679076551"><span class="hs-identifier hs-var">l</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TZLabel -&gt; Either TZDatabase TZLabel
+forall a b. b -&gt; Either a b
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/Data.Either.html#Right"><span class="hs-identifier hs-var">Right</span></a></span><span> </span><span class="annot"><span class="annottext">TZLabel
+</span><a href="#local-6989586621679076551"><span class="hs-identifier hs-var">l</span></a></span><span>
+</span><span id="line-246"></span><span>    </span><span class="annot"><a href="#local-6989586621679076552"><span class="hs-identifier hs-var">from</span></a></span><span> </span><span id="local-6989586621679076550"><span class="annot"><span class="annottext">TZDatabase
+</span><a href="#local-6989586621679076550"><span class="hs-identifier hs-var">other</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TZDatabase -&gt; Either TZDatabase TZLabel
+forall a b. a -&gt; Either a b
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/Data.Either.html#Left"><span class="hs-identifier hs-var">Left</span></a></span><span> </span><span class="annot"><span class="annottext">TZDatabase
+</span><a href="#local-6989586621679076550"><span class="hs-identifier hs-var">other</span></a></span><span>
+</span><span id="line-247"></span><span>
+</span><span id="line-248"></span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-249"></span><span class="annot"><a href="Data.Time.Conversion.Types.html#_TZDatabaseText"><span class="hs-identifier hs-type">_TZDatabaseText</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Prism.html#Prism%27"><span class="hs-identifier hs-type">Prism'</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TZDatabase"><span class="hs-identifier hs-type">TZDatabase</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/text-1.2.5.0/src/Data.Text.Internal.html#Text"><span class="hs-identifier hs-type">Text</span></a></span><span>
+</span><span id="line-250"></span><span id="_TZDatabaseText"><span class="annot"><span class="annottext">_TZDatabaseText :: Prism' TZDatabase Text
+</span><a href="Data.Time.Conversion.Types.html#_TZDatabaseText"><span class="hs-identifier hs-var hs-var">_TZDatabaseText</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Text -&gt; TZDatabase)
+-&gt; (TZDatabase -&gt; Either TZDatabase Text) -&gt; Prism' TZDatabase Text
+forall b t s a. (b -&gt; t) -&gt; (s -&gt; Either t a) -&gt; Prism s t a b
+</span><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Prism.html#prism"><span class="hs-identifier hs-var">prism</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; TZDatabase
+</span><a href="Data.Time.Conversion.Types.html#TZDatabaseText"><span class="hs-identifier hs-var">TZDatabaseText</span></a></span><span> </span><span class="annot"><span class="annottext">TZDatabase -&gt; Either TZDatabase Text
+</span><a href="#local-6989586621679076549"><span class="hs-identifier hs-var">from</span></a></span><span>
+</span><span id="line-251"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-252"></span><span>    </span><span id="local-6989586621679076549"><span class="annot"><span class="annottext">from :: TZDatabase -&gt; Either TZDatabase Text
+</span><a href="#local-6989586621679076549"><span class="hs-identifier hs-var hs-var">from</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Time.Conversion.Types.html#TZDatabaseText"><span class="hs-identifier hs-type">TZDatabaseText</span></a></span><span> </span><span id="local-6989586621679076548"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679076548"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Either TZDatabase Text
+forall a b. b -&gt; Either a b
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/Data.Either.html#Right"><span class="hs-identifier hs-var">Right</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679076548"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-253"></span><span>    </span><span class="annot"><a href="#local-6989586621679076549"><span class="hs-identifier hs-var">from</span></a></span><span> </span><span id="local-6989586621679076547"><span class="annot"><span class="annottext">TZDatabase
+</span><a href="#local-6989586621679076547"><span class="hs-identifier hs-var">other</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TZDatabase -&gt; Either TZDatabase Text
+forall a b. a -&gt; Either a b
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/Data.Either.html#Left"><span class="hs-identifier hs-var">Left</span></a></span><span> </span><span class="annot"><span class="annottext">TZDatabase
+</span><a href="#local-6989586621679076547"><span class="hs-identifier hs-var">other</span></a></span><span>
+</span><span id="line-254"></span><span>
+</span><span id="line-255"></span><span class="hs-comment">-- | Time formatting string. The 'Monoid' instance behaves like 'Text',</span><span>
+</span><span id="line-256"></span><span class="hs-comment">-- whereas 'Default' is an alias for 'hm'.</span><span>
+</span><span id="line-257"></span><span class="hs-comment">--</span><span>
+</span><span id="line-258"></span><span class="hs-comment">-- ==== __Examples__</span><span>
+</span><span id="line-259"></span><span class="hs-comment">-- &gt;&gt;&gt; def :: TimeFormat</span><span>
+</span><span id="line-260"></span><span class="hs-comment">-- MkTimeFormat {unTimeFormat = &quot;%H:%M&quot;}</span><span>
+</span><span id="line-261"></span><span class="hs-comment">--</span><span>
+</span><span id="line-262"></span><span class="hs-comment">-- &gt;&gt;&gt; mempty :: TimeFormat</span><span>
+</span><span id="line-263"></span><span class="hs-comment">-- MkTimeFormat {unTimeFormat = &quot;&quot;}</span><span>
+</span><span id="line-264"></span><span class="hs-comment">--</span><span>
+</span><span id="line-265"></span><span class="hs-comment">-- &gt;&gt;&gt; hm &lt;&gt; &quot; %Z&quot;</span><span>
+</span><span id="line-266"></span><span class="hs-comment">-- MkTimeFormat {unTimeFormat = &quot;%H:%M %Z&quot;}</span><span>
+</span><span id="line-267"></span><span class="hs-comment">--</span><span>
+</span><span id="line-268"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-269"></span><span id="local-6989586621679076545"><span id="local-6989586621679076546"></span></span><span class="hs-keyword">newtype</span><span> </span><span id="TimeFormat"><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeFormat"><span class="hs-identifier hs-var">TimeFormat</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="MkTimeFormat"><span class="annot"><a href="Data.Time.Conversion.Types.html#MkTimeFormat"><span class="hs-identifier hs-var">MkTimeFormat</span></a></span></span><span>
+</span><span id="line-270"></span><span>  </span><span class="hs-special">{</span><span> </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-271"></span><span>    </span><span id="unTimeFormat"><span class="annot"><span class="annottext">TimeFormat -&gt; Text
+</span><a href="Data.Time.Conversion.Types.html#unTimeFormat"><span class="hs-identifier hs-var hs-var">unTimeFormat</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/text-1.2.5.0/src/Data.Text.Internal.html#Text"><span class="hs-identifier hs-type">Text</span></a></span><span>
+</span><span id="line-272"></span><span>  </span><span class="hs-special">}</span><span>
+</span><span id="line-273"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span>
+</span><span id="line-274"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-275"></span><span>      </span><span id="local-6989586621679076538"><span id="local-6989586621679076541"><span class="annot"><span class="annottext">TimeFormat -&gt; TimeFormat -&gt; Bool
+(TimeFormat -&gt; TimeFormat -&gt; Bool)
+-&gt; (TimeFormat -&gt; TimeFormat -&gt; Bool) -&gt; Eq TimeFormat
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: TimeFormat -&gt; TimeFormat -&gt; Bool
+$c/= :: TimeFormat -&gt; TimeFormat -&gt; Bool
+== :: TimeFormat -&gt; TimeFormat -&gt; Bool
+$c== :: TimeFormat -&gt; TimeFormat -&gt; Bool
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Classes.html#Eq"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-276"></span><span>      </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-277"></span><span>      </span><span class="annot"><span class="annottext">(forall x. TimeFormat -&gt; Rep TimeFormat x)
+-&gt; (forall x. Rep TimeFormat x -&gt; TimeFormat) -&gt; Generic TimeFormat
+forall x. Rep TimeFormat x -&gt; TimeFormat
+forall x. TimeFormat -&gt; Rep TimeFormat x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cto :: forall x. Rep TimeFormat x -&gt; TimeFormat
+$cfrom :: forall x. TimeFormat -&gt; Rep TimeFormat x
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Generics.html#Generic"><span class="hs-identifier hs-var hs-var hs-var hs-var">Generic</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-278"></span><span>      </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-279"></span><span>      </span><span id="local-6989586621679076528"><span id="local-6989586621679076530"><span id="local-6989586621679076534"><span class="annot"><span class="annottext">Int -&gt; TimeFormat -&gt; ShowS
+[TimeFormat] -&gt; ShowS
+TimeFormat -&gt; String
+(Int -&gt; TimeFormat -&gt; ShowS)
+-&gt; (TimeFormat -&gt; String)
+-&gt; ([TimeFormat] -&gt; ShowS)
+-&gt; Show TimeFormat
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [TimeFormat] -&gt; ShowS
+$cshowList :: [TimeFormat] -&gt; ShowS
+show :: TimeFormat -&gt; String
+$cshow :: TimeFormat -&gt; String
+showsPrec :: Int -&gt; TimeFormat -&gt; ShowS
+$cshowsPrec :: Int -&gt; TimeFormat -&gt; ShowS
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Show.html#Show"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span>
+</span><span id="line-280"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-281"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span>
+</span><span id="line-282"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-283"></span><span>      </span><span id="local-6989586621679076526"><span class="annot"><span class="annottext">TimeFormat -&gt; ()
+(TimeFormat -&gt; ()) -&gt; NFData TimeFormat
+forall a. (a -&gt; ()) -&gt; NFData a
+rnf :: TimeFormat -&gt; ()
+$crnf :: TimeFormat -&gt; ()
+</span><a href="#local-6989586621679076526"><span class="hs-identifier hs-var hs-var hs-var hs-var">NFData</span></a></span></span><span>
+</span><span id="line-284"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-285"></span><span>  </span><span class="hs-keyword">deriving</span><span>
+</span><span id="line-286"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-287"></span><span>      </span><span id="local-6989586621679076512"><span id="local-6989586621679076516"><span id="local-6989586621679076521"><span class="annot"><span class="annottext">Semigroup TimeFormat
+TimeFormat
+Semigroup TimeFormat
+-&gt; TimeFormat
+-&gt; (TimeFormat -&gt; TimeFormat -&gt; TimeFormat)
+-&gt; ([TimeFormat] -&gt; TimeFormat)
+-&gt; Monoid TimeFormat
+[TimeFormat] -&gt; TimeFormat
+TimeFormat -&gt; TimeFormat -&gt; TimeFormat
+forall a.
+Semigroup a -&gt; a -&gt; (a -&gt; a -&gt; a) -&gt; ([a] -&gt; a) -&gt; Monoid a
+mconcat :: [TimeFormat] -&gt; TimeFormat
+$cmconcat :: [TimeFormat] -&gt; TimeFormat
+mappend :: TimeFormat -&gt; TimeFormat -&gt; TimeFormat
+$cmappend :: TimeFormat -&gt; TimeFormat -&gt; TimeFormat
+mempty :: TimeFormat
+$cmempty :: TimeFormat
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Base.html#Monoid"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Monoid</span></a></span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-288"></span><span>      </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-289"></span><span>      </span><span id="local-6989586621679076506"><span class="annot"><span class="annottext">String -&gt; TimeFormat
+(String -&gt; TimeFormat) -&gt; IsString TimeFormat
+forall a. (String -&gt; a) -&gt; IsString a
+fromString :: String -&gt; TimeFormat
+$cfromString :: String -&gt; TimeFormat
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/Data.String.html#IsString"><span class="hs-identifier hs-var hs-var hs-var hs-var">IsString</span></a></span></span><span class="hs-special">,</span><span>
+</span><span id="line-290"></span><span>      </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-291"></span><span>      </span><span id="local-6989586621679076489"><span id="local-6989586621679076495"><span id="local-6989586621679076500"><span class="annot"><span class="annottext">NonEmpty TimeFormat -&gt; TimeFormat
+TimeFormat -&gt; TimeFormat -&gt; TimeFormat
+(TimeFormat -&gt; TimeFormat -&gt; TimeFormat)
+-&gt; (NonEmpty TimeFormat -&gt; TimeFormat)
+-&gt; (forall b. Integral b =&gt; b -&gt; TimeFormat -&gt; TimeFormat)
+-&gt; Semigroup TimeFormat
+forall b. Integral b =&gt; b -&gt; TimeFormat -&gt; TimeFormat
+forall a.
+(a -&gt; a -&gt; a)
+-&gt; (NonEmpty a -&gt; a)
+-&gt; (forall b. Integral b =&gt; b -&gt; a -&gt; a)
+-&gt; Semigroup a
+stimes :: forall b. Integral b =&gt; b -&gt; TimeFormat -&gt; TimeFormat
+$cstimes :: forall b. Integral b =&gt; b -&gt; TimeFormat -&gt; TimeFormat
+sconcat :: NonEmpty TimeFormat -&gt; TimeFormat
+$csconcat :: NonEmpty TimeFormat -&gt; TimeFormat
+&lt;&gt; :: TimeFormat -&gt; TimeFormat -&gt; TimeFormat
+$c&lt;&gt; :: TimeFormat -&gt; TimeFormat -&gt; TimeFormat
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Base.html#Semigroup"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Semigroup</span></a></span></span></span></span><span>
+</span><span id="line-292"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-293"></span><span>    </span><span class="hs-keyword">via</span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/text-1.2.5.0/src/Data.Text.Internal.html#Text"><span class="hs-identifier hs-type">Text</span></a></span><span>
+</span><span id="line-294"></span><span>
+</span><span id="line-295"></span><span class="hs-comment">-- | Alias for 'hm'.</span><span>
+</span><span id="line-296"></span><span class="hs-comment">--</span><span>
+</span><span id="line-297"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-298"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="file:///nix/store/jaimif5swl0d6rl1h45m65bayxcyq9zi-data-default-class-0.1.2.0-doc/share/doc/data-default-class-0.1.2.0/html/src/Data.Default.Class.html#Default"><span class="hs-identifier hs-type">Default</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeFormat"><span class="hs-identifier hs-type">TimeFormat</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-299"></span><span>  </span><span id="local-6989586621679076481"><span class="annot"><span class="annottext">def :: TimeFormat
+</span><a href="#local-6989586621679076481"><span class="hs-identifier hs-var hs-var hs-var hs-var">def</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TimeFormat
+</span><a href="Data.Time.Conversion.Types.html#hm"><span class="hs-identifier hs-var">hm</span></a></span><span>
+</span><span id="line-300"></span><span>
+</span><span id="line-301"></span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-302"></span><span class="annot"><a href="Data.Time.Conversion.Types.html#_MkTimeFormat"><span class="hs-identifier hs-type">_MkTimeFormat</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Iso.html#Iso%27"><span class="hs-identifier hs-type">Iso'</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeFormat"><span class="hs-identifier hs-type">TimeFormat</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/text-1.2.5.0/src/Data.Text.Internal.html#Text"><span class="hs-identifier hs-type">Text</span></a></span><span>
+</span><span id="line-303"></span><span id="_MkTimeFormat"><span class="annot"><span class="annottext">_MkTimeFormat :: Iso' TimeFormat Text
+</span><a href="Data.Time.Conversion.Types.html#_MkTimeFormat"><span class="hs-identifier hs-var hs-var">_MkTimeFormat</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(TimeFormat -&gt; Text)
+-&gt; (Text -&gt; TimeFormat) -&gt; Iso' TimeFormat Text
+forall s a b t. (s -&gt; a) -&gt; (b -&gt; t) -&gt; Iso s t a b
+</span><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Iso.html#iso"><span class="hs-identifier hs-var">iso</span></a></span><span> </span><span class="annot"><span class="annottext">TimeFormat -&gt; Text
+</span><a href="Data.Time.Conversion.Types.html#unTimeFormat"><span class="hs-identifier hs-var">unTimeFormat</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; TimeFormat
+</span><a href="Data.Time.Conversion.Types.html#MkTimeFormat"><span class="hs-identifier hs-var">MkTimeFormat</span></a></span><span>
+</span><span id="line-304"></span><span>
+</span><span id="line-305"></span><span class="hs-comment">-- | Format for 24-hour @hours:minutes@.</span><span>
+</span><span id="line-306"></span><span class="hs-comment">--</span><span>
+</span><span id="line-307"></span><span class="hs-comment">-- &gt;&gt;&gt; hm</span><span>
+</span><span id="line-308"></span><span class="hs-comment">-- MkTimeFormat {unTimeFormat = &quot;%H:%M&quot;}</span><span>
+</span><span id="line-309"></span><span class="hs-comment">--</span><span>
+</span><span id="line-310"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-311"></span><span class="annot"><a href="Data.Time.Conversion.Types.html#hm"><span class="hs-identifier hs-type">hm</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeFormat"><span class="hs-identifier hs-type">TimeFormat</span></a></span><span>
+</span><span id="line-312"></span><span id="hm"><span class="annot"><span class="annottext">hm :: TimeFormat
+</span><a href="Data.Time.Conversion.Types.html#hm"><span class="hs-identifier hs-var hs-var">hm</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TimeFormat
+</span><span class="hs-string">&quot;%H:%M&quot;</span></span><span>
+</span><span id="line-313"></span><span>
+</span><span id="line-314"></span><span class="hs-comment">-- | Format for 12-hour @hours:minutes am/pm@.</span><span>
+</span><span id="line-315"></span><span class="hs-comment">--</span><span>
+</span><span id="line-316"></span><span class="hs-comment">-- &gt;&gt;&gt; hm12h</span><span>
+</span><span id="line-317"></span><span class="hs-comment">-- MkTimeFormat {unTimeFormat = &quot;%I:%M %P&quot;}</span><span>
+</span><span id="line-318"></span><span class="hs-comment">--</span><span>
+</span><span id="line-319"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-320"></span><span class="annot"><a href="Data.Time.Conversion.Types.html#hm12h"><span class="hs-identifier hs-type">hm12h</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeFormat"><span class="hs-identifier hs-type">TimeFormat</span></a></span><span>
+</span><span id="line-321"></span><span id="hm12h"><span class="annot"><span class="annottext">hm12h :: TimeFormat
+</span><a href="Data.Time.Conversion.Types.html#hm12h"><span class="hs-identifier hs-var hs-var">hm12h</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TimeFormat
+</span><span class="hs-string">&quot;%I:%M %P&quot;</span></span><span>
+</span><span id="line-322"></span><span>
+</span><span id="line-323"></span><span class="hs-comment">-- | Format for 24-hour @hours:minutes TZ@.</span><span>
+</span><span id="line-324"></span><span class="hs-comment">--</span><span>
+</span><span id="line-325"></span><span class="hs-comment">-- &gt;&gt;&gt; hmTZ</span><span>
+</span><span id="line-326"></span><span class="hs-comment">-- MkTimeFormat {unTimeFormat = &quot;%H:%M %Z&quot;}</span><span>
+</span><span id="line-327"></span><span class="hs-comment">--</span><span>
+</span><span id="line-328"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-329"></span><span class="annot"><a href="Data.Time.Conversion.Types.html#hmTZ"><span class="hs-identifier hs-type">hmTZ</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeFormat"><span class="hs-identifier hs-type">TimeFormat</span></a></span><span>
+</span><span id="line-330"></span><span id="hmTZ"><span class="annot"><span class="annottext">hmTZ :: TimeFormat
+</span><a href="Data.Time.Conversion.Types.html#hmTZ"><span class="hs-identifier hs-var hs-var">hmTZ</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TimeFormat
+</span><span class="hs-string">&quot;%H:%M %Z&quot;</span></span><span>
+</span><span id="line-331"></span><span>
+</span><span id="line-332"></span><span class="hs-comment">-- | Format for 12-hour @hours:minutes am/pm TZ@.</span><span>
+</span><span id="line-333"></span><span class="hs-comment">--</span><span>
+</span><span id="line-334"></span><span class="hs-comment">-- &gt;&gt;&gt; hmTZ12h</span><span>
+</span><span id="line-335"></span><span class="hs-comment">-- MkTimeFormat {unTimeFormat = &quot;%I:%M %P %Z&quot;}</span><span>
+</span><span id="line-336"></span><span class="hs-comment">--</span><span>
+</span><span id="line-337"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-338"></span><span class="annot"><a href="Data.Time.Conversion.Types.html#hmTZ12h"><span class="hs-identifier hs-type">hmTZ12h</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeFormat"><span class="hs-identifier hs-type">TimeFormat</span></a></span><span>
+</span><span id="line-339"></span><span id="hmTZ12h"><span class="annot"><span class="annottext">hmTZ12h :: TimeFormat
+</span><a href="Data.Time.Conversion.Types.html#hmTZ12h"><span class="hs-identifier hs-var hs-var">hmTZ12h</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TimeFormat
+</span><span class="hs-string">&quot;%I:%M %P %Z&quot;</span></span><span>
+</span><span id="line-340"></span><span>
+</span><span id="line-341"></span><span class="hs-comment">-- | Format for RFC822: @%a, %_d %b %Y %H:%M:%S %Z@.</span><span>
+</span><span id="line-342"></span><span class="hs-comment">--</span><span>
+</span><span id="line-343"></span><span class="hs-comment">-- &gt;&gt;&gt; rfc822</span><span>
+</span><span id="line-344"></span><span class="hs-comment">-- MkTimeFormat {unTimeFormat = &quot;%a, %_d %b %Y %H:%M:%S %Z&quot;}</span><span>
+</span><span id="line-345"></span><span class="hs-comment">--</span><span>
+</span><span id="line-346"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-347"></span><span class="annot"><a href="Data.Time.Conversion.Types.html#rfc822"><span class="hs-identifier hs-type">rfc822</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeFormat"><span class="hs-identifier hs-type">TimeFormat</span></a></span><span>
+</span><span id="line-348"></span><span id="rfc822"><span class="annot"><span class="annottext">rfc822 :: TimeFormat
+</span><a href="Data.Time.Conversion.Types.html#rfc822"><span class="hs-identifier hs-var hs-var">rfc822</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TimeFormat
+</span><span class="hs-string">&quot;%a, %_d %b %Y %H:%M:%S %Z&quot;</span></span><span>
+</span><span id="line-349"></span><span>
+</span><span id="line-350"></span><span class="hs-comment">-- | Exception parsing time string.</span><span>
+</span><span id="line-351"></span><span class="hs-comment">--</span><span>
+</span><span id="line-352"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-353"></span><span id="local-6989586621679076479"><span id="local-6989586621679076480"></span></span><span class="hs-keyword">data</span><span> </span><span id="ParseTimeException"><span class="annot"><a href="Data.Time.Conversion.Types.html#ParseTimeException"><span class="hs-identifier hs-var">ParseTimeException</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="MkParseTimeException"><span class="annot"><a href="Data.Time.Conversion.Types.html#MkParseTimeException"><span class="hs-identifier hs-var">MkParseTimeException</span></a></span></span><span>
+</span><span id="line-354"></span><span>  </span><span class="hs-special">{</span><span> </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-355"></span><span>    </span><span id="errFormat"><span class="annot"><span class="annottext">ParseTimeException -&gt; TimeFormat
+</span><a href="Data.Time.Conversion.Types.html#errFormat"><span class="hs-identifier hs-var hs-var">errFormat</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeFormat"><span class="hs-identifier hs-type">TimeFormat</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-356"></span><span>    </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-357"></span><span>    </span><span id="errMsg"><span class="annot"><span class="annottext">ParseTimeException -&gt; Text
+</span><a href="Data.Time.Conversion.Types.html#errMsg"><span class="hs-identifier hs-var hs-var">errMsg</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/text-1.2.5.0/src/Data.Text.Internal.html#Text"><span class="hs-identifier hs-type">Text</span></a></span><span>
+</span><span id="line-358"></span><span>  </span><span class="hs-special">}</span><span>
+</span><span id="line-359"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span>
+</span><span id="line-360"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-361"></span><span>      </span><span id="local-6989586621679076470"><span id="local-6989586621679076474"><span class="annot"><span class="annottext">ParseTimeException -&gt; ParseTimeException -&gt; Bool
+(ParseTimeException -&gt; ParseTimeException -&gt; Bool)
+-&gt; (ParseTimeException -&gt; ParseTimeException -&gt; Bool)
+-&gt; Eq ParseTimeException
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: ParseTimeException -&gt; ParseTimeException -&gt; Bool
+$c/= :: ParseTimeException -&gt; ParseTimeException -&gt; Bool
+== :: ParseTimeException -&gt; ParseTimeException -&gt; Bool
+$c== :: ParseTimeException -&gt; ParseTimeException -&gt; Bool
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Classes.html#Eq"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-362"></span><span>      </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-363"></span><span>      </span><span class="annot"><span class="annottext">(forall x. ParseTimeException -&gt; Rep ParseTimeException x)
+-&gt; (forall x. Rep ParseTimeException x -&gt; ParseTimeException)
+-&gt; Generic ParseTimeException
+forall x. Rep ParseTimeException x -&gt; ParseTimeException
+forall x. ParseTimeException -&gt; Rep ParseTimeException x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cto :: forall x. Rep ParseTimeException x -&gt; ParseTimeException
+$cfrom :: forall x. ParseTimeException -&gt; Rep ParseTimeException x
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Generics.html#Generic"><span class="hs-identifier hs-var hs-var hs-var hs-var">Generic</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-364"></span><span>      </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-365"></span><span>      </span><span id="local-6989586621679076459"><span id="local-6989586621679076461"><span id="local-6989586621679076466"><span class="annot"><span class="annottext">Int -&gt; ParseTimeException -&gt; ShowS
+[ParseTimeException] -&gt; ShowS
+ParseTimeException -&gt; String
+(Int -&gt; ParseTimeException -&gt; ShowS)
+-&gt; (ParseTimeException -&gt; String)
+-&gt; ([ParseTimeException] -&gt; ShowS)
+-&gt; Show ParseTimeException
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [ParseTimeException] -&gt; ShowS
+$cshowList :: [ParseTimeException] -&gt; ShowS
+show :: ParseTimeException -&gt; String
+$cshow :: ParseTimeException -&gt; String
+showsPrec :: Int -&gt; ParseTimeException -&gt; ShowS
+$cshowsPrec :: Int -&gt; ParseTimeException -&gt; ShowS
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Show.html#Show"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span>
+</span><span id="line-366"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-367"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span>
+</span><span id="line-368"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-369"></span><span>      </span><span id="local-6989586621679076457"><span class="annot"><span class="annottext">ParseTimeException -&gt; ()
+(ParseTimeException -&gt; ()) -&gt; NFData ParseTimeException
+forall a. (a -&gt; ()) -&gt; NFData a
+rnf :: ParseTimeException -&gt; ()
+$crnf :: ParseTimeException -&gt; ()
+</span><a href="#local-6989586621679076457"><span class="hs-identifier hs-var hs-var hs-var hs-var">NFData</span></a></span></span><span>
+</span><span id="line-370"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-371"></span><span>
+</span><span id="line-372"></span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-373"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679076449"><span id="local-6989586621679076451"><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Exception.Type.html#Exception"><span class="hs-identifier hs-type">Exception</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#ParseTimeException"><span class="hs-identifier hs-type">ParseTimeException</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-374"></span><span>  </span><span id="local-6989586621679076395"><span class="annot"><span class="annottext">displayException :: ParseTimeException -&gt; String
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Exception.Type.html#displayException"><span class="hs-identifier hs-var hs-var hs-var hs-var">displayException</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Time.Conversion.Types.html#MkParseTimeException"><span class="hs-identifier hs-type">MkParseTimeException</span></a></span><span> </span><span id="local-6989586621679076393"><span class="annot"><span class="annottext">TimeFormat
+</span><a href="#local-6989586621679076393"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679076392"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679076392"><span class="hs-identifier hs-var">t</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-375"></span><span>    </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Could not parse time string &lt;&quot;</span></span><span>
+</span><span id="line-376"></span><span>      </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Base.html#%3C%3E"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; String
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/text-1.2.5.0/src/Data.Text.Show.html#unpack"><span class="hs-identifier hs-var">T.unpack</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679076392"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-377"></span><span>      </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Base.html#%3C%3E"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;&gt; with format &lt;&quot;</span></span><span>
+</span><span id="line-378"></span><span>      </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Base.html#%3C%3E"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; String
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/text-1.2.5.0/src/Data.Text.Show.html#unpack"><span class="hs-identifier hs-var">T.unpack</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TimeFormat
+</span><a href="#local-6989586621679076393"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">TimeFormat -&gt; Optic' A_Lens NoIx TimeFormat Text -&gt; Text
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Operators.html#%5E."><span class="hs-operator hs-var">^.</span></a></span><span> </span><span class="annot"><span class="annottext">Optic' A_Lens NoIx TimeFormat Text
+</span><span class="">#unTimeFormat</span></span><span class="hs-special">)</span><span>
+</span><span id="line-379"></span><span>      </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Base.html#%3C%3E"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;&gt;&quot;</span></span><span>
+</span><span id="line-380"></span><span>
+</span><span id="line-381"></span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-382"></span><span class="hs-keyword">instance</span><span>
+</span><span id="line-383"></span><span>  </span><span id="local-6989586621679076932"><span id="local-6989586621679076933"><span id="local-6989586621679076934"><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679076934"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Types.html#~"><span class="hs-operator hs-type">~</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Internal.Optic.Types.html#A_Lens"><span class="hs-identifier hs-type">A_Lens</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679076933"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Types.html#~"><span class="hs-operator hs-type">~</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeFormat"><span class="hs-identifier hs-type">TimeFormat</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679076932"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Types.html#~"><span class="hs-operator hs-type">~</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#TimeFormat"><span class="hs-identifier hs-type">TimeFormat</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-384"></span><span>  </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Label.html#LabelOptic"><span class="hs-identifier hs-type">LabelOptic</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;errFormat&quot;</span></span><span> </span><span class="annot"><a href="#local-6989586621679076934"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#ParseTimeException"><span class="hs-identifier hs-type">ParseTimeException</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#ParseTimeException"><span class="hs-identifier hs-type">ParseTimeException</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679076933"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679076932"><span class="hs-identifier hs-type">b</span></a></span></span></span></span><span>
+</span><span id="line-385"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-386"></span><span>  </span><span id="local-6989586621679076382"><span class="annot"><span class="annottext">labelOptic :: Optic k NoIx ParseTimeException ParseTimeException a b
+</span><a href="#local-6989586621679076382"><span class="hs-identifier hs-var hs-var hs-var hs-var">labelOptic</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(ParseTimeException -&gt; a)
+-&gt; (ParseTimeException -&gt; b -&gt; ParseTimeException)
+-&gt; Lens ParseTimeException ParseTimeException a b
+forall s a b t. (s -&gt; a) -&gt; (s -&gt; b -&gt; t) -&gt; Lens s t a b
+</span><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Lens.html#lens"><span class="hs-identifier hs-var">lens</span></a></span><span> </span><span class="annot"><span class="annottext">ParseTimeException -&gt; a
+ParseTimeException -&gt; TimeFormat
+</span><a href="Data.Time.Conversion.Types.html#errFormat"><span class="hs-identifier hs-var">errFormat</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679076381"><span class="annot"><span class="annottext">ParseTimeException
+</span><a href="#local-6989586621679076381"><span class="hs-identifier hs-var">ex</span></a></span></span><span> </span><span id="local-6989586621679076380"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679076380"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ParseTimeException
+</span><a href="#local-6989586621679076381"><span class="hs-identifier hs-var">ex</span></a></span><span> </span><span class="hs-special">{</span><span class="annot"><span class="annottext">errFormat :: TimeFormat
+</span><a href="Data.Time.Conversion.Types.html#errFormat"><span class="hs-identifier hs-var">errFormat</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">b
+TimeFormat
+</span><a href="#local-6989586621679076380"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">}</span><span class="hs-special">)</span><span>
+</span><span id="line-387"></span><span>
+</span><span id="line-388"></span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-389"></span><span class="hs-keyword">instance</span><span>
+</span><span id="line-390"></span><span>  </span><span id="local-6989586621679076926"><span id="local-6989586621679076927"><span id="local-6989586621679076928"><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679076928"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Types.html#~"><span class="hs-operator hs-type">~</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Internal.Optic.Types.html#A_Lens"><span class="hs-identifier hs-type">A_Lens</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679076927"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Types.html#~"><span class="hs-operator hs-type">~</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/text-1.2.5.0/src/Data.Text.Internal.html#Text"><span class="hs-identifier hs-type">Text</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="#local-6989586621679076926"><span class="hs-identifier hs-type">b</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Types.html#~"><span class="hs-operator hs-type">~</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/text-1.2.5.0/src/Data.Text.Internal.html#Text"><span class="hs-identifier hs-type">Text</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-391"></span><span>  </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Label.html#LabelOptic"><span class="hs-identifier hs-type">LabelOptic</span></a></span><span> </span><span class="annot"><span class="hs-string">&quot;errMsg&quot;</span></span><span> </span><span class="annot"><a href="#local-6989586621679076928"><span class="hs-identifier hs-type">k</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#ParseTimeException"><span class="hs-identifier hs-type">ParseTimeException</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#ParseTimeException"><span class="hs-identifier hs-type">ParseTimeException</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679076927"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679076926"><span class="hs-identifier hs-type">b</span></a></span></span></span></span><span>
+</span><span id="line-392"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-393"></span><span>  </span><span id="local-6989586621679076371"><span class="annot"><span class="annottext">labelOptic :: Optic k NoIx ParseTimeException ParseTimeException a b
+</span><a href="#local-6989586621679076371"><span class="hs-identifier hs-var hs-var hs-var hs-var">labelOptic</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(ParseTimeException -&gt; a)
+-&gt; (ParseTimeException -&gt; b -&gt; ParseTimeException)
+-&gt; Lens ParseTimeException ParseTimeException a b
+forall s a b t. (s -&gt; a) -&gt; (s -&gt; b -&gt; t) -&gt; Lens s t a b
+</span><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Lens.html#lens"><span class="hs-identifier hs-var">lens</span></a></span><span> </span><span class="annot"><span class="annottext">ParseTimeException -&gt; a
+ParseTimeException -&gt; Text
+</span><a href="Data.Time.Conversion.Types.html#errMsg"><span class="hs-identifier hs-var">errMsg</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679076370"><span class="annot"><span class="annottext">ParseTimeException
+</span><a href="#local-6989586621679076370"><span class="hs-identifier hs-var">ex</span></a></span></span><span> </span><span id="local-6989586621679076369"><span class="annot"><span class="annottext">b
+</span><a href="#local-6989586621679076369"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ParseTimeException
+</span><a href="#local-6989586621679076370"><span class="hs-identifier hs-var">ex</span></a></span><span> </span><span class="hs-special">{</span><span class="annot"><span class="annottext">errMsg :: Text
+</span><a href="Data.Time.Conversion.Types.html#errMsg"><span class="hs-identifier hs-var">errMsg</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">b
+Text
+</span><a href="#local-6989586621679076369"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">}</span><span class="hs-special">)</span><span>
+</span><span id="line-394"></span><span>
+</span><span id="line-395"></span><span class="hs-comment">-- | Exception parsing tz database names.</span><span>
+</span><span id="line-396"></span><span class="hs-comment">--</span><span>
+</span><span id="line-397"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-398"></span><span id="local-6989586621679076367"><span id="local-6989586621679076368"></span></span><span class="hs-keyword">newtype</span><span> </span><span id="ParseTZDatabaseException"><span class="annot"><a href="Data.Time.Conversion.Types.html#ParseTZDatabaseException"><span class="hs-identifier hs-var">ParseTZDatabaseException</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="MkParseTZDatabaseException"><span class="annot"><a href="Data.Time.Conversion.Types.html#MkParseTZDatabaseException"><span class="hs-identifier hs-var">MkParseTZDatabaseException</span></a></span></span><span>
+</span><span id="line-399"></span><span>  </span><span class="hs-special">{</span><span> </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-400"></span><span>    </span><span id="unParseTZDatabaseException"><span class="annot"><span class="annottext">ParseTZDatabaseException -&gt; Text
+</span><a href="Data.Time.Conversion.Types.html#unParseTZDatabaseException"><span class="hs-identifier hs-var hs-var">unParseTZDatabaseException</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/text-1.2.5.0/src/Data.Text.Internal.html#Text"><span class="hs-identifier hs-type">Text</span></a></span><span>
+</span><span id="line-401"></span><span>  </span><span class="hs-special">}</span><span>
+</span><span id="line-402"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span>
+</span><span id="line-403"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-404"></span><span>      </span><span id="local-6989586621679076360"><span id="local-6989586621679076363"><span class="annot"><span class="annottext">ParseTZDatabaseException -&gt; ParseTZDatabaseException -&gt; Bool
+(ParseTZDatabaseException -&gt; ParseTZDatabaseException -&gt; Bool)
+-&gt; (ParseTZDatabaseException -&gt; ParseTZDatabaseException -&gt; Bool)
+-&gt; Eq ParseTZDatabaseException
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+/= :: ParseTZDatabaseException -&gt; ParseTZDatabaseException -&gt; Bool
+$c/= :: ParseTZDatabaseException -&gt; ParseTZDatabaseException -&gt; Bool
+== :: ParseTZDatabaseException -&gt; ParseTZDatabaseException -&gt; Bool
+$c== :: ParseTZDatabaseException -&gt; ParseTZDatabaseException -&gt; Bool
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/ghc-prim-0.8.0/src/GHC.Classes.html#Eq"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></a></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-405"></span><span>      </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-406"></span><span>      </span><span class="annot"><span class="annottext">(forall x.
+ ParseTZDatabaseException -&gt; Rep ParseTZDatabaseException x)
+-&gt; (forall x.
+    Rep ParseTZDatabaseException x -&gt; ParseTZDatabaseException)
+-&gt; Generic ParseTZDatabaseException
+forall x.
+Rep ParseTZDatabaseException x -&gt; ParseTZDatabaseException
+forall x.
+ParseTZDatabaseException -&gt; Rep ParseTZDatabaseException x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cto :: forall x.
+Rep ParseTZDatabaseException x -&gt; ParseTZDatabaseException
+$cfrom :: forall x.
+ParseTZDatabaseException -&gt; Rep ParseTZDatabaseException x
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Generics.html#Generic"><span class="hs-identifier hs-var hs-var hs-var hs-var">Generic</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-407"></span><span>      </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-408"></span><span>      </span><span id="local-6989586621679076350"><span id="local-6989586621679076352"><span id="local-6989586621679076356"><span class="annot"><span class="annottext">Int -&gt; ParseTZDatabaseException -&gt; ShowS
+[ParseTZDatabaseException] -&gt; ShowS
+ParseTZDatabaseException -&gt; String
+(Int -&gt; ParseTZDatabaseException -&gt; ShowS)
+-&gt; (ParseTZDatabaseException -&gt; String)
+-&gt; ([ParseTZDatabaseException] -&gt; ShowS)
+-&gt; Show ParseTZDatabaseException
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+showList :: [ParseTZDatabaseException] -&gt; ShowS
+$cshowList :: [ParseTZDatabaseException] -&gt; ShowS
+show :: ParseTZDatabaseException -&gt; String
+$cshow :: ParseTZDatabaseException -&gt; String
+showsPrec :: Int -&gt; ParseTZDatabaseException -&gt; ShowS
+$cshowsPrec :: Int -&gt; ParseTZDatabaseException -&gt; ShowS
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Show.html#Show"><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></a></span></span></span></span><span>
+</span><span id="line-409"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-410"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span>
+</span><span id="line-411"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-412"></span><span>      </span><span id="local-6989586621679076348"><span class="annot"><span class="annottext">ParseTZDatabaseException -&gt; ()
+(ParseTZDatabaseException -&gt; ()) -&gt; NFData ParseTZDatabaseException
+forall a. (a -&gt; ()) -&gt; NFData a
+rnf :: ParseTZDatabaseException -&gt; ()
+$crnf :: ParseTZDatabaseException -&gt; ()
+</span><a href="#local-6989586621679076348"><span class="hs-identifier hs-var hs-var hs-var hs-var">NFData</span></a></span></span><span>
+</span><span id="line-413"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-414"></span><span>
+</span><span id="line-415"></span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-416"></span><span class="annot"><a href="Data.Time.Conversion.Types.html#_ParseTZDatabaseException"><span class="hs-identifier hs-type">_ParseTZDatabaseException</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Iso.html#Iso%27"><span class="hs-identifier hs-type">Iso'</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#ParseTZDatabaseException"><span class="hs-identifier hs-type">ParseTZDatabaseException</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/text-1.2.5.0/src/Data.Text.Internal.html#Text"><span class="hs-identifier hs-type">Text</span></a></span><span>
+</span><span id="line-417"></span><span id="_ParseTZDatabaseException"><span class="annot"><span class="annottext">_ParseTZDatabaseException :: Iso' ParseTZDatabaseException Text
+</span><a href="Data.Time.Conversion.Types.html#_ParseTZDatabaseException"><span class="hs-identifier hs-var hs-var">_ParseTZDatabaseException</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(ParseTZDatabaseException -&gt; Text)
+-&gt; (Text -&gt; ParseTZDatabaseException)
+-&gt; Iso' ParseTZDatabaseException Text
+forall s a b t. (s -&gt; a) -&gt; (b -&gt; t) -&gt; Iso s t a b
+</span><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Iso.html#iso"><span class="hs-identifier hs-var">iso</span></a></span><span> </span><span class="annot"><span class="annottext">ParseTZDatabaseException -&gt; Text
+</span><a href="Data.Time.Conversion.Types.html#unParseTZDatabaseException"><span class="hs-identifier hs-var">unParseTZDatabaseException</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; ParseTZDatabaseException
+</span><a href="Data.Time.Conversion.Types.html#MkParseTZDatabaseException"><span class="hs-identifier hs-var">MkParseTZDatabaseException</span></a></span><span>
+</span><span id="line-418"></span><span class="hs-pragma">{-# INLINEABLE</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#_ParseTZDatabaseException"><span class="hs-pragma hs-type">_ParseTZDatabaseException</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-419"></span><span>
+</span><span id="line-420"></span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-421"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679076340"><span id="local-6989586621679076342"><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Exception.Type.html#Exception"><span class="hs-identifier hs-type">Exception</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#ParseTZDatabaseException"><span class="hs-identifier hs-type">ParseTZDatabaseException</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-422"></span><span>  </span><span id="local-6989586621679076333"><span class="annot"><span class="annottext">displayException :: ParseTZDatabaseException -&gt; String
+</span><a href="#local-6989586621679076333"><span class="hs-identifier hs-var hs-var hs-var hs-var">displayException</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Time.Conversion.Types.html#MkParseTZDatabaseException"><span class="hs-identifier hs-type">MkParseTZDatabaseException</span></a></span><span> </span><span id="local-6989586621679076332"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679076332"><span class="hs-identifier hs-var">tzdb</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-423"></span><span>    </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Could not parse tz database name &lt;&quot;</span></span><span>
+</span><span id="line-424"></span><span>      </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Base.html#%3C%3E"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; String
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/text-1.2.5.0/src/Data.Text.Show.html#unpack"><span class="hs-identifier hs-var">T.unpack</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679076332"><span class="hs-identifier hs-var">tzdb</span></a></span><span>
+</span><span id="line-425"></span><span>      </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Base.html#%3C%3E"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;&gt;. Wanted a name like America/New_York.&quot;</span></span><span>
+</span><span id="line-426"></span><span>
+</span><span id="line-427"></span><span class="hs-comment">-- | Exception reading local system timezone.</span><span>
+</span><span id="line-428"></span><span class="hs-comment">--</span><span>
+</span><span id="line-429"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-430"></span><span class="hs-keyword">data</span><span> </span><span id="LocalTimeZoneException"><span class="annot"><a href="Data.Time.Conversion.Types.html#LocalTimeZoneException"><span class="hs-identifier hs-var">LocalTimeZoneException</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679076331"><span class="annot"><a href="#local-6989586621679076331"><span class="hs-identifier hs-type">e</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Exception.Type.html#Exception"><span class="hs-identifier hs-type">Exception</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679076331"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="MkLocalTimeZoneException"><span class="annot"><a href="Data.Time.Conversion.Types.html#MkLocalTimeZoneException"><span class="hs-identifier hs-var">MkLocalTimeZoneException</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621679076331"><span class="hs-identifier hs-type">e</span></a></span><span>
+</span><span id="line-431"></span><span>
+</span><span id="line-432"></span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-433"></span><span id="local-6989586621679076324"><span id="local-6989586621679076326"><span id="local-6989586621679076328"><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Show.html#Show"><span class="hs-identifier hs-type">Show</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#LocalTimeZoneException"><span class="hs-identifier hs-type">LocalTimeZoneException</span></a></span></span></span></span><span>
+</span><span id="line-434"></span><span>
+</span><span id="line-435"></span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-436"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679076316"><span id="local-6989586621679076318"><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Exception.Type.html#Exception"><span class="hs-identifier hs-type">Exception</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#LocalTimeZoneException"><span class="hs-identifier hs-type">LocalTimeZoneException</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-437"></span><span>  </span><span id="local-6989586621679076314"><span class="annot"><span class="annottext">displayException :: LocalTimeZoneException -&gt; String
+</span><a href="#local-6989586621679076314"><span class="hs-identifier hs-var hs-var hs-var hs-var">displayException</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Time.Conversion.Types.html#MkLocalTimeZoneException"><span class="hs-identifier hs-type">MkLocalTimeZoneException</span></a></span><span> </span><span id="local-6989586621679076308"><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621679076308"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-438"></span><span>    </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Local timezone exception: &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Base.html#%3C%3E"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">e -&gt; String
+forall e. Exception e =&gt; e -&gt; String
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Exception.Type.html#displayException"><span class="hs-identifier hs-var">displayException</span></a></span><span> </span><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621679076308"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-439"></span><span>
+</span><span id="line-440"></span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-441"></span><span id="local-6989586621679076924"><span class="annot"><a href="Data.Time.Conversion.Types.html#_LocalTimeZoneException"><span class="hs-identifier hs-type">_LocalTimeZoneException</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Exception.Type.html#Exception"><span class="hs-identifier hs-type">Exception</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679076924"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Review.html#Review"><span class="hs-identifier hs-type">Review</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#LocalTimeZoneException"><span class="hs-identifier hs-type">LocalTimeZoneException</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679076924"><span class="hs-identifier hs-type">e</span></a></span></span><span>
+</span><span id="line-442"></span><span id="_LocalTimeZoneException"><span class="annot"><span class="annottext">_LocalTimeZoneException :: forall e. Exception e =&gt; Review LocalTimeZoneException e
+</span><a href="Data.Time.Conversion.Types.html#_LocalTimeZoneException"><span class="hs-identifier hs-var hs-var">_LocalTimeZoneException</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(e -&gt; LocalTimeZoneException) -&gt; Review LocalTimeZoneException e
+forall b t. (b -&gt; t) -&gt; Review t b
+</span><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Review.html#unto"><span class="hs-identifier hs-var">unto</span></a></span><span> </span><span class="annot"><span class="annottext">e -&gt; LocalTimeZoneException
+forall e. Exception e =&gt; e -&gt; LocalTimeZoneException
+</span><a href="Data.Time.Conversion.Types.html#MkLocalTimeZoneException"><span class="hs-identifier hs-var">MkLocalTimeZoneException</span></a></span><span>
+</span><span id="line-443"></span><span class="hs-pragma">{-# INLINEABLE</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#_LocalTimeZoneException"><span class="hs-pragma hs-type">_LocalTimeZoneException</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-444"></span><span>
+</span><span id="line-445"></span><span class="hs-comment">-- | Exception reading local system time.</span><span>
+</span><span id="line-446"></span><span class="hs-comment">--</span><span>
+</span><span id="line-447"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-448"></span><span class="hs-keyword">data</span><span> </span><span id="LocalSystemTimeException"><span class="annot"><a href="Data.Time.Conversion.Types.html#LocalSystemTimeException"><span class="hs-identifier hs-var">LocalSystemTimeException</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679076305"><span class="annot"><a href="#local-6989586621679076305"><span class="hs-identifier hs-type">e</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Exception.Type.html#Exception"><span class="hs-identifier hs-type">Exception</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679076305"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="MkLocalSystemTimeException"><span class="annot"><a href="Data.Time.Conversion.Types.html#MkLocalSystemTimeException"><span class="hs-identifier hs-var">MkLocalSystemTimeException</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621679076305"><span class="hs-identifier hs-type">e</span></a></span><span>
+</span><span id="line-449"></span><span>
+</span><span id="line-450"></span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-451"></span><span id="local-6989586621679076298"><span id="local-6989586621679076300"><span id="local-6989586621679076302"><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span> </span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Show.html#Show"><span class="hs-identifier hs-type">Show</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#LocalSystemTimeException"><span class="hs-identifier hs-type">LocalSystemTimeException</span></a></span></span></span></span><span>
+</span><span id="line-452"></span><span>
+</span><span id="line-453"></span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-454"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679076290"><span id="local-6989586621679076292"><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Exception.Type.html#Exception"><span class="hs-identifier hs-type">Exception</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#LocalSystemTimeException"><span class="hs-identifier hs-type">LocalSystemTimeException</span></a></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-455"></span><span>  </span><span id="local-6989586621679076288"><span class="annot"><span class="annottext">displayException :: LocalSystemTimeException -&gt; String
+</span><a href="#local-6989586621679076288"><span class="hs-identifier hs-var hs-var hs-var hs-var">displayException</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Time.Conversion.Types.html#MkLocalSystemTimeException"><span class="hs-identifier hs-type">MkLocalSystemTimeException</span></a></span><span> </span><span id="local-6989586621679076282"><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621679076282"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-456"></span><span>    </span><span class="annot"><span class="annottext">String
+</span><span class="hs-string">&quot;Local system time exception: &quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Base.html#%3C%3E"><span class="hs-operator hs-var">&lt;&gt;</span></a></span><span> </span><span class="annot"><span class="annottext">e -&gt; String
+forall e. Exception e =&gt; e -&gt; String
+</span><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Exception.Type.html#displayException"><span class="hs-identifier hs-var">displayException</span></a></span><span> </span><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621679076282"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-457"></span><span>
+</span><span id="line-458"></span><span class="hs-comment">-- | @since 0.1</span><span>
+</span><span id="line-459"></span><span id="local-6989586621679076917"><span class="annot"><a href="Data.Time.Conversion.Types.html#_LocalSystemTimeException"><span class="hs-identifier hs-type">_LocalSystemTimeException</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///nix/store/16s6s6gbs6bxf3x75xpna03ygn755wig-ghc-9.2.3-doc/share/doc/ghc/html/libraries/base-4.16.2.0/src/GHC.Exception.Type.html#Exception"><span class="hs-identifier hs-type">Exception</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679076917"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Review.html#Review"><span class="hs-identifier hs-type">Review</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#LocalSystemTimeException"><span class="hs-identifier hs-type">LocalSystemTimeException</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679076917"><span class="hs-identifier hs-type">e</span></a></span></span><span>
+</span><span id="line-460"></span><span id="_LocalSystemTimeException"><span class="annot"><span class="annottext">_LocalSystemTimeException :: forall e. Exception e =&gt; Review LocalSystemTimeException e
+</span><a href="Data.Time.Conversion.Types.html#_LocalSystemTimeException"><span class="hs-identifier hs-var hs-var">_LocalSystemTimeException</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(e -&gt; LocalSystemTimeException)
+-&gt; Review LocalSystemTimeException e
+forall b t. (b -&gt; t) -&gt; Review t b
+</span><a href="file:///nix/store/wnx39jjxjr7ivk5xmark8v1f1fl8cmvb-optics-core-0.4.1-doc/share/doc/optics-core-0.4.1/html/src/Optics.Review.html#unto"><span class="hs-identifier hs-var">unto</span></a></span><span> </span><span class="annot"><span class="annottext">e -&gt; LocalSystemTimeException
+forall e. Exception e =&gt; e -&gt; LocalSystemTimeException
+</span><a href="Data.Time.Conversion.Types.html#MkLocalSystemTimeException"><span class="hs-identifier hs-var">MkLocalSystemTimeException</span></a></span><span>
+</span><span id="line-461"></span><span class="hs-pragma">{-# INLINEABLE</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.html#_LocalSystemTimeException"><span class="hs-pragma hs-type">_LocalSystemTimeException</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-462"></span></pre></body></html>
