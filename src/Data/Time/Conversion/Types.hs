@@ -27,11 +27,10 @@ module Data.Time.Conversion.Types
     hmTZ12h,
 
     -- * Errors
-    TimeError (..),
-    _TimeErrorParseTime,
-    _TimeErrorParseTZDatabase,
-    _TimeErrorLocalTimeZone,
-    _TimeErrorLocalSystemTime,
+    ParseTimeException (..),
+    ParseTZDatabaseException (..),
+    LocalTimeZoneException (..),
+    LocalSystemTimeException (..),
   )
 where
 
@@ -44,7 +43,7 @@ import Data.Time.Conversion.Utils qualified as Utils
 import Data.Time.Format (TimeLocale (..))
 import Data.Time.Format qualified as Format
 import Data.Time.Zones.All (TZLabel (..))
-import Optics.Core (A_Lens, Iso', LabelOptic (..), Prism', Review, (^.))
+import Optics.Core (A_Lens, Iso', LabelOptic (..), Prism', (^.))
 import Optics.Core qualified as O
 
 -- | Determines how to read and convert a time string. The 'Default' instance
@@ -379,65 +378,61 @@ hmTZ = "%H:%M %Z"
 hmTZ12h :: TimeFormat
 hmTZ12h = "%I:%M %P %Z"
 
--- | Errors that can occur when reading/converting times.
+-- | Exception parsing time string.
 --
 -- @since 0.1
-data TimeError
-  = -- | Error parsing time string.
-    --
-    -- @since 0.1
-    TimeErrorParseTime TimeFormat Text
-  | -- | Error parsing tz database name.
-    --
-    -- @since 0.1
-    TimeErrorParseTZDatabase Text
-  | -- | Error retrieving the local time zone.
-    --
-    -- @since 0.1
-    forall e. Exception e => TimeErrorLocalTimeZone e
-  | -- | Error retrieving the local system time.
-    --
-    -- @since 0.1
-    forall e. Exception e => TimeErrorLocalSystemTime e
+data ParseTimeException = MkParseTimeException TimeFormat Text
+  deriving stock (Eq, Show)
 
 -- | @since 0.1
-deriving stock instance Show TimeError
-
--- | @since 0.1
-instance Exception TimeError where
-  displayException (TimeErrorParseTime f t) =
+instance Exception ParseTimeException where
+  displayException (MkParseTimeException f t) =
     "Could not parse time string <"
       <> T.unpack t
       <> "> with format <"
       <> (f ^. timeFormatStringIso)
       <> ">"
-  displayException (TimeErrorParseTZDatabase tzdb) =
+
+-- | Exception parsing tz database names.
+--
+-- @since 0.1
+newtype ParseTZDatabaseException = MkParseTZDatabaseException Text
+  deriving stock
+    ( -- | @since 0.1
+      Eq,
+      -- | @since 0.1
+      Show
+    )
+
+-- | @since 0.1
+instance Exception ParseTZDatabaseException where
+  displayException (MkParseTZDatabaseException tzdb) =
     "Could not parse tz database name <"
       <> T.unpack tzdb
       <> ">. Wanted a name like America/New_York."
-  displayException (TimeErrorLocalTimeZone e) =
+
+-- | Exception parsing tz database names.
+--
+-- @since 0.1
+data LocalTimeZoneException = forall e. Exception e => MkLocalTimeZoneException e
+
+-- | @since 0.1
+deriving stock instance Show LocalTimeZoneException
+
+-- | @since 0.1
+instance Exception LocalTimeZoneException where
+  displayException (MkLocalTimeZoneException e) =
     "Local timezone exception: " <> displayException e
-  displayException (TimeErrorLocalSystemTime e) =
+
+-- | Exception parsing tz database names.
+--
+-- @since 0.1
+data LocalSystemTimeException = forall e. Exception e => MkLocalSystemTimeException e
+
+-- | @since 0.1
+deriving stock instance Show LocalSystemTimeException
+
+-- | @since 0.1
+instance Exception LocalSystemTimeException where
+  displayException (MkLocalSystemTimeException e) =
     "Local system time exception: " <> displayException e
-
--- | @since 0.1
-_TimeErrorParseTime :: Prism' TimeError (TimeFormat, Text)
-_TimeErrorParseTime = O.prism (uncurry TimeErrorParseTime) from
-  where
-    from (TimeErrorParseTime f t) = Right (f, t)
-    from other = Left other
-
--- | @since 0.1
-_TimeErrorParseTZDatabase :: Prism' TimeError Text
-_TimeErrorParseTZDatabase = O.prism TimeErrorParseTZDatabase from
-  where
-    from (TimeErrorParseTZDatabase t) = Right t
-    from other = Left other
-
--- | @since 0.1
-_TimeErrorLocalTimeZone :: Exception e => Review TimeError e
-_TimeErrorLocalTimeZone = O.unto TimeErrorLocalTimeZone
-
--- | @since 0.1
-_TimeErrorLocalSystemTime :: Exception e => Review TimeError e
-_TimeErrorLocalSystemTime = O.unto TimeErrorLocalSystemTime

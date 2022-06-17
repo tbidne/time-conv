@@ -39,14 +39,18 @@ module Data.Time.Conversion
     convertZonedLabel,
 
     -- * Errors
-    TimeError (..),
-    Types._TimeErrorParseTime,
-    Types._TimeErrorParseTZDatabase,
-    Types._TimeErrorLocalTimeZone,
-    Types._TimeErrorLocalSystemTime,
+    ParseTimeException (..),
+    ParseTZDatabaseException (..),
+    LocalTimeZoneException (..),
+    LocalSystemTimeException (..),
 
     -- * Miscellaneous
     Utils.timeLocaleAllZones,
+
+    -- * Reexports
+    ZonedTime (..),
+    TZLabel (..),
+    TimeLocale (..),
   )
 where
 
@@ -55,11 +59,14 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TEnc
 import Data.Time.Conversion.Types
-  ( SrcTZ (..),
+  ( LocalSystemTimeException (..),
+    LocalTimeZoneException (..),
+    ParseTZDatabaseException (..),
+    ParseTimeException (..),
+    SrcTZ (..),
     TZConv (..),
     TZDatabase (..),
     TimeBuilder (..),
-    TimeError (..),
     TimeFormat (..),
   )
 import Data.Time.Conversion.Types qualified as Types
@@ -86,10 +93,10 @@ import Optics.Core ((%), (^.), (^?))
 --
 -- __Throws:__
 --
--- * 'TimeErrorParseTime': Error parsing the time string.
--- * 'TimeErrorParseTZDatabase': Error parsing the tz database name.
--- * 'TimeErrorLocalTimeZone': Error retrieving local timezone.
--- * 'TimeErrorLocalSystemTime': Error retrieving local system time.
+-- * 'ParseTimeException': Error parsing the time string.
+-- * 'ParseTZDatabaseException': Error parsing the tz database name.
+-- * 'LocalTimeZoneException': Error retrieving local timezone.
+-- * 'LocalSystemTimeException': Error retrieving local system time.
 --
 -- ==== __Examples__
 -- >>> import Data.Default (Default (def))
@@ -113,7 +120,7 @@ readConvertTime builder = do
   inTime <- case builder ^. #timeString of
     Nothing ->
       Local.getZonedTime
-        `Utils.catchSync` \(e :: SomeException) -> throwIO $ TimeErrorLocalSystemTime e
+        `Utils.catchSync` \(e :: SomeException) -> throwIO $ MkLocalSystemTimeException e
     Just timeStr -> readTimeString format locale (builder ^. #srcTZ) timeStr
 
   case builder ^. #destTZ of
@@ -152,7 +159,7 @@ readTimeString format locale srcTZ timeStr = do
     hasTzdb :: SrcTZ -> Maybe TZDatabase
     hasTzdb x = x ^? Types._SrcTZConv % Types._TZConvDatabase
 
-    throwParseEx f = throwIO . TimeErrorParseTime f
+    throwParseEx f = throwIO . MkParseTimeException f
 
 -- | @readInLocalTimeZone locale format timeStr@ attempts to parse the
 -- @timeStr@ given the expected @format@. We parse into the current
@@ -168,8 +175,8 @@ readTimeString format locale srcTZ timeStr = do
 --
 -- __Throws:__
 --
--- * 'TimeErrorParseTime': Error parsing the time string.
--- * 'TimeErrorLocalTimeZone': Error retrieving local timezone.
+-- * 'ParseTimeException': Error parsing the time string.
+-- * 'LocalTimeZoneException': Error retrieving local timezone.
 --
 -- @since 0.1
 readInLocalTimeZone :: TimeLocale -> TimeFormat -> Text -> IO ZonedTime
@@ -178,11 +185,11 @@ readInLocalTimeZone locale format timeStr = do
     T.pack
       . show
       <$> Local.getCurrentTimeZone
-      `Utils.catchSync` (\(e :: SomeException) -> throwIO $ TimeErrorLocalTimeZone e)
+      `Utils.catchSync` (\(e :: SomeException) -> throwIO $ MkLocalTimeZoneException e)
   let timeStr' = timeStr <> " " <> tzStr
   case readTimeFormat locale format' timeStr' of
     Just zt -> pure zt
-    Nothing -> throwIO $ TimeErrorParseTime format' timeStr'
+    Nothing -> throwIO $ MkParseTimeException format' timeStr'
   where
     format' = format <> " %Z"
 
@@ -244,7 +251,7 @@ tzDatabaseToTZLabel (TZDatabaseLabel lbl) = pure lbl
 tzDatabaseToTZLabel (TZDatabaseText txt) =
   case txtToTZLabel txt of
     Just lbl -> pure lbl
-    Nothing -> throwIO $ TimeErrorParseTZDatabase txt
+    Nothing -> throwIO $ MkParseTZDatabaseException txt
 
 tzLabelToTimeZoneName :: TZLabel -> Text
 tzLabelToTimeZoneName = T.pack . Local.timeZoneName . Utils.tzLabelToTimeZone
