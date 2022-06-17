@@ -148,7 +148,7 @@ $ time-conv -s America/New_York 08:30
 **Examples:**
 
 ```
-# this is the default, equivalent to leaving off '-s local'
+# this is the default, equivalent to leaving off '-d local'
 $ time-conv -d local 08:30
 08:30
 
