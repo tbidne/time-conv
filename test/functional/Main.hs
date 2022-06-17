@@ -83,8 +83,8 @@ testFormatOutputCustom = testCase "Overrides input formatting" $ do
   "08:30 UTC" @=? result
 
 testFormatOutputFull :: TestTree
-testFormatOutputFull = testCase "Uses full output" $ do
-  result <- captureTimeConv $ pureTZ ++ ["-o", "full", "08:30"]
+testFormatOutputFull = testCase "Uses rfc822 output" $ do
+  result <- captureTimeConv $ pureTZ ++ ["-o", "rfc822", "08:30"]
   "Thu,  1 Jan 1970 08:30:00 UTC" @=? result
 
 srcTzTests :: TestTree

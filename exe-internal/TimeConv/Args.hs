@@ -137,14 +137,14 @@ parseFormat =
     ( OApp.value def
         <> OApp.long "format"
         <> OApp.short 'f'
-        <> OApp.metavar "<full | STRING>"
+        <> OApp.metavar "<rfc822 | STRING>"
         <> OApp.help helpTxt
     )
   where
     helpTxt =
       "Glibc-style format string e.g. %Y-%m-%d for yyyy-mm-dd. Defaults to "
         <> defFormatStr
-        <> "i.e. 24-hr hour:minute. If the string 'full' is given then we use"
+        <> " i.e. 24-hr hour:minute. If the string 'rfc822' is given then we use"
         <> " RFC822. See 'man date' for basic examples, and "
         <> " https://hackage.haskell.org/package/time-1.13/docs/Data-Time-Format.html#v:formatTime for the exact spec."
     defFormatStr = def ^. Types.timeFormatStringIso
@@ -156,7 +156,7 @@ parseFormatOut =
       readFormat
       ( OApp.long "format-out"
           <> OApp.short 'o'
-          <> OApp.metavar "<full | STRING>"
+          <> OApp.metavar "<rfc822 | STRING>"
           <> OApp.help helpTxt
       )
   where
@@ -168,7 +168,7 @@ readFormat :: ReadM TimeFormat
 readFormat = do
   s <- OApp.str
   pure $ case s of
-    "full" -> TimeFormatFull
+    "rfc822" -> TimeFormatFull
     other -> TimeFormatManual (T.pack other)
 
 parseSrcTZ :: Parser SrcTZ

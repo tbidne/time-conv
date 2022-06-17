@@ -102,7 +102,6 @@ executable time-conv
   main-is:          Main.hs
   build-depends:
     , base
-    , time-conv
     , time-conv-exe-internal
 
   hs-source-dirs:   app
