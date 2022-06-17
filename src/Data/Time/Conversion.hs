@@ -166,6 +166,11 @@ readTimeString format locale srcTZ timeStr = do
 -- Just 1970-01-01 17:00:00 NZST
 -- @
 --
+-- __Throws:__
+--
+-- * 'TimeErrorParseTime': Error parsing the time string.
+-- * 'TimeErrorLocalTimeZone': Error retrieving local timezone.
+--
 -- @since 0.1
 readInLocalTimeZone :: TimeLocale -> TimeFormat -> Text -> IO ZonedTime
 readInLocalTimeZone locale format timeStr = do
