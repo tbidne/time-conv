@@ -12,6 +12,14 @@ test:
 doctest:
 	RUN_DOCTEST=1 cabal run doctest
 
+.PHONY: functional
+functional:
+	cabal run functional
+
+.PHONY: functional_impure
+functional_impure:
+	FUNCTIONAL_IMPURE=1 cabal run functional
+
 .PHONY: repl
 repl:
 	cabal repl

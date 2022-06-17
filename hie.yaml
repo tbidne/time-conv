@@ -9,8 +9,8 @@ cradle:
     - path: "./app/Main.hs"
       component: "time-conv:exe:time-conv"
 
-    - path: "./app/Args.hs"
-      component: "time-conv:exe:time-conv"
-
     - path: "./test/doctest"
       component: "time-conv:test:doctest"
+
+    - path: "./test/functional"
+      component: "time-conv:test:functional"

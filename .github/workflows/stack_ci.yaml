@@ -26,3 +26,9 @@ jobs:
 
       - name: Compile
         run: stack build --ghc-options="-Werror"
+
+      - name: DocTests
+        run: stack test time-conv:test:doctest
+
+      - name: Functional Tests
+        run: stack test time-conv:test:functional

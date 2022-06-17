@@ -2,6 +2,9 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
 
+-- | CLI args for TimeConv.
+--
+-- @since 0.1
 module TimeConv.Args
   ( Args (..),
     argsToBuilder,
@@ -36,10 +39,14 @@ import Options.Applicative qualified as OApp
 import Options.Applicative.Help (Chunk (..))
 import Options.Applicative.Types (ArgPolicy (..), ReadM)
 
+-- | CLI args.
+--
 -- Very nearly identical to TimeBuilder. The reason we manually reimplement
 -- this type rather than just use reuse TimeBuilder is so we can control the
 -- order of the arguments in the help page (order depends on argument order
 -- in the below definition).
+--
+-- @since 0.1
 data Args = MkArgs
   { format :: TimeFormat,
     formatOut :: Maybe TimeFormat,
@@ -53,6 +60,8 @@ data Args = MkArgs
 makeFieldLabelsNoPrefix ''Args
 
 -- | Optparse-Applicative info.
+--
+-- @since 0.1
 parserInfo :: ParserInfo Args
 parserInfo =
   ParserInfo
@@ -85,6 +94,9 @@ parseArgs =
     <**> OApp.helper
     <**> version
 
+-- | Maps 'Args' to 'TimeBuilder'.
+--
+-- @since 0.1
 argsToBuilder :: Getter Args TimeBuilder
 argsToBuilder = O.to to
   where
