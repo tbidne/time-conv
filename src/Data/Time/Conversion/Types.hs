@@ -195,7 +195,7 @@ data SrcTZ
     -- @since 0.1
     SrcTZConv TZConv
   | -- | Timezones are not given any extra consideration. This is useful
-    -- when either the string itself contains a time zone (e.g. "15:03 EST")
+    -- when either the string itself contains a timezone (e.g. "15:03 EST")
     -- or we want UTC.
     --
     -- @since 0.1

@@ -20,6 +20,7 @@
 ### Table of Contents
 
 * [Introduction](#introduction)
+  * [Usage](#usage)
 * [Options](#options)
   * [Format](#format)
   * [Format Out](#format-out)
@@ -35,10 +36,43 @@
 
 # Introduction
 
-`time-conv` is a tool for converting between timezones. There are two use-cases:
+`time-conv` is a tool for converting between timezones. There are two primary use-cases.
 
-1. Converting local system time into a different timezone.
-2. Converting a "time string" from one timezone to another, where the timezone can either be local or arbitrary, based on the tz_database. See https://en.wikipedia.org/wiki/Tz_database for more information.
+1. Converting local system time into a different timezone:
+
+    ```
+    $ time-conv -o rfc822 -d Europe/Paris
+    Sat, 18 Jun 2022 03:19:58 CEST
+
+    # -o rfc822 sets the output format to RFC822
+    # -d sets the "destination" timezone
+    # no "time string" means we read the local system time
+    ```
+
+2. Converting a "time string" from one timezone to another:
+
+    ````
+    $ time-conv -o rfc822 -t -s America/New_York 18:30
+    Sat, 18 Jun 2022 11:30:00 NZST
+
+    # -t means "today's date" as determined by the source
+    # -s sets the "source" timezone
+    # no dest means we convert to local time
+    # i.e. 6:30 pm in New York on its current day (17 Jun 2022) will be 11:30 am NZST (18 Jun 2022)
+    ````
+
+We can also convert between two non-local timezones:
+
+```
+$ time-conv -o rfc822 -s America/New_York -d Europe/Paris 18:30
+Fri,  2 Jan 1970 00:30:00 CET
+
+# no -t or date information means we assume the initial unix date, 1 Jan 1970.
+```
+
+The timezone names are based on the tz_database. See https://en.wikipedia.org/wiki/Tz_database for more information.
+
+## Usage
 
 ```
 time-conv: A tool for timezone conversions.

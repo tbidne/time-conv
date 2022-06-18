@@ -1,5 +1,5 @@
 -- | This module provides functions for reading time strings. We also provide
--- functions for converting between time zones.
+-- functions for converting between timezones.
 --
 -- @since 0.1
 module Data.Time.Conversion
@@ -103,7 +103,7 @@ import Optics.Core ((%), (^.), (^?))
 -- >>> import Data.Default (Default (def))
 -- >>> let toUtcBuilder = def { destTZ = TZConvDatabase (TZDatabaseLabel Etc__UTC) }
 -- >>> let litToUtcBuilder = toUtcBuilder { srcTZ = SrcTZLiteral }
--- >>> -- literal + no src time zone = utc
+-- >>> -- literal + no src timezone = utc
 -- >>> readConvertTime (litToUtcBuilder { timeString = Just "17:24" })
 -- 1970-01-01 17:24:00 UTC
 --
@@ -136,7 +136,7 @@ readConvertTime builder = do
 readTimeString :: TimeBuilder -> Text -> IO ZonedTime
 readTimeString builder timeStr = do
   case builder ^. #srcTZ of
-    -- read in local time zone
+    -- read in local timezone
     SrcTZConv TZConvLocal -> do
       -- add system date if specified
       (timeStrDate, formatDate) <- maybeAddDate Nothing
@@ -199,10 +199,10 @@ tzString = "%Z"
 
 -- | @readInLocalTimeZone locale format timeStr@ attempts to parse the
 -- @timeStr@ given the expected @format@. We parse into the current
--- system time zone, so:
+-- system timezone, so:
 --
 -- * @format@ should __not__ mention "%Z"
--- * @timeStr@ should __not__ contain time zone information.
+-- * @timeStr@ should __not__ contain timezone information.
 --
 -- @
 -- λ. readInLocalTimeZone Types.timeLocaleAllZones "%H" "17"
