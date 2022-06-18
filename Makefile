@@ -10,15 +10,15 @@ test:
 
 .PHONY: doctest
 doctest:
-	RUN_DOCTEST=1 cabal run doctest
+	RUN_DOCTEST=1 cabal test doctest
 
 .PHONY: functional
 functional:
-	cabal run functional
+	cabal test functional
 
 .PHONY: functional_impure
 functional_impure:
-	FUNCTIONAL_IMPURE=1 cabal run functional
+	FUNCTIONAL_IMPURE=1 cabal test functional
 
 .PHONY: repl
 repl:
