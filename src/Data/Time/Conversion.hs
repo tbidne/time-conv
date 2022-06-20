@@ -19,7 +19,7 @@ module Data.Time.Conversion
     Types._TZDatabaseText,
     TimeFormat (..),
     Types._TimeFormatManual,
-    Types._TimeFormatFull,
+    Types._TimeFormatRFC822,
     Types.timeFormatStringIso,
 
     -- ** Formatting

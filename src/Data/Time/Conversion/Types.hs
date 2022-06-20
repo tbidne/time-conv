@@ -19,7 +19,7 @@ module Data.Time.Conversion.Types
     -- * Formatting
     TimeFormat (..),
     _TimeFormatManual,
-    _TimeFormatFull,
+    _TimeFormatRFC822,
     timeFormatStringIso,
     hm,
     hm12h,
@@ -268,7 +268,7 @@ _TZDatabaseText = O.prism TZDatabaseText from
     from other = Left other
 
 -- | Time formatting string. The 'Monoid' instance behaves like 'Text', where
--- @'TimeFormatManual' ""@ is the identity and 'TimeFormatFull' is the \"top\".
+-- @'TimeFormatManual' ""@ is the identity and 'TimeFormatRFC822' is the \"top\".
 --
 -- ==== __Examples__
 -- >>> def :: TimeFormat
@@ -280,15 +280,15 @@ _TZDatabaseText = O.prism TZDatabaseText from
 -- >>> hm <> " %Z"
 -- TimeFormatManual "%H:%M %Z"
 --
--- >>> hm <> TimeFormatFull
--- TimeFormatFull
+-- >>> hm <> TimeFormatRFC822
+-- TimeFormatRFC822
 --
 -- @since 0.1
 data TimeFormat
   = -- | Corresponds to RFC822: @%a, %_d %b %Y %H:%M:%S %Z@.
     --
     -- @since 0.1
-    TimeFormatFull
+    TimeFormatRFC822
   | -- | Manual format string.
     --
     -- @since 0.1
@@ -306,8 +306,8 @@ instance IsString TimeFormat where
 
 -- | @since 0.1
 instance Semigroup TimeFormat where
-  TimeFormatFull <> _ = TimeFormatFull
-  _ <> TimeFormatFull = TimeFormatFull
+  TimeFormatRFC822 <> _ = TimeFormatRFC822
+  _ <> TimeFormatRFC822 = TimeFormatRFC822
   TimeFormatManual l <> TimeFormatManual r = TimeFormatManual (l <> r)
 
 -- | @since 0.1
@@ -322,10 +322,10 @@ _TimeFormatManual = O.prism TimeFormatManual from
     from other = Left other
 
 -- | @since 0.1
-_TimeFormatFull :: Prism' TimeFormat ()
-_TimeFormatFull = O.prism (const TimeFormatFull) from
+_TimeFormatRFC822 :: Prism' TimeFormat ()
+_TimeFormatRFC822 = O.prism (const TimeFormatRFC822) from
   where
-    from TimeFormatFull = Right ()
+    from TimeFormatRFC822 = Right ()
     from other = Left other
 
 -- | 'Iso'' between 'TimeFormat' and its underlying string
@@ -333,7 +333,7 @@ _TimeFormatFull = O.prism (const TimeFormatFull) from
 --
 -- ==== __Examples__
 -- >>> import Optics.Core (view, review)
--- >>> view timeFormatStringIso TimeFormatFull
+-- >>> view timeFormatStringIso TimeFormatRFC822
 -- "%a, %_d %b %Y %H:%M:%S %Z"
 --
 -- >>> review timeFormatStringIso "%H:%M"
@@ -343,10 +343,10 @@ _TimeFormatFull = O.prism (const TimeFormatFull) from
 timeFormatStringIso :: Iso' TimeFormat String
 timeFormatStringIso = O.iso from to
   where
-    from TimeFormatFull = Format.rfc822DateFormat
+    from TimeFormatRFC822 = Format.rfc822DateFormat
     from (TimeFormatManual f) = T.unpack f
     to f
-      | f == Format.rfc822DateFormat = TimeFormatFull
+      | f == Format.rfc822DateFormat = TimeFormatRFC822
       | otherwise = TimeFormatManual (T.pack f)
 
 -- | Alias for 'hm'.

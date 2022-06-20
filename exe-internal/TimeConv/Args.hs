@@ -168,7 +168,7 @@ readFormat :: ReadM TimeFormat
 readFormat = do
   s <- OApp.str
   pure $ case s of
-    "rfc822" -> TimeFormatFull
+    "rfc822" -> TimeFormatRFC822
     other -> TimeFormatManual (T.pack other)
 
 parseSrcTZ :: Parser SrcTZ
