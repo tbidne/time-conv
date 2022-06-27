@@ -360,7 +360,12 @@ rfc822 = "%a, %_d %b %Y %H:%M:%S %Z"
 --
 -- @since 0.1
 data ParseTimeException = MkParseTimeException TimeFormat Text
-  deriving stock (Eq, Show)
+  deriving stock
+    ( -- | @since 0.1
+      Eq,
+      -- | @since 0.1
+      Show
+    )
 
 -- | @since 0.1
 instance Exception ParseTimeException where
