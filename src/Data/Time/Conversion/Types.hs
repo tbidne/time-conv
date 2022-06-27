@@ -18,13 +18,11 @@ module Data.Time.Conversion.Types
 
     -- * Formatting
     TimeFormat (..),
-    _TimeFormatManual,
-    _TimeFormatRFC822,
-    timeFormatStringIso,
     hm,
     hm12h,
     hmTZ,
     hmTZ12h,
+    rfc822,
 
     -- * Errors
     ParseTimeException (..),
@@ -41,9 +39,8 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Conversion.Utils qualified as Utils
 import Data.Time.Format (TimeLocale (..))
-import Data.Time.Format qualified as Format
 import Data.Time.Zones.All (TZLabel (..))
-import Optics.Core (A_Lens, Iso', LabelOptic (..), Prism', (^.))
+import Optics.Core (A_Lens, An_Iso, LabelOptic (..), Prism', (^.))
 import Optics.Core qualified as O
 
 -- | Determines how to read and convert a time string. The 'Default' instance
@@ -267,87 +264,39 @@ _TZDatabaseText = O.prism TZDatabaseText from
     from (TZDatabaseText t) = Right t
     from other = Left other
 
--- | Time formatting string. The 'Monoid' instance behaves like 'Text', where
--- @'TimeFormatManual' ""@ is the identity and 'TimeFormatRFC822' is the \"top\".
+-- | Time formatting string. The 'Monoid' instance behaves like 'Text',
+-- whereas 'Default' is an alias for 'hm'.
 --
 -- ==== __Examples__
 -- >>> def :: TimeFormat
--- TimeFormatManual "%H:%M"
+-- MkTimeFormat {unTimeFormat = "%H:%M"}
 --
 -- >>> mempty :: TimeFormat
--- TimeFormatManual ""
+-- MkTimeFormat {unTimeFormat = ""}
 --
 -- >>> hm <> " %Z"
--- TimeFormatManual "%H:%M %Z"
---
--- >>> hm <> TimeFormatRFC822
--- TimeFormatRFC822
+-- MkTimeFormat {unTimeFormat = "%H:%M %Z"}
 --
 -- @since 0.1
-data TimeFormat
-  = -- | Corresponds to RFC822: @%a, %_d %b %Y %H:%M:%S %Z@.
-    --
-    -- @since 0.1
-    TimeFormatRFC822
-  | -- | Manual format string.
-    --
-    -- @since 0.1
-    TimeFormatManual Text
+newtype TimeFormat = MkTimeFormat
+  { -- | @since 0.1
+    unTimeFormat :: Text
+  }
   deriving stock
     ( -- | @since 0.1
       Eq,
       -- | @since 0.1
       Show
     )
-
--- | @since 0.1
-instance IsString TimeFormat where
-  fromString = TimeFormatManual . T.pack
-
--- | @since 0.1
-instance Semigroup TimeFormat where
-  TimeFormatRFC822 <> _ = TimeFormatRFC822
-  _ <> TimeFormatRFC822 = TimeFormatRFC822
-  TimeFormatManual l <> TimeFormatManual r = TimeFormatManual (l <> r)
-
--- | @since 0.1
-instance Monoid TimeFormat where
-  mempty = TimeFormatManual ""
-
--- | @since 0.1
-_TimeFormatManual :: Prism' TimeFormat Text
-_TimeFormatManual = O.prism TimeFormatManual from
-  where
-    from (TimeFormatManual f) = Right f
-    from other = Left other
-
--- | @since 0.1
-_TimeFormatRFC822 :: Prism' TimeFormat ()
-_TimeFormatRFC822 = O.prism (const TimeFormatRFC822) from
-  where
-    from TimeFormatRFC822 = Right ()
-    from other = Left other
-
--- | 'Iso'' between 'TimeFormat' and its underlying string
--- representation.
---
--- ==== __Examples__
--- >>> import Optics.Core (view, review)
--- >>> view timeFormatStringIso TimeFormatRFC822
--- "%a, %_d %b %Y %H:%M:%S %Z"
---
--- >>> review timeFormatStringIso "%H:%M"
--- TimeFormatManual "%H:%M"
---
--- @since 0.1
-timeFormatStringIso :: Iso' TimeFormat String
-timeFormatStringIso = O.iso from to
-  where
-    from TimeFormatRFC822 = Format.rfc822DateFormat
-    from (TimeFormatManual f) = T.unpack f
-    to f
-      | f == Format.rfc822DateFormat = TimeFormatRFC822
-      | otherwise = TimeFormatManual (T.pack f)
+  deriving
+    ( -- | @since 0.1
+      Monoid,
+      -- | @since 0.1
+      IsString,
+      -- | @since 0.1
+      Semigroup
+    )
+    via Text
 
 -- | Alias for 'hm'.
 --
@@ -355,10 +304,17 @@ timeFormatStringIso = O.iso from to
 instance Default TimeFormat where
   def = hm
 
+-- | @since 0.1
+instance
+  (k ~ An_Iso, a ~ Text, b ~ Text) =>
+  LabelOptic "unTimeFormat" k TimeFormat TimeFormat a b
+  where
+  labelOptic = O.iso unTimeFormat MkTimeFormat
+
 -- | Format for 24-hour @hours:minutes@.
 --
 -- >>> hm
--- TimeFormatManual "%H:%M"
+-- MkTimeFormat {unTimeFormat = "%H:%M"}
 --
 -- @since 0.1
 hm :: TimeFormat
@@ -367,7 +323,7 @@ hm = "%H:%M"
 -- | Format for 12-hour @hours:minutes am/pm@.
 --
 -- >>> hm12h
--- TimeFormatManual "%I:%M %P"
+-- MkTimeFormat {unTimeFormat = "%I:%M %P"}
 --
 -- @since 0.1
 hm12h :: TimeFormat
@@ -376,7 +332,7 @@ hm12h = "%I:%M %P"
 -- | Format for 24-hour @hours:minutes TZ@.
 --
 -- >>> hmTZ
--- TimeFormatManual "%H:%M %Z"
+-- MkTimeFormat {unTimeFormat = "%H:%M %Z"}
 --
 -- @since 0.1
 hmTZ :: TimeFormat
@@ -385,11 +341,20 @@ hmTZ = "%H:%M %Z"
 -- | Format for 12-hour @hours:minutes am/pm TZ@.
 --
 -- >>> hmTZ12h
--- TimeFormatManual "%I:%M %P %Z"
+-- MkTimeFormat {unTimeFormat = "%I:%M %P %Z"}
 --
 -- @since 0.1
 hmTZ12h :: TimeFormat
 hmTZ12h = "%I:%M %P %Z"
+
+-- | Format for RFC822: @%a, %_d %b %Y %H:%M:%S %Z@.
+--
+-- >>> rfc822
+-- MkTimeFormat {unTimeFormat = "%a, %_d %b %Y %H:%M:%S %Z"}
+--
+-- @since 0.1
+rfc822 :: TimeFormat
+rfc822 = "%a, %_d %b %Y %H:%M:%S %Z"
 
 -- | Exception parsing time string.
 --
@@ -403,7 +368,7 @@ instance Exception ParseTimeException where
     "Could not parse time string <"
       <> T.unpack t
       <> "> with format <"
-      <> (f ^. timeFormatStringIso)
+      <> T.unpack (f ^. #unTimeFormat)
       <> ">"
 
 -- | Exception parsing tz database names.

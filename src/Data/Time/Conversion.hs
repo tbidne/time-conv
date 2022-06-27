@@ -18,15 +18,13 @@ module Data.Time.Conversion
     Types._TZDatabaseLabel,
     Types._TZDatabaseText,
     TimeFormat (..),
-    Types._TimeFormatManual,
-    Types._TimeFormatRFC822,
-    Types.timeFormatStringIso,
 
     -- ** Formatting
     Types.hm,
     Types.hm12h,
     Types.hmTZ,
     Types.hmTZ12h,
+    Types.rfc822,
 
     -- * Low-level functions
 
@@ -250,7 +248,7 @@ readInLocalTimeZone locale format timeStr = do
 readTimeFormat :: TimeLocale -> TimeFormat -> Text -> Maybe ZonedTime
 readTimeFormat locale format timeStr = Format.parseTimeM True locale format' timeStr'
   where
-    format' = format ^. Types.timeFormatStringIso
+    format' = T.unpack $ format ^. #unTimeFormat
     timeStr' = T.unpack timeStr
 
 -- | Converts a zoned time to the given timezone.

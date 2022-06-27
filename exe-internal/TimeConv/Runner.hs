@@ -47,7 +47,7 @@ runWithArgs :: (Text -> IO a) -> Args -> IO a
 runWithArgs handler args = do
   let builder = args ^. argsToBuilder
       format = fromMaybe (builder ^. #format) (args ^. #formatOut)
-      formatStr = format ^. Conv.timeFormatStringIso
+      formatStr = T.unpack $ format ^. #unTimeFormat
 
   readAndHandle builder formatStr
   where

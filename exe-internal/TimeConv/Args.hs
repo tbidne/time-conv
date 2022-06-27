@@ -147,7 +147,7 @@ parseFormat =
         <> " i.e. 24-hr hour:minute. If the string 'rfc822' is given then we use"
         <> " RFC822. See 'man date' for basic examples, and "
         <> " https://hackage.haskell.org/package/time-1.13/docs/Data-Time-Format.html#v:formatTime for the exact spec."
-    defFormatStr = def ^. Types.timeFormatStringIso
+    defFormatStr = T.unpack $ def @TimeFormat ^. #unTimeFormat
 
 parseFormatOut :: Parser (Maybe TimeFormat)
 parseFormatOut =
@@ -168,8 +168,8 @@ readFormat :: ReadM TimeFormat
 readFormat = do
   s <- OApp.str
   pure $ case s of
-    "rfc822" -> TimeFormatRFC822
-    other -> TimeFormatManual (T.pack other)
+    "rfc822" -> Types.rfc822
+    other -> fromString other
 
 parseSrcTZ :: Parser SrcTZ
 parseSrcTZ = do
