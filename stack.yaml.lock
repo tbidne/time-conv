@@ -14,13 +14,13 @@ packages:
 - completed:
     name: env-guard
     pantry-tree:
-      sha256: d2bd5efb32f27d5012ab73e5bf0cecec72da6ca477127db3e2211837c6062b10
-      size: 1414
-    commit: 57c2be47346085a0bd48df129da578d44452904b
+      sha256: 6a419ac84dd3dd41d34e7b6dd2a17fd5421c14949c3b0da55de35094a082ee9d
+      size: 1516
+    commit: a79745209b75c3e741c85f61909672114d9af649
     git: https://github.com/tbidne/env-guard.git
-    version: '0.1'
+    version: 0.1.1
   original:
-    commit: 57c2be47346085a0bd48df129da578d44452904b
+    commit: a79745209b75c3e741c85f61909672114d9af649
     git: https://github.com/tbidne/env-guard.git
 snapshots:
 - completed:

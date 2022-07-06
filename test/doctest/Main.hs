@@ -1,10 +1,15 @@
 module Main (main) where
 
-import System.Environment.Guard (guardSet_)
+import System.Environment.Guard (GuardExpectation (..), guardOrElse_)
 import Test.DocTest qualified as DocTest
 
 main :: IO ()
-main = guardSet_ "RUN_DOCTEST" $ DocTest.doctest args
+main =
+  guardOrElse_
+    "RUN_DOCTEST"
+    GuardExpectationSet
+    (DocTest.doctest args)
+    (putStrLn "*** Doctests Disabled ***")
   where
     args = files <> exts
 
