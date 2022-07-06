@@ -1,13 +1,13 @@
 module Main (main) where
 
-import System.Environment.Guard (GuardExpectation (..), guardOrElse_)
+import System.Environment.Guard (ExpectEnv (..), guardOrElse')
 import Test.DocTest qualified as DocTest
 
 main :: IO ()
 main =
-  guardOrElse_
+  guardOrElse'
     "RUN_DOCTEST"
-    GuardExpectationSet
+    ExpectEnvSet
     (DocTest.doctest args)
     (putStrLn "*** Doctests Disabled ***")
   where

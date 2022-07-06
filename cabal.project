@@ -13,4 +13,4 @@ test-show-details: direct
 source-repository-package
     type: git
     location: https://github.com/tbidne/env-guard.git
-    tag: a79745209b75c3e741c85f61909672114d9af649
+    tag: 8eae34b2fcd4c0bac24ee98f948e48cadc5e7026
