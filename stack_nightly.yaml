@@ -1,4 +1,4 @@
-resolver: lts-19.14
+resolver: nightly-2022-07-07
 packages:
 - .
 ghc-options:
@@ -13,4 +13,4 @@ extra-deps:
   commit: 8eae34b2fcd4c0bac24ee98f948e48cadc5e7026
 nix:
   enable: true
-  shell-file: nix/stack_lts-19.nix
+  shell-file: nix/stack_nightly.nix
