@@ -8,12 +8,10 @@ ghc-options:
     -Wmissing-home-modules -Wmissing-export-lists -Wpartial-fields
     -Wredundant-constraints -Wunused-packages -Wmissing-deriving-strategies
 extra-deps:
+- env-guard-0.2@sha256:59410eed9b9ddbd115760a59c7170927320d8612e414701d323a0c8985c97523,1251
 - optics-core-0.4.1@sha256:b163d1a8f392536c645cbd728c3e29d9f35864b25b1e3cef3a29806ee8a21c6b,5545
 - optics-th-0.4.1@sha256:786f37412cb1ff62842277698fdc11efb3cf4e799011e341d9ef118a8100a860,3089
 - package-version-0.1.0.0@sha256:bb9fc93e905540aa8e1b32f80c2dc82756a4481c63779bd92e3796ed8085ab98,2854
 - tz-0.1.3.6@sha256:1b0c04d8d7f494888f166c66b72e7fcbc2269e57d1d17d48294ac4e19133a3ef,4631
-- git: https://github.com/tbidne/env-guard.git
-  commit: 8eae34b2fcd4c0bac24ee98f948e48cadc5e7026
 nix:
-  enable: true
   shell-file: nix/stack_lts-18.nix

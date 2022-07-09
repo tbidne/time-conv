@@ -6,6 +6,13 @@
 packages:
 - completed:
     pantry-tree:
+      sha256: c8135d95be0df0ce63d0ee398af20e38f505153032b32c4ab0e8f0f615501d46
+      size: 419
+    hackage: env-guard-0.2@sha256:59410eed9b9ddbd115760a59c7170927320d8612e414701d323a0c8985c97523,1251
+  original:
+    hackage: env-guard-0.2@sha256:59410eed9b9ddbd115760a59c7170927320d8612e414701d323a0c8985c97523,1251
+- completed:
+    pantry-tree:
       sha256: dc4cabaa2626c20a70a3e8781e994110bbd9f2c55f35a1c658e1c2b0d2db87c1
       size: 5380
     hackage: optics-core-0.4.1@sha256:b163d1a8f392536c645cbd728c3e29d9f35864b25b1e3cef3a29806ee8a21c6b,5545
@@ -32,17 +39,6 @@ packages:
     hackage: tz-0.1.3.6@sha256:1b0c04d8d7f494888f166c66b72e7fcbc2269e57d1d17d48294ac4e19133a3ef,4631
   original:
     hackage: tz-0.1.3.6@sha256:1b0c04d8d7f494888f166c66b72e7fcbc2269e57d1d17d48294ac4e19133a3ef,4631
-- completed:
-    name: env-guard
-    pantry-tree:
-      sha256: 8f8d624d5b988f06ac813c23df0bc7fb605f848e4c0eb71e8cbbacf11ca60226
-      size: 1516
-    commit: 8eae34b2fcd4c0bac24ee98f948e48cadc5e7026
-    git: https://github.com/tbidne/env-guard.git
-    version: '0.2'
-  original:
-    commit: 8eae34b2fcd4c0bac24ee98f948e48cadc5e7026
-    git: https://github.com/tbidne/env-guard.git
 snapshots:
 - completed:
     sha256: 428ec8d5ce932190d3cbe266b9eb3c175cd81e984babf876b64019e2cbe4ea68

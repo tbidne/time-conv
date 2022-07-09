@@ -1,11 +1,9 @@
 {
   description = "CLI app for converting between timezones";
-  inputs.env-guard-src.url = "github:tbidne/env-guard";
-  inputs.nixpkgs.url = "github:nixos/nixpkgs";
+  inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
   inputs.flake-utils.url = "github:numtide/flake-utils";
   outputs =
-    { env-guard-src
-    , flake-utils
+    { flake-utils
     , nixpkgs
     , self
     }:
@@ -27,9 +25,6 @@
               pkgs.gnumake
               pkgs.zlib
             ]);
-          overrides = final: prev: with compiler; {
-            env-guard = final.callCabal2nix "env-guard" env-guard-src { };
-          };
         };
     in
     {

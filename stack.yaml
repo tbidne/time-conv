@@ -8,9 +8,7 @@ ghc-options:
     -Wmissing-home-modules -Wmissing-export-lists -Wpartial-fields
     -Wredundant-constraints -Wunused-packages -Wmissing-deriving-strategies
 extra-deps:
+- env-guard-0.2@sha256:59410eed9b9ddbd115760a59c7170927320d8612e414701d323a0c8985c97523,1251
 - package-version-0.1.0.0@sha256:bb9fc93e905540aa8e1b32f80c2dc82756a4481c63779bd92e3796ed8085ab98,2854
-- git: https://github.com/tbidne/env-guard.git
-  commit: 8eae34b2fcd4c0bac24ee98f948e48cadc5e7026
 nix:
-  enable: true
   shell-file: nix/stack_lts-19.nix
