@@ -101,5 +101,5 @@ haddock:
 
 .PHONY: haddockc
 haddockc:
-# threshold dropped to 95 because on reexport (TimeLocale) does not have any haddocks.
-	nix run github:tbidne/nix-hs-tools/0.6#haddock-cov -- . --threshold 95
+# threshold dropped to 90 because on reexport (TimeLocale) does not have any haddocks.
+	nix run github:tbidne/nix-hs-tools/0.6#haddock-cov -- . --threshold 90
