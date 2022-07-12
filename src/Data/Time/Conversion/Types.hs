@@ -331,7 +331,7 @@ instance Exception ParseTZDatabaseException where
       <> T.unpack tzdb
       <> ">. Wanted a name like America/New_York."
 
--- | Exception parsing tz database names.
+-- | Exception reading local system timezone.
 --
 -- @since 0.1
 data LocalTimeZoneException = forall e. Exception e => MkLocalTimeZoneException e
@@ -344,7 +344,7 @@ instance Exception LocalTimeZoneException where
   displayException (MkLocalTimeZoneException e) =
     "Local timezone exception: " <> displayException e
 
--- | Exception parsing tz database names.
+-- | Exception reading local system time.
 --
 -- @since 0.1
 data LocalSystemTimeException = forall e. Exception e => MkLocalSystemTimeException e
