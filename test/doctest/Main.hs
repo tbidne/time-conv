@@ -27,6 +27,7 @@ exts =
   [ "-XNoStarIsType",
     "-XApplicativeDo",
     "-XDataKinds",
+    "-XDeriveAnyClass",
     "-XDeriveGeneric",
     "-XDerivingVia",
     "-XDuplicateRecordFields",

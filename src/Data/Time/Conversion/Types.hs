@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 -- | This module provides types for reading / converting
@@ -30,6 +31,7 @@ module Data.Time.Conversion.Types
   )
 where
 
+import Control.DeepSeq (NFData (..), deepseq)
 import Control.Exception (Exception (..))
 import Data.Default (Default (..))
 import Data.String (IsString (..))
@@ -38,6 +40,7 @@ import Data.Text qualified as T
 import Data.Time.Conversion.Utils qualified as Utils
 import Data.Time.Format (TimeLocale (..))
 import Data.Time.Zones.All (TZLabel (..))
+import GHC.Generics (Generic)
 import Optics.Core (A_Lens, An_Iso, LabelOptic (..), Prism', (^.))
 import Optics.Core qualified as O
 
@@ -75,8 +78,28 @@ data TimeReader = MkTimeReader
     ( -- | @since 0.1
       Eq,
       -- | @since 0.1
+      Generic,
+      -- | @since 0.1
       Show
     )
+
+-- | @since 0.1
+instance NFData TimeReader where
+  rnf (MkTimeReader f s l td ts) =
+    f `deepseq` s `deepseq` l `evalLocale` td `deepseq` ts `deepseq` ()
+
+-- because TimeLocale does not have an NFData instance
+evalLocale :: TimeLocale -> b -> b
+evalLocale (TimeLocale {..}) x =
+  wDays `deepseq`
+    months `deepseq`
+      amPm `deepseq`
+        dateTimeFmt `deepseq`
+          dateFmt `deepseq`
+            timeFmt `deepseq`
+              time12Fmt `deepseq`
+                knownTimeZones `deepseq`
+                  x
 
 -- | @since 0.1
 instance
@@ -142,7 +165,13 @@ data SrcTZ
     ( -- | @since 0.1
       Eq,
       -- | @since 0.1
+      Generic,
+      -- | @since 0.1
       Show
+    )
+  deriving anyclass
+    ( -- | @since 0.1
+      NFData
     )
 
 -- | @since 0.1
@@ -184,7 +213,13 @@ data TZDatabase
     ( -- | @since 0.1
       Eq,
       -- | @since 0.1
+      Generic,
+      -- | @since 0.1
       Show
+    )
+  deriving anyclass
+    ( -- | @since 0.1
+      NFData
     )
 
 -- | @since 0.1
@@ -223,7 +258,13 @@ newtype TimeFormat = MkTimeFormat
     ( -- | @since 0.1
       Eq,
       -- | @since 0.1
+      Generic,
+      -- | @since 0.1
       Show
+    )
+  deriving anyclass
+    ( -- | @since 0.1
+      NFData
     )
   deriving
     ( -- | @since 0.1
