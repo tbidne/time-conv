@@ -80,12 +80,12 @@ The timezone names are based on the tz_database. See https://en.wikipedia.org/wi
 ```
 time-conv: A tool for timezone conversions.
 
-Usage: time-conv [-f|--format <rfc822 | FORMAT_STRING>] 
-                 [-o|--format-out <rfc822 | FORMAT_STRING>] 
-                 [-s|--src-tz <local | literal | TZ_DATABASE>] 
-                 [-d|--dest-tz <local | TZ_DATABASE>] [-t|--today] [TIME_STRING]
+Usage: time-conv [-f|--format <rfc822 | FORMAT_STRING>]
+                 [-o|--format-out <rfc822 | FORMAT_STRING>]
+                 [-s|--src-tz <literal | TZ_DATABASE>]
+                 [-d|--dest-tz TZ_DATABASE] [-t|--today] [TIME_STRING]
                  [-v|--version]
-  
+
 time-conv reads time strings and converts between timezones. For the src and dest options, TZ_DATABASE refers to labels like America/New_York. See https://en.wikipedia.org/wiki/Tz_database.
 
 Available options:
@@ -103,17 +103,18 @@ Available options:
                            used for both input and output. In other words, this
                            option must be used if you want to format the local
                            system time output.
-  -s,--src-tz <local | literal | TZ_DATABASE>
-                           Timezone in which to read the string. Can be 'local',
-                           'literal' or a tz database label. Defaults to local.
-                           The literal option means we read the (possibly empty)
-                           timezone from the string itself e.g. '7:00 EST'. If a
-                           timezone is included, then a formatter using the '%Z'
-                           flag should be present. If literal is specified and
-                           no timezone is included then we assume UTC.
-  -d,--dest-tz <local | TZ_DATABASE>
-                           Timezone in which to convert the read string. Can be
-                           'local' or a tz database label. Defaults to local.
+  -s,--src-tz <literal | TZ_DATABASE>
+                           Timezone in which to read the string. Can be
+                           'literal' or a tz database label. If none is given
+                           then we use the local system timezone. The literal
+                           option means we read the (possibly empty) timezone
+                           from the string itself e.g. '7:00 EST'. If a timezone
+                           is included, then a formatter using the '%Z' flag
+                           should be present. If literal is specified and no
+                           timezone is included then we assume UTC.
+  -d,--dest-tz TZ_DATABASE Timezone in which to convert the read string. Must be
+                           a tz database label like America/New_York. If none is
+                           given then we use the local system timezone.
   -t,--today               Used when reading a time string, adds the local date.
                            This is a convenience option and should only be used
                            if the time string and format do not explicitly
@@ -167,15 +168,15 @@ Fri, 17 Jun 2022 16:05:01 NZST
 
 ## Source Timezone
 
-**Arg:** `-s,--src-tz <local | literal | TZ_DATABASE>`
+**Arg:** `-s,--src-tz <literal | TZ_DATABASE>`
 
-**Description:** This option allows one to change how the time string is interpreted. By default, we interpret the time string in the system's local timezone. The literal option is used for reading the timezone in the string itself e.g. `07:00 EST`. If a timezone is included then a formatter using the `%Z` flag should be present. If `literal` is specified and no timezone is included then we assume UTC.
+**Description:** This option allows one to change how the time string is interpreted. Can be 'literal' or a tz database label. If none is given then we interpret the time string in the system's local timezone. The literal option is used for reading the timezone in the string itself e.g. `07:00 EST`. If a timezone is included then a formatter using the `%Z` flag should be present. If `literal` is specified and no timezone is included then we assume UTC.
 
 **Examples:**
 
 ```
-# this is the default, equivalent to leaving off '-s local'
-$ time-conv -s local "08:30"
+# use the local system timezone
+$ time-conv "08:30"
 08:30
 
 # notice the literal is overridden unless '-s literal' is added
@@ -192,15 +193,15 @@ $ time-conv -s America/New_York 08:30
 
 ## Destination Timezone
 
-**Arg:** `-d,--dest-tz <local | TZ_DATABASE>`
+**Arg:** `-d,--dest-tz TZ_DATABASE`
 
 **Description:** This option allows one to convert the read timezone. By default, we convert to the local timezone.
 
 **Examples:**
 
 ```
-# this is the default, equivalent to leaving off '-d local'
-$ time-conv -d local 08:30
+# use the local system timezone
+$ time-conv 08:30
 08:30
 
 # using tz database name

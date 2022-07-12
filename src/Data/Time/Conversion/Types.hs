@@ -8,11 +8,8 @@ module Data.Time.Conversion.Types
   ( TimeReader (..),
     defaultTimeReader,
     SrcTZ (..),
-    _SrcTZConv,
+    _SrcTZDatabase,
     _SrcTZLiteral,
-    TZConv (..),
-    _TZConvLocal,
-    _TZConvDatabase,
     TZDatabase (..),
     _TZDatabaseLabel,
     _TZDatabaseText,
@@ -52,10 +49,11 @@ data TimeReader = MkTimeReader
     --
     -- @since 0.1
     format :: TimeFormat,
-    -- | Timezone in which to read the string.
+    -- | Timezone in which to read the string. 'Nothing' corresponds to
+    -- local timezone.
     --
     -- @since 0.1
-    srcTZ :: SrcTZ,
+    srcTZ :: Maybe SrcTZ,
     -- | Locale to use when parsing.
     --
     -- @since 0.1
@@ -86,7 +84,7 @@ instance
 
 -- | @since 0.1
 instance
-  (k ~ A_Lens, a ~ SrcTZ, b ~ SrcTZ) =>
+  (k ~ A_Lens, a ~ Maybe SrcTZ, b ~ Maybe SrcTZ) =>
   LabelOptic "srcTZ" k TimeReader TimeReader a b
   where
   labelOptic = O.lens srcTZ (\tb tz -> tb {srcTZ = tz})
@@ -115,71 +113,22 @@ instance
 -- | Given a time string, returns a default time reader.
 --
 -- * @format = "%H:%M"@ (24hr hours:minutes)
--- * @srzTZ = 'SrcTZConv' 'TZConvLocal'@ (local)
--- * @destTZ = 'TZConvLocal'@ (local)
+-- * @srzTZ = 'Nothing'@ (local)
 -- * @locale = 'Utils.timeLocaleAllZones'@ (all locales)
 -- * @today = 'False'@ (do not automatically add current day)
 --
 -- @since 0.1
 defaultTimeReader :: Text -> TimeReader
-defaultTimeReader = MkTimeReader def def Utils.timeLocaleAllZones False
-
--- | Conversion timezone options.
---
--- ==== __Examples__
--- >>> def :: TZConv
--- TZConvLocal
---
--- >>> TZConvDatabase $ TZDatabaseLabel America__New_York
--- TZConvDatabase (TZDatabaseLabel America__New_York)
---
--- @since 0.1
-data TZConv
-  = -- | Represents the local timezone.
-    --
-    -- @since 0.1
-    TZConvLocal
-  | -- | Represents an explicitly given timezone.
-    --
-    -- @since 0.1
-    TZConvDatabase TZDatabase
-  deriving stock
-    ( -- | @since 0.1
-      Eq,
-      -- | @since 0.1
-      Show
-    )
-
--- | @since 0.1
-_TZConvLocal :: Prism' TZConv ()
-_TZConvLocal = O.prism (const TZConvLocal) from
-  where
-    from TZConvLocal = Right ()
-    from other = Left other
-
--- | @since 0.1
-_TZConvDatabase :: Prism' TZConv TZDatabase
-_TZConvDatabase = O.prism TZConvDatabase from
-  where
-    from (TZConvDatabase tzdb) = Right tzdb
-    from other = Left other
-
--- | @since 0.1
-instance Default TZConv where
-  def = TZConvLocal
+defaultTimeReader = MkTimeReader def Nothing Utils.timeLocaleAllZones False
 
 -- | Determines what timezone we use when reading a time string.
 --
--- ==== __Examples__
--- >>> def :: SrcTZ
--- SrcTZConv TZConvLocal
---
 -- @since 0.1
 data SrcTZ
-  = -- | Use the 'TZConv' to determine which timezone to use.
+  = -- | Use the 'TZDatabase' to determine which timezone to use.
     --
     -- @since 0.1
-    SrcTZConv TZConv
+    SrcTZDatabase TZDatabase
   | -- | Timezones are not given any extra consideration. This is useful
     -- when either the string itself contains a timezone (e.g. "15:03 EST")
     -- or we want UTC.
@@ -194,10 +143,10 @@ data SrcTZ
     )
 
 -- | @since 0.1
-_SrcTZConv :: Prism' SrcTZ TZConv
-_SrcTZConv = O.prism SrcTZConv from
+_SrcTZDatabase :: Prism' SrcTZ TZDatabase
+_SrcTZDatabase = O.prism SrcTZDatabase from
   where
-    from (SrcTZConv tzdb) = Right tzdb
+    from (SrcTZDatabase tzdb) = Right tzdb
     from other = Left other
 
 -- | @since 0.1
@@ -206,10 +155,6 @@ _SrcTZLiteral = O.prism (const SrcTZLiteral) from
   where
     from SrcTZLiteral = Right ()
     from other = Left other
-
--- | @since 0.1
-instance Default SrcTZ where
-  def = SrcTZConv def
 
 -- | Options for interpreting a timezone.
 --

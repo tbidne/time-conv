@@ -10,11 +10,8 @@ module Data.Time.Conversion
     TimeReader (..),
     defaultTimeReader,
     SrcTZ (..),
-    Types._SrcTZConv,
+    Types._SrcTZDatabase,
     Types._SrcTZLiteral,
-    TZConv (..),
-    Types._TZConvLocal,
-    Types._TZConvDatabase,
     TZDatabase (..),
     Types._TZDatabaseLabel,
     Types._TZDatabaseText,
@@ -64,7 +61,6 @@ import Data.Time.Conversion.Types
     ParseTZDatabaseException (..),
     ParseTimeException (..),
     SrcTZ (..),
-    TZConv (..),
     TZDatabase (..),
     TimeFormat (..),
     TimeReader (..),
@@ -79,14 +75,14 @@ import Data.Time.LocalTime qualified as Local
 import Data.Time.Zones qualified as Zones
 import Data.Time.Zones.All (TZLabel (..))
 import Data.Time.Zones.All qualified as All
-import Optics.Core ((%), (^.), (^?))
+import Optics.Core ((^.), (^?))
 
 -- | Reads the given time string based on the 'TimeReader' and destination
 -- timezone. The semantics are:
 --
 -- * If 'TimeReader' is 'Nothing' then we read the local system time.
 --
--- * If 'srcTZ' is @'SrcTZConv' 'TZConvDatabase'@ then we manually append the
+-- * If 'srcTZ' is @'SrcTZDatabase'@ then we manually append the
 --   timezone data onto the time string and format. That is, only use this if:
 --
 --      * @timeString@ does __not__ contain a timezone like @EST@.
@@ -101,9 +97,9 @@ import Optics.Core ((%), (^.), (^?))
 --
 -- ==== __Examples__
 -- >>> import Data.Default (Default (def))
--- >>> let toUtc = TZConvDatabase (TZDatabaseLabel Etc__UTC)
+-- >>> let toUtc = Just $ TZDatabaseLabel Etc__UTC
 -- >>> let reader = defaultTimeReader "17:24"
--- >>> let litReader = reader { srcTZ = SrcTZLiteral }
+-- >>> let litReader = reader { srcTZ = Just SrcTZLiteral }
 -- >>> -- literal + no src timezone = utc
 -- >>> readConvertTime (Just litReader) toUtc
 -- 1970-01-01 17:24:00 UTC
@@ -112,12 +108,12 @@ import Optics.Core ((%), (^.), (^?))
 -- >>> readConvertTime (Just (litReader { format = Types.hmTZ, timeString = "17:24 EST" })) toUtc
 -- 1970-01-01 22:24:00 UTC
 --
--- >>> let nyReader = litReader { srcTZ = SrcTZConv (TZConvDatabase $ TZDatabaseLabel America__New_York) }
+-- >>> let nyReader = litReader { srcTZ = Just (SrcTZDatabase $ TZDatabaseLabel America__New_York) }
 -- >>> readConvertTime (Just (nyReader { timeString = "08:15" })) toUtc
 -- 1970-01-01 13:15:00 UTC
 --
 -- @since 0.1
-readConvertTime :: Maybe TimeReader -> TZConv -> IO ZonedTime
+readConvertTime :: Maybe TimeReader -> Maybe TZDatabase -> IO ZonedTime
 readConvertTime mtimeReader destTZ = do
   inTime <- case mtimeReader of
     Nothing ->
@@ -126,10 +122,10 @@ readConvertTime mtimeReader destTZ = do
     Just timeReader -> readTimeString timeReader
 
   case destTZ of
-    TZConvDatabase tzdb -> do
+    Just tzdb -> do
       lbl <- tzDatabaseToTZLabel tzdb
       pure $ convertZonedLabel inTime lbl
-    TZConvLocal -> do
+    Nothing -> do
       let inTimeUtc = Local.zonedTimeToUTC inTime
       currTZ <- Local.getCurrentTimeZone
       pure $ Local.utcToZonedTime currTZ inTimeUtc
@@ -138,15 +134,15 @@ readTimeString :: TimeReader -> IO ZonedTime
 readTimeString timeReader = do
   case timeReader ^. #srcTZ of
     -- read in local timezone
-    SrcTZConv TZConvLocal -> do
+    Nothing -> do
       -- add system date if specified
       (timeStrDate, formatDate) <- maybeAddDate Nothing
       readInLocalTimeZone locale formatDate timeStrDate
     -- remaining two cases work similarly, though we need to account for a
     -- manually specified timezone
-    other -> do
+    Just srzTZ -> do
       -- add timezone if specified
-      (timeStrDateTZ, formatDateTZ) <- case hasTzdb other of
+      (timeStrDateTZ, formatDateTZ) <- case hasTzdb srzTZ of
         -- This is a SrcTZLiteral, leave timeStr and format as-is
         Nothing -> do
           -- add system date if specified
@@ -170,7 +166,7 @@ readTimeString timeReader = do
     locale = timeReader ^. #locale
     timeStr = timeReader ^. #timeString
     hasTzdb :: SrcTZ -> Maybe TZDatabase
-    hasTzdb x = x ^? Types._SrcTZConv % Types._TZConvDatabase
+    hasTzdb x = x ^? Types._SrcTZDatabase
 
     throwParseEx f = throwIO . MkParseTimeException f
 

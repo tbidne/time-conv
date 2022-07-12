@@ -20,7 +20,6 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Conversion.Types
   ( SrcTZ (..),
-    TZConv (..),
     TZDatabase (..),
     TimeFormat (..),
     TimeReader (..),
@@ -43,17 +42,12 @@ import Options.Applicative.Types (ArgPolicy (..), ReadM)
 
 -- | CLI args.
 --
--- Very nearly identical to TimeReader. The reason we manually reimplement
--- this type rather than just use reuse TimeReader is so we can control the
--- order of the arguments in the help page (order depends on argument order
--- in the below definition).
---
 -- @since 0.1
 data Args = MkArgs
   { format :: TimeFormat,
     formatOut :: Maybe TimeFormat,
-    srcTZ :: SrcTZ,
-    destTZ :: TZConv,
+    srcTZ :: Maybe SrcTZ,
+    destTZ :: Maybe TZDatabase,
     today :: Bool,
     timeString :: Maybe Text
   }
@@ -98,17 +92,17 @@ parseArgs =
 
 -- | Maps 'Args' to 'TimeReader'. Details:
 --
--- * If no 'TimeString' is given then no 'TimeReader' is returned.
+-- * If no 'Args.timeString' is given then no 'TimeReader' is returned.
 -- * If a 'TimeReader' is returned then its locale is always
 --   'Utils.timeLocaleAllZones'.
 -- * The output format is, in order:
 --
 --     1. 'formatOut' if it exists.
---     2. 'format' if no 'formatOut' and 'timeString' exists.
+--     2. 'Args.format' if no 'formatOut' and 'Args.timeString' exists.
 --     3. Otherwise, default format of "%H:%M".
 --
 -- @since 0.1
-argsToBuilder :: Getter Args (Maybe TimeReader, TZConv, TimeFormat)
+argsToBuilder :: Getter Args (Maybe TimeReader, Maybe TZDatabase, TimeFormat)
 argsToBuilder = O.to to
   where
     to args =
@@ -126,25 +120,24 @@ argsToBuilder = O.to to
           formatOut = fromMaybe def (args ^. #formatOut <|> mtimeReader ^? _Just % #format)
        in (mtimeReader, args ^. #destTZ, formatOut)
 
-parseDestTZ :: Parser TZConv
+parseDestTZ :: Parser (Maybe TZDatabase)
 parseDestTZ =
   OApp.option
-    readTZConv
-    ( OApp.value TZConvLocal
+    readTZDatabase
+    ( OApp.value Nothing
         <> OApp.long "dest-tz"
         <> OApp.short 'd'
-        <> OApp.metavar "<local | TZ_DATABASE>"
+        <> OApp.metavar "TZ_DATABASE"
         <> OApp.help helpTxt
     )
   where
     helpTxt =
-      "Timezone in which to convert the read string. Can be 'local' or"
-        <> " a tz database label. Defaults to local."
-    readTZConv = do
-      a <- OApp.str
-      case a of
-        "local" -> pure TZConvLocal
-        other -> pure $ TZConvDatabase $ TZDatabaseText other
+      mconcat
+        [ "Timezone in which to convert the read string. Must be a tz database",
+          " label like America/New_York. If none is given then we use the",
+          " local system timezone."
+        ]
+    readTZDatabase = Just . TZDatabaseText <$> OApp.str
 
 parseFormat :: Parser TimeFormat
 parseFormat =
@@ -157,14 +150,15 @@ parseFormat =
         <> OApp.help helpTxt
     )
   where
-    helpTxt = mconcat
-      [ "Glibc-style format string e.g. %Y-%m-%d for yyyy-mm-dd, only used if",
-        " a time string is given. Defaults to ",
-        defFormatStr,
-        " i.e. 24-hr hour:minute. If the string 'rfc822' is given then we use",
-        " RFC822. See 'man date' for basic examples, and ",
-        " https://hackage.haskell.org/package/time-1.13/docs/Data-Time-Format.html#v:formatTime for the exact spec."
-      ]
+    helpTxt =
+      mconcat
+        [ "Glibc-style format string e.g. %Y-%m-%d for yyyy-mm-dd, only used if",
+          " a time string is given. Defaults to ",
+          defFormatStr,
+          " i.e. 24-hr hour:minute. If the string 'rfc822' is given then we use",
+          " RFC822. See 'man date' for basic examples, and ",
+          " https://hackage.haskell.org/package/time-1.13/docs/Data-Time-Format.html#v:formatTime for the exact spec."
+        ]
     defFormatStr = T.unpack $ def @TimeFormat ^. #unTimeFormat
 
 parseFormatOut :: Parser (Maybe TimeFormat)
@@ -178,12 +172,13 @@ parseFormatOut =
           <> OApp.help helpTxt
       )
   where
-    helpTxt = mconcat
-      [ "Like --format, but used for the output only. If this is not",
-        " present but a time string is, then --format is used for both",
-        " input and output. In other words, this option must be used",
-        " if you want to format the local system time output."
-      ]
+    helpTxt =
+      mconcat
+        [ "Like --format, but used for the output only. If this is not",
+          " present but a time string is, then --format is used for both",
+          " input and output. In other words, this option must be used",
+          " if you want to format the local system time output."
+        ]
 
 readFormat :: ReadM TimeFormat
 readFormat = do
@@ -192,30 +187,32 @@ readFormat = do
     "rfc822" -> Types.rfc822
     other -> fromString other
 
-parseSrcTZ :: Parser SrcTZ
-parseSrcTZ = do
+parseSrcTZ :: Parser (Maybe SrcTZ)
+parseSrcTZ =
   OApp.option
     readSrcTZ
-    ( OApp.value (SrcTZConv TZConvLocal)
+    ( OApp.value Nothing
         <> OApp.long "src-tz"
         <> OApp.short 's'
-        <> OApp.metavar "<local | literal | TZ_DATABASE>"
+        <> OApp.metavar "<literal | TZ_DATABASE>"
         <> OApp.help helpTxt
     )
   where
     helpTxt =
-      "Timezone in which to read the string. Can be 'local', 'literal' or"
-        <> " a tz database label. Defaults to local. The literal option means we"
-        <> " read the (possibly empty) timezone from the string itself e.g."
-        <> " '7:00 EST'. If a timezone is included, then a formatter using the"
-        <> " '%Z' flag should be present. If literal is specified and no "
-        <> " timezone is included then we assume UTC."
+      mconcat
+        [ "Timezone in which to read the string. Can be 'literal' or",
+          " a tz database label. If none is given then we use the local",
+          " system timezone. The literal option means we read the",
+          " (possibly empty) timezone from the string itself e.g.",
+          " '7:00 EST'. If a timezone is included, then a formatter using the",
+          " '%Z' flag should be present. If literal is specified and no ",
+          " timezone is included then we assume UTC."
+        ]
     readSrcTZ = do
       a <- OApp.str
       case a of
-        "local" -> pure $ SrcTZConv TZConvLocal
-        "literal" -> pure SrcTZLiteral
-        other -> pure $ SrcTZConv $ TZConvDatabase $ TZDatabaseText other
+        "literal" -> pure $ Just SrcTZLiteral
+        other -> pure $ Just $ SrcTZDatabase $ TZDatabaseText other
 
 parseToday :: Parser Bool
 parseToday =
