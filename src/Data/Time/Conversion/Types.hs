@@ -5,7 +5,8 @@
 --
 -- @since 0.1
 module Data.Time.Conversion.Types
-  ( TimeBuilder (..),
+  ( TimeReader (..),
+    defaultTimeReader,
     SrcTZ (..),
     _SrcTZConv,
     _SrcTZLiteral,
@@ -43,18 +44,10 @@ import Data.Time.Zones.All (TZLabel (..))
 import Optics.Core (A_Lens, An_Iso, LabelOptic (..), Prism', (^.))
 import Optics.Core qualified as O
 
--- | Determines how to read and convert a time string. The 'Default' instance
--- uses:
---
--- * @format = "%H:%M"@ (24hr hours:minutes)
--- * @srzTZ = 'SrcTZConv' 'TZConvLocal'@ (local)
--- * @destTZ = 'TZConvLocal'@ (local)
--- * @locale = 'Utils.timeLocaleAllZones'@ (all locales)
--- * @today = 'False'@ (do not automatically add current day)
--- * @timeString = 'Nothing'@ (read system time)
+-- | Determines how to read a time string.
 --
 -- @since 0.1
-data TimeBuilder = MkTimeBuilder
+data TimeReader = MkTimeReader
   { -- | Format used when parsing the time string.
     --
     -- @since 0.1
@@ -63,10 +56,6 @@ data TimeBuilder = MkTimeBuilder
     --
     -- @since 0.1
     srcTZ :: SrcTZ,
-    -- | Timezone in which to convert.
-    --
-    -- @since 0.1
-    destTZ :: TZConv,
     -- | Locale to use when parsing.
     --
     -- @since 0.1
@@ -76,11 +65,10 @@ data TimeBuilder = MkTimeBuilder
     --
     -- @since 0.1
     today :: Bool,
-    -- | The time string to parse. If empty, we retrieve the local system
-    -- time instead.
+    -- | The time string to parse.
     --
     -- @since 0.1
-    timeString :: Maybe Text
+    timeString :: Text
   }
   deriving stock
     ( -- | @since 0.1
@@ -92,48 +80,49 @@ data TimeBuilder = MkTimeBuilder
 -- | @since 0.1
 instance
   (k ~ A_Lens, a ~ TimeFormat, b ~ TimeFormat) =>
-  LabelOptic "format" k TimeBuilder TimeBuilder a b
+  LabelOptic "format" k TimeReader TimeReader a b
   where
   labelOptic = O.lens format (\tb f -> tb {format = f})
 
 -- | @since 0.1
 instance
   (k ~ A_Lens, a ~ SrcTZ, b ~ SrcTZ) =>
-  LabelOptic "srcTZ" k TimeBuilder TimeBuilder a b
+  LabelOptic "srcTZ" k TimeReader TimeReader a b
   where
   labelOptic = O.lens srcTZ (\tb tz -> tb {srcTZ = tz})
 
 -- | @since 0.1
 instance
   (k ~ A_Lens, a ~ TimeLocale, b ~ TimeLocale) =>
-  LabelOptic "locale" k TimeBuilder TimeBuilder a b
+  LabelOptic "locale" k TimeReader TimeReader a b
   where
   labelOptic = O.lens locale (\tb l -> tb {locale = l})
 
 -- | @since 0.1
 instance
-  (k ~ A_Lens, a ~ TZConv, b ~ TZConv) =>
-  LabelOptic "destTZ" k TimeBuilder TimeBuilder a b
-  where
-  labelOptic = O.lens destTZ (\tb tz -> tb {destTZ = tz})
-
--- | @since 0.1
-instance
   (k ~ A_Lens, a ~ Bool, b ~ Bool) =>
-  LabelOptic "today" k TimeBuilder TimeBuilder a b
+  LabelOptic "today" k TimeReader TimeReader a b
   where
   labelOptic = O.lens today (\tb b -> tb {today = b})
 
 -- | @since 0.1
 instance
-  (k ~ A_Lens, a ~ Maybe Text, b ~ Maybe Text) =>
-  LabelOptic "timeString" k TimeBuilder TimeBuilder a b
+  (k ~ A_Lens, a ~ Text, b ~ Text) =>
+  LabelOptic "timeString" k TimeReader TimeReader a b
   where
   labelOptic = O.lens timeString (\tb ts -> tb {timeString = ts})
 
--- | @since 0.1
-instance Default TimeBuilder where
-  def = MkTimeBuilder def def def Utils.timeLocaleAllZones False Nothing
+-- | Given a time string, returns a default time reader.
+--
+-- * @format = "%H:%M"@ (24hr hours:minutes)
+-- * @srzTZ = 'SrcTZConv' 'TZConvLocal'@ (local)
+-- * @destTZ = 'TZConvLocal'@ (local)
+-- * @locale = 'Utils.timeLocaleAllZones'@ (all locales)
+-- * @today = 'False'@ (do not automatically add current day)
+--
+-- @since 0.1
+defaultTimeReader :: Text -> TimeReader
+defaultTimeReader = MkTimeReader def def Utils.timeLocaleAllZones False
 
 -- | Conversion timezone options.
 --

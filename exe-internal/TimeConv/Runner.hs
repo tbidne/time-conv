@@ -8,7 +8,6 @@ module TimeConv.Runner
 where
 
 import Control.Exception (SomeException, displayException)
-import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Conversion qualified as Conv
@@ -45,13 +44,12 @@ runTimeConvHandler handler = do
 -- @since 0.1
 runWithArgs :: (Text -> IO a) -> Args -> IO a
 runWithArgs handler args = do
-  let builder = args ^. argsToBuilder
-      format = fromMaybe (builder ^. #format) (args ^. #formatOut)
-      formatStr = T.unpack $ format ^. #unTimeFormat
+  let (mtimeReader, destTZ, formatOut) = args ^. argsToBuilder
+      formatStr = T.unpack $ formatOut ^. #unTimeFormat
 
-  readAndHandle builder formatStr
+  readAndHandle mtimeReader destTZ formatStr
   where
-    readAndHandle b fmt = do
-      time <- Conv.readConvertTime b
-      let result = T.pack $ Format.formatTime (b ^. #locale) fmt time
+    readAndHandle tr d fmt = do
+      time <- Conv.readConvertTime tr d
+      let result = T.pack $ Format.formatTime Utils.timeLocaleAllZones fmt time
       handler result

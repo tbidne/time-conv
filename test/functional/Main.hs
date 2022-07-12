@@ -13,7 +13,7 @@ import Data.Text qualified as T
 import Data.Time.Conversion (ParseTZDatabaseException, ParseTimeException)
 import Data.Time.Conversion.Utils qualified as Utils
 import System.Environment qualified as SysEnv
-import System.Environment.Guard (guardSet)
+import System.Environment.Guard (ExpectEnv (..), guardOrElse')
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty qualified as Tasty
 import Test.Tasty.HUnit (Assertion, assertBool, testCase, (@=?))
@@ -24,21 +24,24 @@ import TimeConv.Runner (runTimeConvHandler)
 -- @since 0.1
 main :: IO ()
 main = do
-  mimpureTests <- guardSet "FUNCTIONAL_IMPURE" $ pure impureTests
-  let allTests = case mimpureTests of
-        Nothing -> pureTests
-        Just impureTests' ->
-          [ testGroup "Pure tests" pureTests,
-            impureTests'
-          ]
-  Tasty.defaultMain $
-    testGroup "Functional tests" allTests
+  allTests <-
+    guardOrElse'
+      "FUNCTIONAL_IMPURE"
+      ExpectEnvSet
+      (pure pureAndImpureTests)
+      (pure pureTests)
+
+  Tasty.defaultMain $ testGroup "Functional tests" allTests
   where
     pureTests =
       [ formatTests,
         formatOutputTests,
         srcTzTests,
         destTzTests
+      ]
+    pureAndImpureTests =
+      [ testGroup "Pure tests" pureTests,
+        impureTests
       ]
 
 formatTests :: TestTree

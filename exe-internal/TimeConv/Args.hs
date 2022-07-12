@@ -12,7 +12,9 @@ module TimeConv.Args
   )
 where
 
+import Control.Applicative ((<|>))
 import Data.Default (Default (..))
+import Data.Maybe (fromMaybe)
 import Data.String (IsString (fromString))
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -20,14 +22,14 @@ import Data.Time.Conversion.Types
   ( SrcTZ (..),
     TZConv (..),
     TZDatabase (..),
-    TimeBuilder (..),
     TimeFormat (..),
+    TimeReader (..),
   )
 import Data.Time.Conversion.Types qualified as Types
 import Data.Time.Conversion.Utils qualified as Utils
 import Data.Version.Package qualified as PV
 import Development.GitRev qualified as GitRev
-import Optics.Core (Getter, (^.))
+import Optics.Core (Getter, (%), (^.), (^?), _Just)
 import Optics.Core qualified as O
 import Optics.TH (makeFieldLabelsNoPrefix)
 import Options.Applicative
@@ -41,8 +43,8 @@ import Options.Applicative.Types (ArgPolicy (..), ReadM)
 
 -- | CLI args.
 --
--- Very nearly identical to TimeBuilder. The reason we manually reimplement
--- this type rather than just use reuse TimeBuilder is so we can control the
+-- Very nearly identical to TimeReader. The reason we manually reimplement
+-- this type rather than just use reuse TimeReader is so we can control the
 -- order of the arguments in the help page (order depends on argument order
 -- in the below definition).
 --
@@ -79,7 +81,7 @@ parserInfo =
     desc =
       Just $
         "\ntime-conv reads time strings and converts between timezones."
-          <> " For the src and dest options, tz_database refers to labels like"
+          <> " For the src and dest options, TZ_DATABASE refers to labels like"
           <> " America/New_York. See https://en.wikipedia.org/wiki/Tz_database."
 
 parseArgs :: Parser Args
@@ -94,21 +96,35 @@ parseArgs =
     <**> OApp.helper
     <**> version
 
--- | Maps 'Args' to 'TimeBuilder'.
+-- | Maps 'Args' to 'TimeReader'. Details:
+--
+-- * If no 'TimeString' is given then no 'TimeReader' is returned.
+-- * If a 'TimeReader' is returned then its locale is always
+--   'Utils.timeLocaleAllZones'.
+-- * The output format is, in order:
+--
+--     1. 'formatOut' if it exists.
+--     2. 'format' if no 'formatOut' and 'timeString' exists.
+--     3. Otherwise, default format of "%H:%M".
 --
 -- @since 0.1
-argsToBuilder :: Getter Args TimeBuilder
+argsToBuilder :: Getter Args (Maybe TimeReader, TZConv, TimeFormat)
 argsToBuilder = O.to to
   where
     to args =
-      MkTimeBuilder
-        { format = args ^. #format,
-          srcTZ = args ^. #srcTZ,
-          destTZ = args ^. #destTZ,
-          locale = Utils.timeLocaleAllZones,
-          today = args ^. #today,
-          timeString = args ^. #timeString
-        }
+      let mtimeReader = case args ^. #timeString of
+            Just str ->
+              Just $
+                MkTimeReader
+                  { format = args ^. #format,
+                    srcTZ = args ^. #srcTZ,
+                    locale = Utils.timeLocaleAllZones,
+                    today = args ^. #today,
+                    timeString = str
+                  }
+            Nothing -> Nothing
+          formatOut = fromMaybe def (args ^. #formatOut <|> mtimeReader ^? _Just % #format)
+       in (mtimeReader, args ^. #destTZ, formatOut)
 
 parseDestTZ :: Parser TZConv
 parseDestTZ =
@@ -117,7 +133,7 @@ parseDestTZ =
     ( OApp.value TZConvLocal
         <> OApp.long "dest-tz"
         <> OApp.short 'd'
-        <> OApp.metavar "<local | tz_database>"
+        <> OApp.metavar "<local | TZ_DATABASE>"
         <> OApp.help helpTxt
     )
   where
@@ -137,16 +153,18 @@ parseFormat =
     ( OApp.value def
         <> OApp.long "format"
         <> OApp.short 'f'
-        <> OApp.metavar "<rfc822 | STRING>"
+        <> OApp.metavar "<rfc822 | FORMAT_STRING>"
         <> OApp.help helpTxt
     )
   where
-    helpTxt =
-      "Glibc-style format string e.g. %Y-%m-%d for yyyy-mm-dd. Defaults to "
-        <> defFormatStr
-        <> " i.e. 24-hr hour:minute. If the string 'rfc822' is given then we use"
-        <> " RFC822. See 'man date' for basic examples, and "
-        <> " https://hackage.haskell.org/package/time-1.13/docs/Data-Time-Format.html#v:formatTime for the exact spec."
+    helpTxt = mconcat
+      [ "Glibc-style format string e.g. %Y-%m-%d for yyyy-mm-dd, only used if",
+        " a time string is given. Defaults to ",
+        defFormatStr,
+        " i.e. 24-hr hour:minute. If the string 'rfc822' is given then we use",
+        " RFC822. See 'man date' for basic examples, and ",
+        " https://hackage.haskell.org/package/time-1.13/docs/Data-Time-Format.html#v:formatTime for the exact spec."
+      ]
     defFormatStr = T.unpack $ def @TimeFormat ^. #unTimeFormat
 
 parseFormatOut :: Parser (Maybe TimeFormat)
@@ -156,13 +174,16 @@ parseFormatOut =
       readFormat
       ( OApp.long "format-out"
           <> OApp.short 'o'
-          <> OApp.metavar "<rfc822 | STRING>"
+          <> OApp.metavar "<rfc822 | FORMAT_STRING>"
           <> OApp.help helpTxt
       )
   where
-    helpTxt =
-      "Like --format, but used for the output. If this is not"
-        <> " present then --format is used for both input and output."
+    helpTxt = mconcat
+      [ "Like --format, but used for the output only. If this is not",
+        " present but a time string is, then --format is used for both",
+        " input and output. In other words, this option must be used",
+        " if you want to format the local system time output."
+      ]
 
 readFormat :: ReadM TimeFormat
 readFormat = do
@@ -178,7 +199,7 @@ parseSrcTZ = do
     ( OApp.value (SrcTZConv TZConvLocal)
         <> OApp.long "src-tz"
         <> OApp.short 's'
-        <> OApp.metavar "<local | literal | tz_database>"
+        <> OApp.metavar "<local | literal | TZ_DATABASE>"
         <> OApp.help helpTxt
     )
   where
@@ -218,11 +239,11 @@ parseTimeStr =
     T.pack
       <$> OApp.argument
         OApp.str
-        (OApp.metavar "STRING" <> OApp.help helpTxt)
+        (OApp.metavar "TIME_STRING" <> OApp.help helpTxt)
   where
     helpTxt =
       "Time string to parse. If none is given then we parse the"
-        <> " local system time."
+        <> " local system time. To format the output, use --format-out."
 
 version :: Parser (a -> a)
 version = OApp.infoOption txt (OApp.long "version" <> OApp.short 'v')

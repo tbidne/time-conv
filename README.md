@@ -64,14 +64,14 @@
     # i.e. 6:30 pm in New York on its current day (17 Jun 2022) will be 11:30 am NZST (18 Jun 2022)
     ````
 
-We can also convert between two non-local timezones:
+    We can also convert between two non-local timezones:
 
-```
-$ time-conv -o rfc822 -s America/New_York -d Europe/Paris 18:30
-Fri,  2 Jan 1970 00:30:00 CET
+    ```
+    $ time-conv -o rfc822 -s America/New_York -d Europe/Paris 18:30
+    Fri,  2 Jan 1970 00:30:00 CET
 
-# no -t or date information means we assume the initial unix date, 1 Jan 1970.
-```
+    # no -t or date information means we assume the initial unix date, 1 Jan 1970.
+    ```
 
 The timezone names are based on the tz_database. See https://en.wikipedia.org/wiki/Tz_database for more information.
 
@@ -80,27 +80,30 @@ The timezone names are based on the tz_database. See https://en.wikipedia.org/wi
 ```
 time-conv: A tool for timezone conversions.
 
-Usage: time-conv [-f|--format <rfc822 | STRING>]
-                 [-o|--format-out <rfc822 | STRING>]
-                 [-s|--src-tz <local | literal | tz_database>]
-                 [-d|--dest-tz <local | tz_database>] [-t|--today] [STRING]
+Usage: time-conv [-f|--format <rfc822 | FORMAT_STRING>] 
+                 [-o|--format-out <rfc822 | FORMAT_STRING>] 
+                 [-s|--src-tz <local | literal | TZ_DATABASE>] 
+                 [-d|--dest-tz <local | TZ_DATABASE>] [-t|--today] [TIME_STRING]
                  [-v|--version]
-
-time-conv reads time strings and converts between timezones. For the src and dest options, tz_database refers to labels like America/New_York. See https://en.wikipedia.org/wiki/Tz_database.
+  
+time-conv reads time strings and converts between timezones. For the src and dest options, TZ_DATABASE refers to labels like America/New_York. See https://en.wikipedia.org/wiki/Tz_database.
 
 Available options:
-  -f,--format <rfc822 | STRING>
+  -f,--format <rfc822 | FORMAT_STRING>
                            Glibc-style format string e.g. %Y-%m-%d for
-                           yyyy-mm-dd. Defaults to %H:%M i.e. 24-hr hour:minute.
-                           If the string 'rfc822' is given then we use RFC822.
-                           See 'man date' for basic examples, and
+                           yyyy-mm-dd, only used if a time string is given.
+                           Defaults to %H:%M i.e. 24-hr hour:minute. If the
+                           string 'rfc822' is given then we use RFC822. See 'man
+                           date' for basic examples, and
                            https://hackage.haskell.org/package/time-1.13/docs/Data-Time-Format.html#v:formatTime
                            for the exact spec.
-  -o,--format-out <rfc822 | STRING>
-                           Like --format, but used for the output. If this is
-                           not present then --format is used for both input and
-                           output.
-  -s,--src-tz <local | literal | tz_database>
+  -o,--format-out <rfc822 | FORMAT_STRING>
+                           Like --format, but used for the output only. If this
+                           is not present but a time string is, then --format is
+                           used for both input and output. In other words, this
+                           option must be used if you want to format the local
+                           system time output.
+  -s,--src-tz <local | literal | TZ_DATABASE>
                            Timezone in which to read the string. Can be 'local',
                            'literal' or a tz database label. Defaults to local.
                            The literal option means we read the (possibly empty)
@@ -108,15 +111,16 @@ Available options:
                            timezone is included, then a formatter using the '%Z'
                            flag should be present. If literal is specified and
                            no timezone is included then we assume UTC.
-  -d,--dest-tz <local | tz_database>
+  -d,--dest-tz <local | TZ_DATABASE>
                            Timezone in which to convert the read string. Can be
                            'local' or a tz database label. Defaults to local.
   -t,--today               Used when reading a time string, adds the local date.
                            This is a convenience option and should only be used
                            if the time string and format do not explicitly
                            mention date.
-  STRING                   Time string to parse. If none is given then we parse
-                           the local system time.
+  TIME_STRING              Time string to parse. If none is given then we parse
+                           the local system time. To format the output, use
+                           --format-out.
   -h,--help                Show this help text
 
 Version: 0.1
@@ -126,9 +130,9 @@ Version: 0.1
 
 ## Format
 
-**Arg:** `-f,--format <rfc822 | STRING>`
+**Arg:** `-f,--format <rfc822 | FORMAT_STRING>`
 
-**Description:** This option allows one to set an explicit format string. By default we use the format `%H-%M` which is 24-hour `hours:minutes`. If the string `rfc822` is given, we use the time string as defined by RFC822: `%a, %_d %b %Y %H:%M:%S %Z`.
+**Description:** This option allows one to set an explicit format string, only used if a [time string](#time-string) is present. By default we use the format `%H-%M` which is 24-hour `hours:minutes`. If the string `rfc822` is given, we use the time string as defined by RFC822: `%a, %_d %b %Y %H:%M:%S %Z`.
 
 **Examples:**
 
@@ -142,9 +146,9 @@ $ time-conv -f "%Y-%m-%d %H:%M" "2022-06-15 08:30"
 
 ## Format Out
 
-**Arg:** `-o,--format-out <rfc822 | STRING>`
+**Arg:** `-o,--format-out <rfc822 | FORMAT_STRING>`
 
-**Description:** The same as `--format` except it applies to the output format only. If `--format-out` is not given then the output is formatted via `--format`.
+**Description:** The same as `--format` except it applies to the output format only. If `--format-out` is not given but a [time string](#time-string) is, then the output is formatted via `--format`. In other words, this option must be used if you want to format the local system time output.
 
 **Examples:**
 
@@ -163,7 +167,7 @@ Fri, 17 Jun 2022 16:05:01 NZST
 
 ## Source Timezone
 
-**Arg:** `-s,--src-tz <local | literal | tz_database>`
+**Arg:** `-s,--src-tz <local | literal | TZ_DATABASE>`
 
 **Description:** This option allows one to change how the time string is interpreted. By default, we interpret the time string in the system's local timezone. The literal option is used for reading the timezone in the string itself e.g. `07:00 EST`. If a timezone is included then a formatter using the `%Z` flag should be present. If `literal` is specified and no timezone is included then we assume UTC.
 
@@ -188,7 +192,7 @@ $ time-conv -s America/New_York 08:30
 
 ## Destination Timezone
 
-**Arg:** `-d,--dest-tz <local | tz_database>`
+**Arg:** `-d,--dest-tz <local | TZ_DATABASE>`
 
 **Description:** This option allows one to convert the read timezone. By default, we convert to the local timezone.
 
@@ -225,9 +229,9 @@ Fri, 17 Jun 2022 08:30:00 NZST
 
 ## Time String
 
-**Arg:** `STRING`
+**Arg:** `TIME_STRING`
 
-**Description:** This is the time string to parse. If none is given then we parse the local system time. Naturally, the local system time overrides the `--src-tz` option.
+**Description:** This is the time string to parse. If none is given then we parse the local system time. Naturally, the local system time overrides the `--src-tz` option. To format the output, use [`--format-out`](format-out).
 
 **Examples:**
 
@@ -235,7 +239,7 @@ Fri, 17 Jun 2022 08:30:00 NZST
 $ time-conv
 21:30
 
-$ time-conv -f rfc822 -d Europe/Paris
+$ time-conv -o rfc822 -d Europe/Paris
 Thu, 16 Jun 2022 12:30:00 CEST
 ```
 
@@ -246,9 +250,9 @@ Thu, 16 Jun 2022 12:30:00 CEST
 You will need one of:
 
 * [cabal-install 2.4+](https://www.haskell.org/cabal/download.html) and one of:
-  * [ghc 8.10.7](https://www.haskell.org/ghc/download_ghc_8_10_7.html)
-  * [ghc 9.0.2](https://www.haskell.org/ghc/download_ghc_9_0_2.html)
-  * [ghc 9.2.2](https://www.haskell.org/ghc/download_ghc_9_2_2.html)
+  * [ghc 8.10](https://www.haskell.org/ghc/download_ghc_8_10_7.html)
+  * [ghc 9.0](https://www.haskell.org/ghc/download_ghc_9_0_2.html)
+  * [ghc 9.2](https://www.haskell.org/ghc/download_ghc_9_2_2.html)
 * [stack](https://docs.haskellstack.org/en/stable/README/#how-to-install)
 * [nix](https://nixos.org/download.html)
 

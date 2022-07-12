@@ -7,7 +7,8 @@ module Data.Time.Conversion
     readConvertTime,
 
     -- ** Types
-    TimeBuilder (..),
+    TimeReader (..),
+    defaultTimeReader,
     SrcTZ (..),
     Types._SrcTZConv,
     Types._SrcTZLiteral,
@@ -65,8 +66,9 @@ import Data.Time.Conversion.Types
     SrcTZ (..),
     TZConv (..),
     TZDatabase (..),
-    TimeBuilder (..),
     TimeFormat (..),
+    TimeReader (..),
+    defaultTimeReader,
   )
 import Data.Time.Conversion.Types qualified as Types
 import Data.Time.Conversion.Utils qualified as Utils
@@ -79,16 +81,16 @@ import Data.Time.Zones.All (TZLabel (..))
 import Data.Time.Zones.All qualified as All
 import Optics.Core ((%), (^.), (^?))
 
--- | Reads the given time string based on the 'TimeBuilder'.
--- The semantics are:
+-- | Reads the given time string based on the 'TimeReader' and destination
+-- timezone. The semantics are:
+--
+-- * If 'TimeReader' is 'Nothing' then we read the local system time.
 --
 -- * If 'srcTZ' is @'SrcTZConv' 'TZConvDatabase'@ then we manually append the
 --   timezone data onto the time string and format. That is, only use this if:
 --
 --      * @timeString@ does __not__ contain a timezone like @EST@.
 --      * @format@ does __not__ mention the timezone option @%Z@.
---
--- * If 'timeString' is 'Nothing' then we retrieve the local system time.
 --
 -- __Throws:__
 --
@@ -99,30 +101,31 @@ import Optics.Core ((%), (^.), (^?))
 --
 -- ==== __Examples__
 -- >>> import Data.Default (Default (def))
--- >>> let toUtcBuilder = def { destTZ = TZConvDatabase (TZDatabaseLabel Etc__UTC) }
--- >>> let litToUtcBuilder = toUtcBuilder { srcTZ = SrcTZLiteral }
+-- >>> let toUtc = TZConvDatabase (TZDatabaseLabel Etc__UTC)
+-- >>> let reader = defaultTimeReader "17:24"
+-- >>> let litReader = reader { srcTZ = SrcTZLiteral }
 -- >>> -- literal + no src timezone = utc
--- >>> readConvertTime (litToUtcBuilder { timeString = Just "17:24" })
+-- >>> readConvertTime (Just litReader) toUtc
 -- 1970-01-01 17:24:00 UTC
 --
 -- >>> -- literal + convert from est
--- >>> readConvertTime (litToUtcBuilder { format = Types.hmTZ, timeString = Just "17:24 EST" })
+-- >>> readConvertTime (Just (litReader { format = Types.hmTZ, timeString = "17:24 EST" })) toUtc
 -- 1970-01-01 22:24:00 UTC
 --
--- >>> let nyToUtcBuilder = toUtcBuilder { srcTZ = SrcTZConv (TZConvDatabase $ TZDatabaseLabel America__New_York) }
--- >>> readConvertTime (nyToUtcBuilder { timeString = Just "08:15" })
+-- >>> let nyReader = litReader { srcTZ = SrcTZConv (TZConvDatabase $ TZDatabaseLabel America__New_York) }
+-- >>> readConvertTime (Just (nyReader { timeString = "08:15" })) toUtc
 -- 1970-01-01 13:15:00 UTC
 --
 -- @since 0.1
-readConvertTime :: TimeBuilder -> IO ZonedTime
-readConvertTime builder = do
-  inTime <- case builder ^. #timeString of
+readConvertTime :: Maybe TimeReader -> TZConv -> IO ZonedTime
+readConvertTime mtimeReader destTZ = do
+  inTime <- case mtimeReader of
     Nothing ->
       Local.getZonedTime
         `Utils.catchSync` \(e :: SomeException) -> throwIO $ MkLocalSystemTimeException e
-    Just timeStr -> readTimeString builder timeStr
+    Just timeReader -> readTimeString timeReader
 
-  case builder ^. #destTZ of
+  case destTZ of
     TZConvDatabase tzdb -> do
       lbl <- tzDatabaseToTZLabel tzdb
       pure $ convertZonedLabel inTime lbl
@@ -131,9 +134,9 @@ readConvertTime builder = do
       currTZ <- Local.getCurrentTimeZone
       pure $ Local.utcToZonedTime currTZ inTimeUtc
 
-readTimeString :: TimeBuilder -> Text -> IO ZonedTime
-readTimeString builder timeStr = do
-  case builder ^. #srcTZ of
+readTimeString :: TimeReader -> IO ZonedTime
+readTimeString timeReader = do
+  case timeReader ^. #srcTZ of
     -- read in local timezone
     SrcTZConv TZConvLocal -> do
       -- add system date if specified
@@ -163,15 +166,16 @@ readTimeString builder timeStr = do
         pure
         (readTimeFormat locale formatDateTZ timeStrDateTZ)
   where
-    format = builder ^. #format
-    locale = builder ^. #locale
+    format = timeReader ^. #format
+    locale = timeReader ^. #locale
+    timeStr = timeReader ^. #timeString
     hasTzdb :: SrcTZ -> Maybe TZDatabase
     hasTzdb x = x ^? Types._SrcTZConv % Types._TZConvDatabase
 
     throwParseEx f = throwIO . MkParseTimeException f
 
     maybeAddDate mlabel = do
-      if builder ^. #today
+      if timeReader ^. #today
         then do
           currDateStr <- currentDate locale mlabel
           pure (T.pack currDateStr +-+ timeStr, dateString +-+ format)
