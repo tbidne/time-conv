@@ -5,6 +5,8 @@
 module Data.Time.Conversion
   ( -- * High-level parsing/conversion
     readConvertTime,
+    readTime,
+    convertTime,
 
     -- ** Types
     TimeReader (..),
@@ -77,16 +79,11 @@ import Data.Time.Zones.All (TZLabel (..))
 import Data.Time.Zones.All qualified as All
 import Optics.Core ((^.), (^?))
 
--- | Reads the given time string based on the 'TimeReader' and destination
--- timezone. The semantics are:
---
--- * If 'TimeReader' is 'Nothing' then we read the local system time.
---
--- * If 'srcTZ' is @'SrcTZDatabase'@ then we manually append the
---   timezone data onto the time string and format. That is, only use this if:
---
---      * @timeString@ does __not__ contain a timezone like @EST@.
---      * @format@ does __not__ mention the timezone option @%Z@.
+-- | Reads the given time string based on the source 'TimeReader' and
+-- converts to the destination timezone. This is the composition of
+-- 'readTime' and 'convertTime'. If the source is 'Nothing' then we read
+-- the local system time. Similarly, if the dest is 'Nothing', we convert
+-- to the local system timezone.
 --
 -- __Throws:__
 --
@@ -96,7 +93,7 @@ import Optics.Core ((^.), (^?))
 -- * 'LocalSystemTimeException': Error retrieving local system time.
 --
 -- ==== __Examples__
--- >>> import Data.Default (Default (def))
+--
 -- >>> let toUtc = Just $ TZDatabaseLabel Etc__UTC
 -- >>> let reader = defaultTimeReader "17:24"
 -- >>> let litReader = reader { srcTZ = Just SrcTZLiteral }
@@ -112,23 +109,96 @@ import Optics.Core ((^.), (^?))
 -- >>> readConvertTime (Just (nyReader { timeString = "08:15" })) toUtc
 -- 1970-01-01 13:15:00 UTC
 --
+-- >>> let badTimeString = litReader { timeString = "bad" }
+-- >>> readConvertTime (Just badTimeString) toUtc
+-- *** Exception: MkParseTimeException (MkTimeFormat {unTimeFormat = "%H:%M"}) "bad"
+--
+-- >>> let badTZDatabase = litReader { srcTZ = Just (SrcTZDatabase $ TZDatabaseText "America/NewYork")}
+-- >>> readConvertTime (Just badTZDatabase) toUtc
+-- *** Exception: MkParseTZDatabaseException "America/NewYork"
+--
 -- @since 0.1
 readConvertTime :: Maybe TimeReader -> Maybe TZDatabase -> IO ZonedTime
-readConvertTime mtimeReader destTZ = do
-  inTime <- case mtimeReader of
-    Nothing ->
-      Local.getZonedTime
-        `Utils.catchSync` \(e :: SomeException) -> throwIO $ MkLocalSystemTimeException e
-    Just timeReader -> readTimeString timeReader
+readConvertTime mtimeReader destTZ =
+  readTime mtimeReader >>= (`convertTime` destTZ)
 
-  case destTZ of
-    Just tzdb -> do
-      lbl <- tzDatabaseToTZLabel tzdb
-      pure $ convertZonedLabel inTime lbl
-    Nothing -> do
-      let inTimeUtc = Local.zonedTimeToUTC inTime
-      currTZ <- Local.getCurrentTimeZone
-      pure $ Local.utcToZonedTime currTZ inTimeUtc
+-- | Reads a time based on the 'TimeReader'. If given 'Nothing' we read the
+-- local system time instead. If 'srcTZ' is 'SrcTZDatabase' then we manually
+-- append the timezone data onto the time string and format. That is, only use
+-- 'SrcTZDatabase' if:
+--
+--      * @timeString@ does __not__ contain a timezone like @EST@.
+--      * @format@ does __not__ mention the timezone option @%Z@.
+--
+-- __Throws:__
+--
+-- * 'ParseTimeException': Error parsing the time string.
+-- * 'ParseTZDatabaseException': Error parsing the tz database name.
+-- * 'LocalTimeZoneException': Error retrieving local timezone.
+-- * 'LocalSystemTimeException': Error retrieving local system time.
+--
+-- ==== __Examples__
+-- >>> let reader = defaultTimeReader "17:24"
+-- >>> let litReader = reader { srcTZ = Just SrcTZLiteral }
+-- >>> -- literal + no src timezone = utc
+-- >>> readTime (Just litReader)
+-- 1970-01-01 17:24:00 +0000
+--
+-- >>> -- literal + convert from est
+-- >>> readTime (Just (litReader { format = Types.hmTZ, timeString = "17:24 EST" }))
+-- 1970-01-01 17:24:00 EST
+--
+-- >>> let nyReader = litReader { srcTZ = Just (SrcTZDatabase $ TZDatabaseLabel America__New_York) }
+-- >>> readTime (Just (nyReader { timeString = "08:15" }))
+-- 1970-01-01 08:15:00 EST
+--
+-- >>> let badTimeString = litReader { timeString = "bad" }
+-- >>> readTime (Just badTimeString)
+-- *** Exception: MkParseTimeException (MkTimeFormat {unTimeFormat = "%H:%M"}) "bad"
+--
+-- >>> let badTZDatabase = litReader { srcTZ = Just (SrcTZDatabase $ TZDatabaseText "America/NewYork")}
+-- >>> readTime (Just badTZDatabase)
+-- *** Exception: MkParseTZDatabaseException "America/NewYork"
+--
+-- @since 0.1
+readTime :: Maybe TimeReader -> IO ZonedTime
+readTime (Just timeReader) = readTimeString timeReader
+readTime Nothing =
+  Local.getZonedTime
+    `Utils.catchSync` \(e :: SomeException) -> throwIO $ MkLocalSystemTimeException e
+
+-- | Converts the given time to the destination timezone. If no destination
+-- timezone is given then we convert to the local system timezone.
+--
+-- __Throws:__
+--
+-- * 'ParseTZDatabaseException': Error parsing the tz database name.
+-- * 'LocalTimeZoneException': Error retrieving local timezone.
+--
+-- ==== __Examples__
+--
+-- >>> import Data.Time.Clock (UTCTime (..))
+-- >>> import Data.Time.LocalTime (utc, utcToZonedTime)
+-- >>> let zoned = utcToZonedTime utc (UTCTime (toEnum 50_000) 0)
+-- >>> zoned
+-- 1995-10-10 00:00:00 UTC
+--
+-- >>> let toNy = Just $ TZDatabaseText "America/New_York"
+-- >>> convertTime zoned toNy
+-- 1995-10-09 20:00:00 EDT
+--
+-- >>> convertTime zoned (Just $ TZDatabaseText "America/NewYork")
+-- *** Exception: MkParseTZDatabaseException "America/NewYork"
+--
+-- @since 0.1
+convertTime :: ZonedTime -> Maybe TZDatabase -> IO ZonedTime
+convertTime inTime Nothing = do
+  let inTimeUtc = Local.zonedTimeToUTC inTime
+  currTZ <-
+    Local.getCurrentTimeZone
+      `Utils.catchSync` (\(e :: SomeException) -> throwIO $ MkLocalTimeZoneException e)
+  pure $ Local.utcToZonedTime currTZ inTimeUtc
+convertTime inTime (Just tzdb) = convertZonedLabel inTime <$> tzDatabaseToTZLabel tzdb
 
 readTimeString :: TimeReader -> IO ZonedTime
 readTimeString timeReader = do

@@ -50,7 +50,10 @@ data TimeReader = MkTimeReader
     -- @since 0.1
     format :: TimeFormat,
     -- | Timezone in which to read the string. 'Nothing' corresponds to
-    -- local timezone.
+    -- local timezone. If 'srcTZ' is 'SrcTZDatabase' then:
+    --
+    --     * 'timeString' should __not__ contain a timezone like @EST@.
+    --     * 'format' should __not__ mention the timezone option @%Z@.
     --
     -- @since 0.1
     srcTZ :: Maybe SrcTZ,
@@ -112,10 +115,10 @@ instance
 
 -- | Given a time string, returns a default time reader.
 --
--- * @format = "%H:%M"@ (24hr hours:minutes)
--- * @srzTZ = 'Nothing'@ (local)
--- * @locale = 'Utils.timeLocaleAllZones'@ (all locales)
--- * @today = 'False'@ (do not automatically add current day)
+-- * @format = "%H:%M"@: 24hr hours:minutes
+-- * @srzTZ = 'Nothing'@: local
+-- * @locale = 'Utils.timeLocaleAllZones'@: all locales
+-- * @today = 'False'@: do not automatically add current day
 --
 -- @since 0.1
 defaultTimeReader :: Text -> TimeReader
