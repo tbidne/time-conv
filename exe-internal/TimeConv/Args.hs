@@ -14,6 +14,7 @@ where
 
 import Control.Applicative ((<|>))
 import Data.Default (Default (..))
+import Data.Functor ((<&>))
 import Data.Maybe (fromMaybe)
 import Data.String (IsString (fromString))
 import Data.Text (Text)
@@ -181,9 +182,8 @@ parseFormatOut =
         ]
 
 readFormat :: ReadM TimeFormat
-readFormat = do
-  s <- OApp.str
-  pure $ case s of
+readFormat =
+  OApp.str <&> \case
     "rfc822" -> Types.rfc822
     other -> fromString other
 
@@ -208,11 +208,10 @@ parseSrcTZ =
           " '%Z' flag should be present. If literal is specified and no ",
           " timezone is included then we assume UTC."
         ]
-    readSrcTZ = do
-      a <- OApp.str
-      case a of
-        "literal" -> pure $ Just SrcTZLiteral
-        other -> pure $ Just $ SrcTZDatabase $ TZDatabaseText other
+    readSrcTZ =
+      OApp.str <&> \case
+        "literal" -> Just SrcTZLiteral
+        other -> Just $ SrcTZDatabase $ TZDatabaseText other
 
 parseToday :: Parser Bool
 parseToday =

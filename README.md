@@ -5,7 +5,7 @@
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/tbidne/time-conv?include_prereleases&sort=semver)](https://github.com/tbidne/time-conv/releases/)
 [![MIT](https://img.shields.io/github/license/tbidne/time-conv?color=blue)](https://opensource.org/licenses/MIT)
 
-[![nix](https://img.shields.io/github/workflow/status/tbidne/time-conv/nix/main?label=nix%209.2.2&&logo=nixos&logoColor=85c5e7&labelColor=2f353c)](https://github.com/tbidne/time-conv/actions/workflows/nix_ci.yaml)
+[![nix](https://img.shields.io/github/workflow/status/tbidne/time-conv/nix/main?label=nix%209.2&&logo=nixos&logoColor=85c5e7&labelColor=2f353c)](https://github.com/tbidne/time-conv/actions/workflows/nix_ci.yaml)
 [![style](https://img.shields.io/github/workflow/status/tbidne/time-conv/style/main?label=style&logoColor=white&labelColor=2f353c)](https://github.com/tbidne/time-conv/actions/workflows/style_ci.yaml)
 
 [![cabal 8.10](https://img.shields.io/github/workflow/status/tbidne/time-conv/cabal_8-10/main?label=8.10&logo=haskell&logoColor=655889&labelColor=2f353c)](https://github.com/tbidne/time-conv/actions/workflows/cabal_8-10.yaml)
