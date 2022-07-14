@@ -12,11 +12,7 @@ module Data.Time.Conversion
     TimeReader (..),
     defaultTimeReader,
     SrcTZ (..),
-    Types._SrcTZDatabase,
-    Types._SrcTZLiteral,
     TZDatabase (..),
-    Types._TZDatabaseLabel,
-    Types._TZDatabaseText,
     TimeFormat (..),
 
     -- ** Formatting
@@ -41,6 +37,16 @@ module Data.Time.Conversion
     ParseTZDatabaseException (..),
     LocalTimeZoneException (..),
     LocalSystemTimeException (..),
+
+    -- * Optics
+    _SrcTZDatabase,
+    _SrcTZLiteral,
+    _TZDatabaseLabel,
+    _TZDatabaseText,
+    _MkTimeFormat,
+    _ParseTZDatabaseException,
+    _LocalTimeZoneException,
+    _LocalSystemTimeException,
 
     -- * Miscellaneous
     Utils.timeLocaleAllZones,
@@ -67,6 +73,14 @@ import Data.Time.Conversion.Types
     TimeFormat (..),
     TimeReader (..),
     defaultTimeReader,
+    _LocalSystemTimeException,
+    _LocalTimeZoneException,
+    _MkTimeFormat,
+    _ParseTZDatabaseException,
+    _SrcTZDatabase,
+    _SrcTZLiteral,
+    _TZDatabaseLabel,
+    _TZDatabaseText,
   )
 import Data.Time.Conversion.Types qualified as Types
 import Data.Time.Conversion.Utils qualified as Utils
@@ -111,11 +125,11 @@ import Optics.Core ((^.), (^?))
 --
 -- >>> let badTimeString = litReader { timeString = "bad" }
 -- >>> readConvertTime (Just badTimeString) toUtc
--- *** Exception: MkParseTimeException (MkTimeFormat {unTimeFormat = "%H:%M"}) "bad"
+-- *** Exception: MkParseTimeException {errFormat = MkTimeFormat {unTimeFormat = "%H:%M"}, errMsg = "bad"}
 --
 -- >>> let badTZDatabase = litReader { srcTZ = Just (SrcTZDatabase $ TZDatabaseText "America/NewYork")}
 -- >>> readConvertTime (Just badTZDatabase) toUtc
--- *** Exception: MkParseTZDatabaseException "America/NewYork"
+-- *** Exception: MkParseTZDatabaseException {unParseTZDatabaseException = "America/NewYork"}
 --
 -- @since 0.1
 readConvertTime :: Maybe TimeReader -> Maybe TZDatabase -> IO ZonedTime
@@ -154,11 +168,11 @@ readConvertTime mtimeReader destTZ =
 --
 -- >>> let badTimeString = litReader { timeString = "bad" }
 -- >>> readTime (Just badTimeString)
--- *** Exception: MkParseTimeException (MkTimeFormat {unTimeFormat = "%H:%M"}) "bad"
+-- *** Exception: MkParseTimeException {errFormat = MkTimeFormat {unTimeFormat = "%H:%M"}, errMsg = "bad"}
 --
 -- >>> let badTZDatabase = litReader { srcTZ = Just (SrcTZDatabase $ TZDatabaseText "America/NewYork")}
 -- >>> readTime (Just badTZDatabase)
--- *** Exception: MkParseTZDatabaseException "America/NewYork"
+-- *** Exception: MkParseTZDatabaseException {unParseTZDatabaseException = "America/NewYork"}
 --
 -- @since 0.1
 readTime :: Maybe TimeReader -> IO ZonedTime
@@ -188,7 +202,7 @@ readTime Nothing =
 -- 1995-10-09 20:00:00 EDT
 --
 -- >>> convertTime zoned (Just $ TZDatabaseText "America/NewYork")
--- *** Exception: MkParseTZDatabaseException "America/NewYork"
+-- *** Exception: MkParseTZDatabaseException {unParseTZDatabaseException = "America/NewYork"}
 --
 -- @since 0.1
 convertTime :: ZonedTime -> Maybe TZDatabase -> IO ZonedTime

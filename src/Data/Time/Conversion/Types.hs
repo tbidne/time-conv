@@ -9,11 +9,7 @@ module Data.Time.Conversion.Types
   ( TimeReader (..),
     defaultTimeReader,
     SrcTZ (..),
-    _SrcTZDatabase,
-    _SrcTZLiteral,
     TZDatabase (..),
-    _TZDatabaseLabel,
-    _TZDatabaseText,
 
     -- * Formatting
     TimeFormat (..),
@@ -28,6 +24,16 @@ module Data.Time.Conversion.Types
     ParseTZDatabaseException (..),
     LocalTimeZoneException (..),
     LocalSystemTimeException (..),
+
+    -- * Optics
+    _SrcTZDatabase,
+    _SrcTZLiteral,
+    _TZDatabaseLabel,
+    _TZDatabaseText,
+    _MkTimeFormat,
+    _ParseTZDatabaseException,
+    _LocalTimeZoneException,
+    _LocalSystemTimeException,
   )
 where
 
@@ -41,8 +47,18 @@ import Data.Time.Conversion.Utils qualified as Utils
 import Data.Time.Format (TimeLocale (..))
 import Data.Time.Zones.All (TZLabel (..))
 import GHC.Generics (Generic)
-import Optics.Core (A_Lens, An_Iso, LabelOptic (..), Prism', (^.))
-import Optics.Core qualified as O
+import Optics.Core
+  ( A_Lens,
+    Iso',
+    LabelOptic (..),
+    Prism',
+    Review,
+    iso,
+    lens,
+    prism,
+    unto,
+    (^.),
+  )
 
 -- | Determines how to read a time string.
 --
@@ -106,35 +122,35 @@ instance
   (k ~ A_Lens, a ~ TimeFormat, b ~ TimeFormat) =>
   LabelOptic "format" k TimeReader TimeReader a b
   where
-  labelOptic = O.lens format (\tb f -> tb {format = f})
+  labelOptic = lens format (\tb f -> tb {format = f})
 
 -- | @since 0.1
 instance
   (k ~ A_Lens, a ~ Maybe SrcTZ, b ~ Maybe SrcTZ) =>
   LabelOptic "srcTZ" k TimeReader TimeReader a b
   where
-  labelOptic = O.lens srcTZ (\tb tz -> tb {srcTZ = tz})
+  labelOptic = lens srcTZ (\tb tz -> tb {srcTZ = tz})
 
 -- | @since 0.1
 instance
   (k ~ A_Lens, a ~ TimeLocale, b ~ TimeLocale) =>
   LabelOptic "locale" k TimeReader TimeReader a b
   where
-  labelOptic = O.lens locale (\tb l -> tb {locale = l})
+  labelOptic = lens locale (\tb l -> tb {locale = l})
 
 -- | @since 0.1
 instance
   (k ~ A_Lens, a ~ Bool, b ~ Bool) =>
   LabelOptic "today" k TimeReader TimeReader a b
   where
-  labelOptic = O.lens today (\tb b -> tb {today = b})
+  labelOptic = lens today (\tb b -> tb {today = b})
 
 -- | @since 0.1
 instance
   (k ~ A_Lens, a ~ Text, b ~ Text) =>
   LabelOptic "timeString" k TimeReader TimeReader a b
   where
-  labelOptic = O.lens timeString (\tb ts -> tb {timeString = ts})
+  labelOptic = lens timeString (\tb ts -> tb {timeString = ts})
 
 -- | Given a time string, returns a default time reader.
 --
@@ -176,14 +192,14 @@ data SrcTZ
 
 -- | @since 0.1
 _SrcTZDatabase :: Prism' SrcTZ TZDatabase
-_SrcTZDatabase = O.prism SrcTZDatabase from
+_SrcTZDatabase = prism SrcTZDatabase from
   where
     from (SrcTZDatabase tzdb) = Right tzdb
     from other = Left other
 
 -- | @since 0.1
 _SrcTZLiteral :: Prism' SrcTZ ()
-_SrcTZLiteral = O.prism (const SrcTZLiteral) from
+_SrcTZLiteral = prism (const SrcTZLiteral) from
   where
     from SrcTZLiteral = Right ()
     from other = Left other
@@ -224,14 +240,14 @@ data TZDatabase
 
 -- | @since 0.1
 _TZDatabaseLabel :: Prism' TZDatabase TZLabel
-_TZDatabaseLabel = O.prism TZDatabaseLabel from
+_TZDatabaseLabel = prism TZDatabaseLabel from
   where
     from (TZDatabaseLabel l) = Right l
     from other = Left other
 
 -- | @since 0.1
 _TZDatabaseText :: Prism' TZDatabase Text
-_TZDatabaseText = O.prism TZDatabaseText from
+_TZDatabaseText = prism TZDatabaseText from
   where
     from (TZDatabaseText t) = Right t
     from other = Left other
@@ -283,11 +299,8 @@ instance Default TimeFormat where
   def = hm
 
 -- | @since 0.1
-instance
-  (k ~ An_Iso, a ~ Text, b ~ Text) =>
-  LabelOptic "unTimeFormat" k TimeFormat TimeFormat a b
-  where
-  labelOptic = O.iso unTimeFormat MkTimeFormat
+_MkTimeFormat :: Iso' TimeFormat Text
+_MkTimeFormat = iso unTimeFormat MkTimeFormat
 
 -- | Format for 24-hour @hours:minutes@.
 --
@@ -337,12 +350,23 @@ rfc822 = "%a, %_d %b %Y %H:%M:%S %Z"
 -- | Exception parsing time string.
 --
 -- @since 0.1
-data ParseTimeException = MkParseTimeException TimeFormat Text
+data ParseTimeException = MkParseTimeException
+  { -- | @since 0.1
+    errFormat :: TimeFormat,
+    -- | @since 0.1
+    errMsg :: Text
+  }
   deriving stock
     ( -- | @since 0.1
       Eq,
       -- | @since 0.1
+      Generic,
+      -- | @since 0.1
       Show
+    )
+  deriving anyclass
+    ( -- | @since 0.1
+      NFData
     )
 
 -- | @since 0.1
@@ -354,16 +378,44 @@ instance Exception ParseTimeException where
       <> T.unpack (f ^. #unTimeFormat)
       <> ">"
 
+-- | @since 0.1
+instance
+  (k ~ A_Lens, a ~ TimeFormat, b ~ TimeFormat) =>
+  LabelOptic "errFormat" k ParseTimeException ParseTimeException a b
+  where
+  labelOptic = lens errFormat (\ex f -> ex {errFormat = f})
+
+-- | @since 0.1
+instance
+  (k ~ A_Lens, a ~ Text, b ~ Text) =>
+  LabelOptic "errMsg" k ParseTimeException ParseTimeException a b
+  where
+  labelOptic = lens errMsg (\ex m -> ex {errMsg = m})
+
 -- | Exception parsing tz database names.
 --
 -- @since 0.1
-newtype ParseTZDatabaseException = MkParseTZDatabaseException Text
+newtype ParseTZDatabaseException = MkParseTZDatabaseException
+  { -- | @since 0.1
+    unParseTZDatabaseException :: Text
+  }
   deriving stock
     ( -- | @since 0.1
       Eq,
       -- | @since 0.1
+      Generic,
+      -- | @since 0.1
       Show
     )
+  deriving anyclass
+    ( -- | @since 0.1
+      NFData
+    )
+
+-- | @since 0.1
+_ParseTZDatabaseException :: Iso' ParseTZDatabaseException Text
+_ParseTZDatabaseException = iso unParseTZDatabaseException MkParseTZDatabaseException
+{-# INLINEABLE _ParseTZDatabaseException #-}
 
 -- | @since 0.1
 instance Exception ParseTZDatabaseException where
@@ -385,6 +437,11 @@ instance Exception LocalTimeZoneException where
   displayException (MkLocalTimeZoneException e) =
     "Local timezone exception: " <> displayException e
 
+-- | @since 0.1
+_LocalTimeZoneException :: Exception e => Review LocalTimeZoneException e
+_LocalTimeZoneException = unto MkLocalTimeZoneException
+{-# INLINEABLE _LocalTimeZoneException #-}
+
 -- | Exception reading local system time.
 --
 -- @since 0.1
@@ -397,3 +454,8 @@ deriving stock instance Show LocalSystemTimeException
 instance Exception LocalSystemTimeException where
   displayException (MkLocalSystemTimeException e) =
     "Local system time exception: " <> displayException e
+
+-- | @since 0.1
+_LocalSystemTimeException :: Exception e => Review LocalSystemTimeException e
+_LocalSystemTimeException = unto MkLocalSystemTimeException
+{-# INLINEABLE _LocalSystemTimeException #-}

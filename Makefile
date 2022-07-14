@@ -10,6 +10,10 @@ build:
 		cabal build $(ARGS); \
 	fi
 
+.PHONY: clean
+clean:
+	cabal clean
+
 .PHONY: test
 test:
 	if [ -z "$(ARGS)" ]; then \
