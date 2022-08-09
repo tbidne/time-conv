@@ -12,7 +12,6 @@ module TimeConv.Args
   )
 where
 
-import Control.Applicative ((<|>))
 import Data.Default (Default (..))
 import Data.Functor ((<&>))
 import Data.Maybe (fromMaybe)
@@ -29,7 +28,7 @@ import Data.Time.Conversion.Types qualified as Types
 import Data.Time.Conversion.Utils qualified as Utils
 import Data.Version.Package qualified as PV
 import Development.GitRev qualified as GitRev
-import Optics.Core (Getter, (%), (^.), (^?), _Just)
+import Optics.Core (Getter, (^.))
 import Optics.Core qualified as O
 import Optics.TH (makeFieldLabelsNoPrefix)
 import Options.Applicative
@@ -45,7 +44,7 @@ import Options.Applicative.Types (ArgPolicy (..), ReadM)
 --
 -- @since 0.1
 data Args = MkArgs
-  { format :: TimeFormat,
+  { formatIn :: TimeFormat,
     formatOut :: Maybe TimeFormat,
     srcTZ :: Maybe SrcTZ,
     destTZ :: Maybe TZDatabase,
@@ -82,7 +81,7 @@ parserInfo =
 parseArgs :: Parser Args
 parseArgs =
   MkArgs
-    <$> parseFormat
+    <$> parseFormatIn
     <*> parseFormatOut
     <*> parseSrcTZ
     <*> parseDestTZ
@@ -111,14 +110,14 @@ argsToBuilder = O.to to
             Just str ->
               Just $
                 MkTimeReader
-                  { format = args ^. #format,
+                  { format = args ^. #formatIn,
                     srcTZ = args ^. #srcTZ,
                     locale = Utils.timeLocaleAllZones,
                     today = args ^. #today,
                     timeString = str
                   }
             Nothing -> Nothing
-          formatOut = fromMaybe def (args ^. #formatOut <|> mtimeReader ^? _Just % #format)
+          formatOut = fromMaybe Types.rfc822 (args ^. #formatOut)
        in (mtimeReader, args ^. #destTZ, formatOut)
 
 parseDestTZ :: Parser (Maybe TZDatabase)
@@ -140,12 +139,12 @@ parseDestTZ =
         ]
     readTZDatabase = Just . TZDatabaseText <$> OApp.str
 
-parseFormat :: Parser TimeFormat
-parseFormat =
+parseFormatIn :: Parser TimeFormat
+parseFormatIn =
   OApp.option
     readFormat
     ( OApp.value def
-        <> OApp.long "format"
+        <> OApp.long "format-in"
         <> OApp.short 'f'
         <> OApp.metavar "<rfc822 | FORMAT_STRING>"
         <> OApp.help helpTxt
@@ -153,8 +152,8 @@ parseFormat =
   where
     helpTxt =
       mconcat
-        [ "Glibc-style format string e.g. %Y-%m-%d for yyyy-mm-dd, only used if",
-          " a time string is given. Defaults to ",
+        [ "Glibc-style format string -- e.g. %Y-%m-%d for yyyy-mm-dd -- for ",
+          " parsing the time string. Defaults to",
           defFormatStr,
           " i.e. 24-hr hour:minute. If the string 'rfc822' is given then we use",
           " RFC822. See 'man date' for basic examples, and ",
@@ -175,10 +174,8 @@ parseFormatOut =
   where
     helpTxt =
       mconcat
-        [ "Like --format, but used for the output only. If this is not",
-          " present but a time string is, then --format is used for both",
-          " input and output. In other words, this option must be used",
-          " if you want to format the local system time output."
+        [ "Like --format-in, but used for the output. If this is not ",
+          "present we default to rfc822."
         ]
 
 readFormat :: ReadM TimeFormat

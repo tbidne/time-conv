@@ -74,7 +74,7 @@ The timezone names are based on the tz_database. See https://en.wikipedia.org/wi
 ```
 time-conv: A tool for timezone conversions.
 
-Usage: time-conv [-f|--format <rfc822 | FORMAT_STRING>]
+Usage: time-conv [-f|--format-in <rfc822 | FORMAT_STRING>]
                  [-o|--format-out <rfc822 | FORMAT_STRING>]
                  [-s|--src-tz <literal | TZ_DATABASE>]
                  [-d|--dest-tz TZ_DATABASE] [-t|--today] [TIME_STRING]
@@ -83,20 +83,17 @@ Usage: time-conv [-f|--format <rfc822 | FORMAT_STRING>]
 time-conv reads time strings and converts between timezones. For the src and dest options, TZ_DATABASE refers to labels like America/New_York. See https://en.wikipedia.org/wiki/Tz_database.
 
 Available options:
-  -f,--format <rfc822 | FORMAT_STRING>
-                           Glibc-style format string e.g. %Y-%m-%d for
-                           yyyy-mm-dd, only used if a time string is given.
-                           Defaults to %H:%M i.e. 24-hr hour:minute. If the
-                           string 'rfc822' is given then we use RFC822. See 'man
-                           date' for basic examples, and
+  -f,--format-in <rfc822 | FORMAT_STRING>
+                           Glibc-style format string -- e.g. %Y-%m-%d for
+                           yyyy-mm-dd -- for parsing the time string. Defaults
+                           to%H:%M i.e. 24-hr hour:minute. If the string
+                           'rfc822' is given then we use RFC822. See 'man date'
+                           for basic examples, and
                            https://hackage.haskell.org/package/time-1.13/docs/Data-Time-Format.html#v:formatTime
                            for the exact spec.
   -o,--format-out <rfc822 | FORMAT_STRING>
-                           Like --format, but used for the output only. If this
-                           is not present but a time string is, then --format is
-                           used for both input and output. In other words, this
-                           option must be used if you want to format the local
-                           system time output.
+                           Like --format-in, but used for the output. If this is
+                           not present we default to rfc822.
   -s,--src-tz <literal | TZ_DATABASE>
                            Timezone in which to read the string. Can be
                            'literal' or a tz database label. If none is given
@@ -127,7 +124,7 @@ Version: 0.1
 
 **Arg:** `-f,--format <rfc822 | FORMAT_STRING>`
 
-**Description:** This option allows one to set an explicit format string, only used if a [time string](#time-string) is present. By default we use the format `%H-%M` which is 24-hour `hours:minutes`. If the string `rfc822` is given, we use the time string as defined by RFC822: `%a, %_d %b %Y %H:%M:%S %Z`.
+**Description:** Custom format -- e.g. `%Y-%m-%d` for `yyyy-mm-dd` -- for parsing the time string. By default we use the format `%H-%M` which is 24-hour `hours:minutes`. If the string `rfc822` is given, we use the time string as defined by RFC822: `%a, %_d %b %Y %H:%M:%S %Z`.
 
 **Examples:**
 
@@ -143,20 +140,17 @@ $ time-conv -f "%Y-%m-%d %H:%M" "2022-06-15 08:30"
 
 **Arg:** `-o,--format-out <rfc822 | FORMAT_STRING>`
 
-**Description:** The same as `--format` except it applies to the output format only. If `--format-out` is not given but a [time string](#time-string) is, then the output is formatted via `--format`. In other words, this option must be used if you want to format the local system time output.
+**Description:** Like `--format-in` except it applies to the output format only. If `--format-out` is not given we default to `rfc822`.
 
 **Examples:**
 
 ```
-# using implicit %H-%M format for both input and output
+# using implicit %H-%M format for input
 $ time-conv 08:30
-08:30
-
-# override input format for output
-$ time-conv -o rfc822 08:30
 Thu,  1 Jan 1970 08:30:00 NZST
 
-$ time-conv -o rfc822
+# read local system time
+$ time-conv
 Fri, 17 Jun 2022 16:05:01 NZST
 ```
 
@@ -170,19 +164,19 @@ Fri, 17 Jun 2022 16:05:01 NZST
 
 ```
 # use the local system timezone
-$ time-conv "08:30"
-08:30
+$ time-conv 08:30
+Thu,  1 Jan 1970 08:30:00 NZST
 
 # notice the literal is overridden unless '-s literal' is added
 $ time-conv -f "%H:%M %Z" "08:30 EST"
-08:30 NZST
+Thu,  1 Jan 1970 08:30:00 NZST
 
 $ time-conv -f "%H:%M %Z" -s literal "08:30 EST"
-01:30:00 NZST
+Fri,  2 Jan 1970 01:30:00 NZST
 
 # using tz database name
 $ time-conv -s America/New_York 08:30
-01:30
+Fri,  2 Jan 1970 01:30:00 NZST
 ```
 
 ## Destination Timezone
@@ -196,14 +190,14 @@ $ time-conv -s America/New_York 08:30
 ```
 # use the local system timezone
 $ time-conv 08:30
-08:30
+Thu,  1 Jan 1970 08:30:00 NZST
 
 # using tz database name
 $ time-conv -d America/New_York 08:30
-15:30
+Wed, 31 Dec 1969 15:30:00 EST
 
 $ time-conv -s America/New_York -d Etc/UTC 08:30
-13:30
+Thu,  1 Jan 1970 13:30:00 UTC
 ```
 
 ## Today
@@ -215,10 +209,11 @@ $ time-conv -s America/New_York -d Etc/UTC 08:30
 **Examples:**
 
 ```
-$ time-conv -o rfc822 08:30
+$ time-conv 08:30
 Thu,  1 Jan 1970 08:30:00 NZST
 
-$ time-conv -t -o rfc822 08:30
+# use today's date instead of initial unix time
+$ time-conv -t 08:30
 Fri, 17 Jun 2022 08:30:00 NZST
 ```
 
@@ -232,9 +227,9 @@ Fri, 17 Jun 2022 08:30:00 NZST
 
 ```
 $ time-conv
-21:30
+Thu, 16 Jun 2022 21:30:00 NZST
 
-$ time-conv -o rfc822 -d Europe/Paris
+$ time-conv -d Europe/Paris
 Thu, 16 Jun 2022 12:30:00 CEST
 ```
 

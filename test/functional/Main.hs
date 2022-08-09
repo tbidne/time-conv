@@ -55,12 +55,12 @@ formatTests =
 
 testFormatDefault :: TestTree
 testFormatDefault = testCase "Uses default parsing" $ do
-  result <- captureTimeConv ["08:30"]
+  result <- captureTimeConv ["08:30", "-o", "%H:%M"]
   "08:30" @=? result
 
 testFormatCustom :: TestTree
 testFormatCustom = testCase "Uses custom parsing" $ do
-  result <- captureTimeConv ["-f", "%Y-%m-%d %H:%M", "2022-06-15 08:30"]
+  result <- captureTimeConv ["-f", "%Y-%m-%d %H:%M", "-o", "%Y-%m-%d %H:%M", "2022-06-15 08:30"]
   "2022-06-15 08:30" @=? result
 
 testFormatFails :: TestTree
@@ -102,12 +102,12 @@ srcTzTests =
 testSrcTzLiteral :: TestTree
 testSrcTzLiteral = testCase "Uses source timezone from literal" $ do
   result <- captureTimeConv $ pureTZ ++ ["-f", "%H:%M %Z", "08:30 EST"]
-  "13:30 UTC" @=? result
+  "Thu,  1 Jan 1970 13:30:00 UTC" @=? result
 
 testSrcTzDatabase :: TestTree
 testSrcTzDatabase = testCase "Uses source timezone from tz database" $ do
   result <- captureTimeConv $ pureDestTZ ++ ["-f", "%H:%M %Z", "-s", "Europe/Paris", "08:30 EST"]
-  "07:30 UTC" @=? result
+  "Thu,  1 Jan 1970 07:30:00 UTC" @=? result
 
 testSrcTzFails :: TestTree
 testSrcTzFails = testCase "Bad source timezone fails" $ do
@@ -128,12 +128,12 @@ destTzTests =
 testDestTzDatabase :: TestTree
 testDestTzDatabase = testCase "Uses dest timezone from tz database" $ do
   result <- captureTimeConv $ pureSrcTZ ++ ["-f", "%H:%M %Z", "-d", "Europe/Paris", "08:30 EST"]
-  "14:30 CET" @=? result
+  "Thu,  1 Jan 1970 14:30:00 CET" @=? result
 
 testSrcDestTzDatabase :: TestTree
 testSrcDestTzDatabase = testCase "Uses src to dest" $ do
   result <- captureTimeConv ["-s", "America/New_York", "-d", "Europe/Paris", "08:30"]
-  "14:30" @=? result
+  "Thu,  1 Jan 1970 14:30:00 CET" @=? result
 
 testDestTzFails :: TestTree
 testDestTzFails = testCase "Bad dest timezone fails" $ do
