@@ -38,7 +38,7 @@
 1. Converting local system time into a different timezone:
 
     ```
-    $ time-conv -d Europe/Paris
+    $ time-conv -d europe/paris
     Sat, 18 Jun 2022 03:19:58 CEST
 
     # -d sets the "destination" timezone
@@ -48,7 +48,7 @@
 2. Converting a "time string" from one timezone to another:
 
     ````
-    $ time-conv -t -s America/New_York 18:30
+    $ time-conv -t -s america/new_york 18:30
     Sat, 18 Jun 2022 11:30:00 NZST
 
     # -t means "today's date" as determined by the source
@@ -60,7 +60,7 @@
     We can also convert between two non-local timezones:
 
     ```
-    $ time-conv -s America/New_York -d Europe/Paris 18:30
+    $ time-conv -s america/new_york -d europe/paris 18:30
     Fri,  2 Jan 1970 00:30:00 CET
 
     # no -t or date information means we assume the initial unix date, 1 Jan 1970.
@@ -79,7 +79,7 @@ Usage: time-conv [-f|--format-in <rfc822 | FORMAT_STRING>]
                  [-d|--dest-tz TZ_DATABASE] [-t|--today] [TIME_STRING]
                  [-v|--version]
 
-time-conv reads time strings and converts between timezones. For the src and dest options, TZ_DATABASE refers to labels like America/New_York. See https://en.wikipedia.org/wiki/Tz_database.
+time-conv reads time strings and converts between timezones. For the src and dest options, TZ_DATABASE refers to labels like america/new_york. See https://en.wikipedia.org/wiki/Tz_database.
 
 Available options:
   -f,--format-in <rfc822 | FORMAT_STRING>
@@ -103,7 +103,7 @@ Available options:
                            should be present. If literal is specified and no
                            timezone is included then we assume UTC.
   -d,--dest-tz TZ_DATABASE Timezone in which to convert the read string. Must be
-                           a tz database label like America/New_York. If none is
+                           a tz database label like america/new_york. If none is
                            given then we use the local system timezone.
   -t,--today               Used when reading a time string, adds the local date.
                            This is a convenience option and should only be used
@@ -195,7 +195,7 @@ Thu,  1 Jan 1970 08:30:00 NZST
 $ time-conv -d america/new_york 08:30
 Wed, 31 Dec 1969 15:30:00 EST
 
-$ time-conv -s america/new_york -d Etc/UTC 08:30
+$ time-conv -s america/new_york -d etc/utc 08:30
 Thu,  1 Jan 1970 13:30:00 UTC
 ```
 
@@ -228,7 +228,7 @@ Fri, 17 Jun 2022 08:30:00 NZST
 $ time-conv
 Thu, 16 Jun 2022 21:30:00 NZST
 
-$ time-conv -d Europe/Paris
+$ time-conv -d europe/paris
 Thu, 16 Jun 2022 12:30:00 CEST
 ```
 
@@ -275,7 +275,7 @@ Because `time-conv` is a flake, it can be built as part of a nix expression. For
       pkgs = import nixpkgs {
         system = system;
       };
-      time-conv = time-conv-src.defaultPackage.${system};
+      time-conv = time-conv-src.packages.${system}.default;
     in
     {
       nixosConfigurations = {
