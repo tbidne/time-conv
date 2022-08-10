@@ -23,6 +23,7 @@ import Data.Time.Conversion.Types
     TZDatabase (..),
     TimeFormat (..),
     TimeReader (..),
+    _MkTimeFormat,
   )
 import Data.Time.Conversion.Types qualified as Types
 import Data.Time.Conversion.Utils qualified as Utils
@@ -159,7 +160,7 @@ parseFormatIn =
           " RFC822. See 'man date' for basic examples, and ",
           " https://hackage.haskell.org/package/time-1.13/docs/Data-Time-Format.html#v:formatTime for the exact spec."
         ]
-    defFormatStr = T.unpack $ def @TimeFormat ^. #unTimeFormat
+    defFormatStr = T.unpack $ def @TimeFormat ^. _MkTimeFormat
 
 parseFormatOut :: Parser (Maybe TimeFormat)
 parseFormatOut =

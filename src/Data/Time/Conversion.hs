@@ -127,11 +127,11 @@ import Optics.Core ((^.), (^?))
 --
 -- >>> let badTimeString = litReader { timeString = "bad" }
 -- >>> readConvertTime (Just badTimeString) toUtc
--- *** Exception: MkParseTimeException {errFormat = MkTimeFormat {unTimeFormat = "%H:%M"}, errMsg = "bad"}
+-- *** Exception: MkParseTimeException (MkTimeFormat "%H:%M") "bad"
 --
 -- >>> let badTZDatabase = litReader { srcTZ = Just (SrcTZDatabase $ TZDatabaseText "America/NewYork")}
 -- >>> readConvertTime (Just badTZDatabase) toUtc
--- *** Exception: MkParseTZDatabaseException {unParseTZDatabaseException = "America/NewYork"}
+-- *** Exception: MkParseTZDatabaseException "America/NewYork"
 --
 -- @since 0.1
 readConvertTime :: Maybe TimeReader -> Maybe TZDatabase -> IO ZonedTime
@@ -170,11 +170,11 @@ readConvertTime mtimeReader destTZ =
 --
 -- >>> let badTimeString = litReader { timeString = "bad" }
 -- >>> readTime (Just badTimeString)
--- *** Exception: MkParseTimeException {errFormat = MkTimeFormat {unTimeFormat = "%H:%M"}, errMsg = "bad"}
+-- *** Exception: MkParseTimeException (MkTimeFormat "%H:%M") "bad"
 --
 -- >>> let badTZDatabase = litReader { srcTZ = Just (SrcTZDatabase $ TZDatabaseText "America/NewYork")}
 -- >>> readTime (Just badTZDatabase)
--- *** Exception: MkParseTZDatabaseException {unParseTZDatabaseException = "America/NewYork"}
+-- *** Exception: MkParseTZDatabaseException "America/NewYork"
 --
 -- @since 0.1
 readTime :: Maybe TimeReader -> IO ZonedTime
@@ -204,7 +204,7 @@ readTime Nothing =
 -- 1995-10-09 20:00:00 EDT
 --
 -- >>> convertTime zoned (Just $ TZDatabaseText "America/NewYork")
--- *** Exception: MkParseTZDatabaseException {unParseTZDatabaseException = "America/NewYork"}
+-- *** Exception: MkParseTZDatabaseException "America/NewYork"
 --
 -- @since 0.1
 convertTime :: ZonedTime -> Maybe TZDatabase -> IO ZonedTime
@@ -334,7 +334,7 @@ readInLocalTimeZone locale format timeStr = do
 readTimeFormat :: TimeLocale -> TimeFormat -> Text -> Maybe ZonedTime
 readTimeFormat locale format timeStr = Format.parseTimeM True locale format' timeStr'
   where
-    format' = T.unpack $ format ^. #unTimeFormat
+    format' = T.unpack $ format ^. _MkTimeFormat
     timeStr' = T.unpack timeStr
 
 -- | Converts a zoned time to the given timezone.

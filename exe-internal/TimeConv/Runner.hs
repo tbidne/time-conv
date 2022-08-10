@@ -12,6 +12,7 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Conversion qualified as Conv
 import Data.Time.Conversion.Internal qualified as Internal
+import Data.Time.Conversion.Types (_MkTimeFormat)
 import Data.Time.Conversion.Utils qualified as Utils
 import Data.Time.Format qualified as Format
 import Optics.Core ((^.))
@@ -46,7 +47,7 @@ runTimeConvHandler handler = do
 runWithArgs :: (Text -> IO a) -> Args -> IO a
 runWithArgs handler args = do
   let (mtimeReader, destTZ, formatOut) = args ^. argsToBuilder
-      formatStr = T.unpack $ formatOut ^. #unTimeFormat
+      formatStr = T.unpack $ formatOut ^. _MkTimeFormat
 
   readAndHandle mtimeReader destTZ formatStr
   where

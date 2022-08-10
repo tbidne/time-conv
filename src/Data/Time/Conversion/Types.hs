@@ -258,19 +258,16 @@ _TZDatabaseText = prism TZDatabaseText from
 --
 -- ==== __Examples__
 -- >>> def :: TimeFormat
--- MkTimeFormat {unTimeFormat = "%H:%M"}
+-- MkTimeFormat "%H:%M"
 --
 -- >>> mempty :: TimeFormat
--- MkTimeFormat {unTimeFormat = ""}
+-- MkTimeFormat ""
 --
 -- >>> hm <> " %Z"
--- MkTimeFormat {unTimeFormat = "%H:%M %Z"}
+-- MkTimeFormat "%H:%M %Z"
 --
 -- @since 0.1
-newtype TimeFormat = MkTimeFormat
-  { -- | @since 0.1
-    unTimeFormat :: Text
-  }
+newtype TimeFormat = MkTimeFormat Text
   deriving stock
     ( -- | @since 0.1
       Eq,
@@ -301,12 +298,12 @@ instance Default TimeFormat where
 
 -- | @since 0.1
 _MkTimeFormat :: Iso' TimeFormat Text
-_MkTimeFormat = iso unTimeFormat MkTimeFormat
+_MkTimeFormat = iso (\(MkTimeFormat t) -> t) MkTimeFormat
 
 -- | Format for 24-hour @hours:minutes@.
 --
 -- >>> hm
--- MkTimeFormat {unTimeFormat = "%H:%M"}
+-- MkTimeFormat "%H:%M"
 --
 -- @since 0.1
 hm :: TimeFormat
@@ -316,7 +313,7 @@ hm = "%H:%M"
 -- | Format for 12-hour @hours:minutes am/pm@.
 --
 -- >>> hm12h
--- MkTimeFormat {unTimeFormat = "%I:%M %P"}
+-- MkTimeFormat "%I:%M %P"
 --
 -- @since 0.1
 hm12h :: TimeFormat
@@ -326,7 +323,7 @@ hm12h = "%I:%M %P"
 -- | Format for 24-hour @hours:minutes TZ@.
 --
 -- >>> hmTZ
--- MkTimeFormat {unTimeFormat = "%H:%M %Z"}
+-- MkTimeFormat "%H:%M %Z"
 --
 -- @since 0.1
 hmTZ :: TimeFormat
@@ -336,7 +333,7 @@ hmTZ = "%H:%M %Z"
 -- | Format for 12-hour @hours:minutes am/pm TZ@.
 --
 -- >>> hmTZ12h
--- MkTimeFormat {unTimeFormat = "%I:%M %P %Z"}
+-- MkTimeFormat "%I:%M %P %Z"
 --
 -- @since 0.1
 hmTZ12h :: TimeFormat
@@ -346,7 +343,7 @@ hmTZ12h = "%I:%M %P %Z"
 -- | Format for RFC822: @%a, %_d %b %Y %H:%M:%S %Z@.
 --
 -- >>> rfc822
--- MkTimeFormat {unTimeFormat = "%a, %_d %b %Y %H:%M:%S %Z"}
+-- MkTimeFormat "%a, %_d %b %Y %H:%M:%S %Z"
 --
 -- @since 0.1
 rfc822 :: TimeFormat
@@ -376,7 +373,7 @@ instance Exception ParseTimeException where
     "Could not parse time string <"
       <> T.unpack t
       <> "> with format <"
-      <> T.unpack (f ^. #unTimeFormat)
+      <> T.unpack (f ^. _MkTimeFormat)
       <> ">"
 
 -- | @since 0.1
