@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 module Props.Generators
   ( tzText,
     tzLabel,
@@ -36,10 +38,8 @@ tzText = tzLabel >>= textCase . toText
 -- @since 0.1
 textCase :: Text -> Gen Text
 textCase =
-  -- TODO: switch to foldr' once the oldest stack snapshot we support
-  -- has it (text 2.1)
   fmap (TL.toStrict . TLBuilder.toLazyText)
-    . T.foldr f (pure "")
+    . tfoldr f (pure "")
   where
     f :: Char -> Gen Builder -> Gen Builder
     f c gacc =
@@ -62,3 +62,12 @@ caseTransform =
       Ch.toLower,
       id
     ]
+
+-- TODO: switch to unconditional foldr' once the oldest stack snapshot we
+-- support has it (text 2.0.1)
+tfoldr :: (Char -> a -> a) -> a -> Text -> a
+#if MIN_VERSION_text(2,0,1)
+tfoldr = T.foldr'
+#else
+tfoldr = T.foldr
+#endif
