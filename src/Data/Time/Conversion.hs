@@ -62,7 +62,7 @@ import Control.Exception (SomeException (..), throwIO)
 import Data.String (IsString)
 import Data.Text (Text)
 import Data.Text qualified as T
-import Data.Text.Encoding qualified as TEnc
+import Data.Time.Conversion.Internal qualified as Internal
 import Data.Time.Conversion.Types
   ( LocalSystemTimeException (..),
     LocalTimeZoneException (..),
@@ -179,7 +179,7 @@ readTime :: Maybe TimeReader -> IO ZonedTime
 readTime (Just timeReader) = readTimeString timeReader
 readTime Nothing =
   Local.getZonedTime
-    `Utils.catchSync` \(e :: SomeException) -> throwIO $ MkLocalSystemTimeException e
+    `Internal.catchSync` \(e :: SomeException) -> throwIO $ MkLocalSystemTimeException e
 
 -- | Converts the given time to the destination timezone. If no destination
 -- timezone is given then we convert to the local system timezone.
@@ -210,7 +210,7 @@ convertTime inTime Nothing = do
   let inTimeUtc = Local.zonedTimeToUTC inTime
   currTZ <-
     Local.getCurrentTimeZone
-      `Utils.catchSync` (\(e :: SomeException) -> throwIO $ MkLocalTimeZoneException e)
+      `Internal.catchSync` (\(e :: SomeException) -> throwIO $ MkLocalTimeZoneException e)
   pure $ Local.utcToZonedTime currTZ inTimeUtc
 convertTime inTime (Just tzdb) = convertZonedLabel inTime <$> tzDatabaseToTZLabel tzdb
 
@@ -238,7 +238,7 @@ readTimeString timeReader = do
           -- add src date if specified
           (timeStrDate, formatDate) <- maybeAddDate (Just lbl)
 
-          let name = tzLabelToTimeZoneName lbl
+          let name = Internal.tzLabelToTimeZoneAbbrv lbl
           pure (timeStrDate +-+ name, formatDate +-+ tzString)
 
       maybe
@@ -265,7 +265,7 @@ currentDate :: TimeLocale -> Maybe TZLabel -> IO String
 currentDate locale mlabel = do
   currTime <-
     Local.getZonedTime
-      `Utils.catchSync` \(e :: SomeException) -> throwIO $ MkLocalSystemTimeException e
+      `Internal.catchSync` \(e :: SomeException) -> throwIO $ MkLocalSystemTimeException e
 
   -- Convert into the given label if present. Otherwise keep in system
   -- timezone.
@@ -303,7 +303,7 @@ readInLocalTimeZone locale format timeStr = do
     T.pack
       . show
       <$> Local.getCurrentTimeZone
-      `Utils.catchSync` (\(e :: SomeException) -> throwIO $ MkLocalTimeZoneException e)
+      `Internal.catchSync` (\(e :: SomeException) -> throwIO $ MkLocalTimeZoneException e)
   let timeStr' = timeStr +-+ tzStr
   case readTimeFormat locale format' timeStr' of
     Just zt -> pure zt
@@ -347,7 +347,7 @@ readTimeFormat locale format timeStr = Format.parseTimeM True locale format' tim
 --
 -- @since 0.1
 convertZoned :: ZonedTime -> Text -> Maybe ZonedTime
-convertZoned zt = fmap (convertZonedLabel zt) . txtToTZLabel
+convertZoned zt = fmap (convertZonedLabel zt) . Internal.tzNameToTZLabel
 
 -- | Converts a zoned time to the given timezone.
 --
@@ -367,15 +367,9 @@ convertZonedLabel zt tzLabel =
 tzDatabaseToTZLabel :: TZDatabase -> IO TZLabel
 tzDatabaseToTZLabel (TZDatabaseLabel lbl) = pure lbl
 tzDatabaseToTZLabel (TZDatabaseText txt) =
-  case txtToTZLabel txt of
+  case Internal.tzNameToTZLabel txt of
     Just lbl -> pure lbl
     Nothing -> throwIO $ MkParseTZDatabaseException txt
-
-tzLabelToTimeZoneName :: TZLabel -> Text
-tzLabelToTimeZoneName = T.pack . Local.timeZoneName . Utils.tzLabelToTimeZone
-
-txtToTZLabel :: Text -> Maybe TZLabel
-txtToTZLabel = All.fromTZName . TEnc.encodeUtf8
 
 -- concat with a space
 (+-+) :: (Semigroup a, IsString a) => a -> a -> a

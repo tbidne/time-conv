@@ -11,7 +11,7 @@ import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Conversion (ParseTZDatabaseException, ParseTimeException)
-import Data.Time.Conversion.Utils qualified as Utils
+import Data.Time.Conversion.Internal qualified as Internal
 import System.Environment qualified as SysEnv
 import System.Environment.Guard (ExpectEnv (..), guardOrElse')
 import Test.Tasty (TestTree, testGroup)
@@ -96,6 +96,7 @@ srcTzTests =
     "Source Timezone"
     [ testSrcTzLiteral,
       testSrcTzDatabase,
+      testSrcTzDatabaseCase,
       testSrcTzFails
     ]
 
@@ -108,6 +109,14 @@ testSrcTzDatabase :: TestTree
 testSrcTzDatabase = testCase "Uses source timezone from tz database" $ do
   result <- captureTimeConv $ pureDestTZ ++ ["-f", "%H:%M %Z", "-s", "Europe/Paris", "08:30 EST"]
   "Thu,  1 Jan 1970 07:30:00 UTC" @=? result
+
+testSrcTzDatabaseCase :: TestTree
+testSrcTzDatabaseCase = testCase "Uses source timezone from tz database with 'wrong' case" $ do
+  result <- captureTimeConv $ pureDestTZ ++ ["-f", "%H:%M %Z", "-s", "aMeRiCa/new_yoRk", "08:30 EST"]
+  "Thu,  1 Jan 1970 13:30:00 UTC" @=? result
+
+  result2 <- captureTimeConv $ pureDestTZ ++ ["-f", "%H:%M %Z", "-s", "etc/utc", "08:30 EST"]
+  "Thu,  1 Jan 1970 08:30:00 UTC" @=? result2
 
 testSrcTzFails :: TestTree
 testSrcTzFails = testCase "Bad source timezone fails" $ do
@@ -165,7 +174,7 @@ assertException expected io = do
   result <- (io $> Nothing) `catchSync` (pure . Just)
   Just expected @=? fmap displayException result
   where
-    catchSync = Utils.catchSync @e
+    catchSync = Internal.catchSync @e
 
 captureTimeConv :: [String] -> IO Text
 captureTimeConv argList = do

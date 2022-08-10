@@ -11,6 +11,7 @@ import Control.Exception (SomeException, displayException)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Conversion qualified as Conv
+import Data.Time.Conversion.Internal qualified as Internal
 import Data.Time.Conversion.Utils qualified as Utils
 import Data.Time.Format qualified as Format
 import Optics.Core ((^.))
@@ -27,7 +28,7 @@ runTimeConv = do
   -- catch needs to be _within_ this call (i.e. not applied to the execParser
   -- function) otherwise e.g. we catch the --help "exception".
   runWithArgs (putStrLn . T.unpack) args
-    `Utils.catchSync` \(e :: SomeException) -> do
+    `Internal.catchSync` \(e :: SomeException) -> do
       _ <- putStrLn $ displayException e
       exitFailure
 

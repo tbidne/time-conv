@@ -12,5 +12,8 @@ cradle:
     - path: "./test/doctest"
       component: "time-conv:test:doctest"
 
+    - path: "./test/unit"
+      component: "time-conv:test:unit"
+
     - path: "./test/functional"
       component: "time-conv:test:functional"

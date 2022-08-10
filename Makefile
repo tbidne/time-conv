@@ -1,8 +1,9 @@
 # core
 
+.PHONY: build clean test doctest unit functional functional_impure repl watch
+
 ARGS = ""
 
-.PHONY: build
 build:
 	if [ -z "$(ARGS)" ]; then \
 		cabal build; \
@@ -10,11 +11,9 @@ build:
 		cabal build $(ARGS); \
 	fi
 
-.PHONY: clean
 clean:
 	cabal clean
 
-.PHONY: test
 test:
 	if [ -z "$(ARGS)" ]; then \
 		RUN_DOCTEST=1 cabal test; \
@@ -22,19 +21,18 @@ test:
 		RUN_DOCTEST=1 cabal test $(ARGS); \
 	fi
 
-.PHONY: doctest
 doctest:
 	RUN_DOCTEST=1 cabal test doctest
 
-.PHONY: functional
+unit:
+	cabal test unit
+
 functional:
 	cabal test functional
 
-.PHONY: functional_impure
 functional_impure:
 	FUNCTIONAL_IMPURE=1 cabal test functional
 
-.PHONY: repl
 repl:
 	if [ -z "$(ARGS)" ]; then \
 		cabal repl; \
@@ -42,68 +40,57 @@ repl:
 		cabal repl $(ARGS); \
 	fi
 
-.PHONY: watch
 watch:
 	ghcid --command "cabal repl $(ARGS)"
 
 # ci
 
-.PHONY: cic
+.PHONY: cic ci
+
 cic: formatc lintc haddockc
 
-.PHONY: ci
 ci: lint format
 
 # formatting
 
-.PHONY: formatc
+.PHONY: formatc format hsformat hsformatc cabalfmt nixpkgsfmt nixpkgsfmtc lint lintc haddock haddockc
+
 formatc: cabalfmtc hsformatc nixpkgsfmtc
 
-.PHONY: format
 format: cabalfmt hsformat nixpkgsfmt
 
-.PHONY: hsformat
 hsformat:
 	nix run github:tbidne/nix-hs-tools/0.6.1#ormolu -- --mode inplace
 
-.PHONY: hsformatc
 hsformatc:
 	nix run github:tbidne/nix-hs-tools/0.6.1#ormolu -- --mode check
 
-.PHONY: cabalfmt
 cabalfmt:
 	nix run github:tbidne/nix-hs-tools/0.6.1#cabal-fmt -- --inplace
 
-.PHONY: cabalfmtc
 cabalfmtc:
 	nix run github:tbidne/nix-hs-tools/0.6.1#cabal-fmt -- --check
 
-.PHONY: nixpkgsfmt
 nixpkgsfmt:
 	nix run github:tbidne/nix-hs-tools/0.6.1#nixpkgs-fmt
 
-.PHONY: nixpkgsfmtc
 nixpkgsfmtc:
 	nix run github:tbidne/nix-hs-tools/0.6.1#nixpkgs-fmt -- --check
 
 # linting
 
-.PHONY: lint
 lint:
 	nix run github:tbidne/nix-hs-tools/0.6.1#hlint -- --refact
 
-.PHONY: lintc
 lintc:
 	nix run github:tbidne/nix-hs-tools/0.6.1#hlint
 
-.PHONY: haddock
 haddock:
 	cabal haddock --haddock-hyperlink-source --haddock-quickjump ;\
 	mkdir -p docs/ ;\
 	find docs/ -type f | xargs -I % sh -c "rm -r %" ;\
 	cp -r dist-newstyle/build/x86_64-linux/ghc-9.2.3/time-conv-0.1/opt/doc/html/time-conv/* docs/
 
-.PHONY: haddockc
 haddockc:
 # threshold dropped to 90 because on reexport (TimeLocale) does not have any haddocks.
 	nix run github:tbidne/nix-hs-tools/0.6.1#haddock-cov -- . --threshold 90

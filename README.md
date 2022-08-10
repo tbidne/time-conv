@@ -38,10 +38,9 @@
 1. Converting local system time into a different timezone:
 
     ```
-    $ time-conv -o rfc822 -d Europe/Paris
+    $ time-conv -d Europe/Paris
     Sat, 18 Jun 2022 03:19:58 CEST
 
-    # -o rfc822 sets the output format to RFC822
     # -d sets the "destination" timezone
     # no "time string" means we read the local system time
     ```
@@ -49,7 +48,7 @@
 2. Converting a "time string" from one timezone to another:
 
     ````
-    $ time-conv -o rfc822 -t -s America/New_York 18:30
+    $ time-conv -t -s America/New_York 18:30
     Sat, 18 Jun 2022 11:30:00 NZST
 
     # -t means "today's date" as determined by the source
@@ -61,7 +60,7 @@
     We can also convert between two non-local timezones:
 
     ```
-    $ time-conv -o rfc822 -s America/New_York -d Europe/Paris 18:30
+    $ time-conv -s America/New_York -d Europe/Paris 18:30
     Fri,  2 Jan 1970 00:30:00 CET
 
     # no -t or date information means we assume the initial unix date, 1 Jan 1970.
@@ -145,13 +144,13 @@ $ time-conv -f "%Y-%m-%d %H:%M" "2022-06-15 08:30"
 **Examples:**
 
 ```
-# using implicit %H-%M format for input
+# using implicit rc822 format for output
 $ time-conv 08:30
 Thu,  1 Jan 1970 08:30:00 NZST
 
-# read local system time
-$ time-conv
-Fri, 17 Jun 2022 16:05:01 NZST
+# overriding output format
+$ time-conv -o %H:%M:%s 08:30
+08:30:00
 ```
 
 ## Source Timezone
@@ -175,7 +174,7 @@ $ time-conv -f "%H:%M %Z" -s literal "08:30 EST"
 Fri,  2 Jan 1970 01:30:00 NZST
 
 # using tz database name
-$ time-conv -s America/New_York 08:30
+$ time-conv -s america/new_york 08:30
 Fri,  2 Jan 1970 01:30:00 NZST
 ```
 
@@ -193,10 +192,10 @@ $ time-conv 08:30
 Thu,  1 Jan 1970 08:30:00 NZST
 
 # using tz database name
-$ time-conv -d America/New_York 08:30
+$ time-conv -d america/new_york 08:30
 Wed, 31 Dec 1969 15:30:00 EST
 
-$ time-conv -s America/New_York -d Etc/UTC 08:30
+$ time-conv -s america/new_york -d Etc/UTC 08:30
 Thu,  1 Jan 1970 13:30:00 UTC
 ```
 
