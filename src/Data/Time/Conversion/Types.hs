@@ -31,9 +31,10 @@ module Data.Time.Conversion.Types
     _TZDatabaseLabel,
     _TZDatabaseText,
     _MkTimeFormat,
-    _ParseTZDatabaseException,
-    _LocalTimeZoneException,
-    _LocalSystemTimeException,
+    _MkParseTimeException,
+    _MkParseTZDatabaseException,
+    _MkLocalTimeZoneException,
+    _MkLocalSystemTimeException,
   )
 where
 
@@ -310,6 +311,7 @@ _MkTimeFormat = iso unTimeFormat MkTimeFormat
 -- @since 0.1
 hm :: TimeFormat
 hm = "%H:%M"
+{-# INLINE hm #-}
 
 -- | Format for 12-hour @hours:minutes am/pm@.
 --
@@ -319,6 +321,7 @@ hm = "%H:%M"
 -- @since 0.1
 hm12h :: TimeFormat
 hm12h = "%I:%M %P"
+{-# INLINE hm12h #-}
 
 -- | Format for 24-hour @hours:minutes TZ@.
 --
@@ -328,6 +331,7 @@ hm12h = "%I:%M %P"
 -- @since 0.1
 hmTZ :: TimeFormat
 hmTZ = "%H:%M %Z"
+{-# INLINE hmTZ #-}
 
 -- | Format for 12-hour @hours:minutes am/pm TZ@.
 --
@@ -337,6 +341,7 @@ hmTZ = "%H:%M %Z"
 -- @since 0.1
 hmTZ12h :: TimeFormat
 hmTZ12h = "%I:%M %P %Z"
+{-# INLINE hmTZ12h #-}
 
 -- | Format for RFC822: @%a, %_d %b %Y %H:%M:%S %Z@.
 --
@@ -346,16 +351,12 @@ hmTZ12h = "%I:%M %P %Z"
 -- @since 0.1
 rfc822 :: TimeFormat
 rfc822 = "%a, %_d %b %Y %H:%M:%S %Z"
+{-# INLINE rfc822 #-}
 
 -- | Exception parsing time string.
 --
 -- @since 0.1
-data ParseTimeException = MkParseTimeException
-  { -- | @since 0.1
-    errFormat :: TimeFormat,
-    -- | @since 0.1
-    errMsg :: Text
-  }
+data ParseTimeException = MkParseTimeException TimeFormat Text
   deriving stock
     ( -- | @since 0.1
       Eq,
@@ -379,26 +380,14 @@ instance Exception ParseTimeException where
       <> ">"
 
 -- | @since 0.1
-instance
-  (k ~ A_Lens, a ~ TimeFormat, b ~ TimeFormat) =>
-  LabelOptic "errFormat" k ParseTimeException ParseTimeException a b
-  where
-  labelOptic = lens errFormat (\ex f -> ex {errFormat = f})
-
--- | @since 0.1
-instance
-  (k ~ A_Lens, a ~ Text, b ~ Text) =>
-  LabelOptic "errMsg" k ParseTimeException ParseTimeException a b
-  where
-  labelOptic = lens errMsg (\ex m -> ex {errMsg = m})
+_MkParseTimeException :: Iso' ParseTimeException (TimeFormat, Text)
+_MkParseTimeException = iso (\(MkParseTimeException f t) -> (f, t)) (uncurry MkParseTimeException)
+{-# INLINE _MkParseTimeException #-}
 
 -- | Exception parsing tz database names.
 --
 -- @since 0.1
-newtype ParseTZDatabaseException = MkParseTZDatabaseException
-  { -- | @since 0.1
-    unParseTZDatabaseException :: Text
-  }
+newtype ParseTZDatabaseException = MkParseTZDatabaseException Text
   deriving stock
     ( -- | @since 0.1
       Eq,
@@ -413,16 +402,17 @@ newtype ParseTZDatabaseException = MkParseTZDatabaseException
     )
 
 -- | @since 0.1
-_ParseTZDatabaseException :: Iso' ParseTZDatabaseException Text
-_ParseTZDatabaseException = iso unParseTZDatabaseException MkParseTZDatabaseException
-{-# INLINEABLE _ParseTZDatabaseException #-}
+_MkParseTZDatabaseException :: Iso' ParseTZDatabaseException Text
+_MkParseTZDatabaseException = iso (\(MkParseTZDatabaseException t) -> t) MkParseTZDatabaseException
+{-# INLINE _MkParseTZDatabaseException #-}
 
 -- | @since 0.1
 instance Exception ParseTZDatabaseException where
   displayException (MkParseTZDatabaseException tzdb) =
-    "Could not parse tz database name <"
-      <> T.unpack tzdb
-      <> ">. Wanted a name like America/New_York."
+    T.unpack $
+      "Could not parse tz database name <"
+        <> tzdb
+        <> ">. Wanted a name like America/New_York."
 
 -- | Exception reading local system timezone.
 --
@@ -438,9 +428,9 @@ instance Exception LocalTimeZoneException where
     "Local timezone exception: " <> displayException e
 
 -- | @since 0.1
-_LocalTimeZoneException :: Exception e => Review LocalTimeZoneException e
-_LocalTimeZoneException = unto MkLocalTimeZoneException
-{-# INLINEABLE _LocalTimeZoneException #-}
+_MkLocalTimeZoneException :: Exception e => Review LocalTimeZoneException e
+_MkLocalTimeZoneException = unto MkLocalTimeZoneException
+{-# INLINE _MkLocalTimeZoneException #-}
 
 -- | Exception reading local system time.
 --
@@ -456,6 +446,6 @@ instance Exception LocalSystemTimeException where
     "Local system time exception: " <> displayException e
 
 -- | @since 0.1
-_LocalSystemTimeException :: Exception e => Review LocalSystemTimeException e
-_LocalSystemTimeException = unto MkLocalSystemTimeException
-{-# INLINEABLE _LocalSystemTimeException #-}
+_MkLocalSystemTimeException :: Exception e => Review LocalSystemTimeException e
+_MkLocalSystemTimeException = unto MkLocalSystemTimeException
+{-# INLINE _MkLocalSystemTimeException #-}
