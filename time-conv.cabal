@@ -92,7 +92,7 @@ library time-conv-exe-internal
     , optics-core
     , optics-th             ^>=0.4
     , optparse-applicative  >=0.16.1.0 && <0.18
-    , package-version       ^>=0.1.0.0
+    , package-version       >=0.1.0.0  && <0.3
     , text
     , time
     , time-conv
