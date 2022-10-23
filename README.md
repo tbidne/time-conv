@@ -3,10 +3,11 @@
 # time-conv
 
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/tbidne/time-conv?include_prereleases&sort=semver)](https://github.com/tbidne/time-conv/releases/)
+![haskell](https://img.shields.io/static/v1?label=&message=9.4&logo=haskell&logoColor=655889&labelColor=2f353e&color=655889)
 [![MIT](https://img.shields.io/github/license/tbidne/time-conv?color=blue)](https://opensource.org/licenses/MIT)
 
-[![nix](https://img.shields.io/github/workflow/status/tbidne/time-conv/nix/main?label=nix%209.2&&logo=nixos&logoColor=85c5e7&labelColor=2f353c)](https://github.com/tbidne/time-conv/actions/workflows/nix.yaml)
-[![cabal](https://img.shields.io/github/workflow/status/tbidne/time-conv/cabal/main?label=cabal&logo=haskell&logoColor=655889&labelColor=2f353c)](https://github.com/tbidne/time-conv/actions/workflows/cabal.yaml)
+[![nix](https://img.shields.io/github/workflow/status/tbidne/time-conv/nix/main?label=nix&logo=nixos&logoColor=85c5e7&labelColor=2f353c)](https://github.com/tbidne/time-conv/actions/workflows/nix.yaml)
+[![cabal](https://img.shields.io/github/workflow/status/tbidne/time-conv/cabal/main?label=cabal&labelColor=2f353c)](https://github.com/tbidne/time-conv/actions/workflows/cabal.yaml)
 [![stack](https://img.shields.io/github/workflow/status/tbidne/time-conv/stack/main?label=stack&logoColor=white&labelColor=2f353c)](https://github.com/tbidne/time-conv/actions/workflows/stack.yaml)
 [![style](https://img.shields.io/github/workflow/status/tbidne/time-conv/style/main?label=style&logoColor=white&labelColor=2f353c)](https://github.com/tbidne/time-conv/actions/workflows/style.yaml)
 

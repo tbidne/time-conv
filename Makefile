@@ -1,6 +1,9 @@
-# core
+.PHONY: build clean repl watch ;\
+	test unit integration functional ;\
+	cic ci formatc format lint lintc ;\
+	haddock haddockc hackage
 
-.PHONY: build clean test doctest unit functional functional_impure repl watch
+# core
 
 ARGS = ""
 
@@ -16,22 +19,10 @@ clean:
 
 test:
 	if [ -z "$(ARGS)" ]; then \
-		RUN_DOCTEST=1 cabal test; \
+		RUN_DOCTEST=1 FUNCTIONAL_IMPURE=1 cabal test; \
 	else \
-		RUN_DOCTEST=1 cabal test $(ARGS); \
+		RUN_DOCTEST=1 FUNCTIONAL_IMPURE=1 cabal test $(ARGS); \
 	fi
-
-doctest:
-	RUN_DOCTEST=1 cabal test doctest
-
-unit:
-	cabal test unit
-
-functional:
-	cabal test functional
-
-functional_impure:
-	FUNCTIONAL_IMPURE=1 cabal test functional
 
 repl:
 	if [ -z "$(ARGS)" ]; then \
@@ -45,45 +36,29 @@ watch:
 
 # ci
 
-.PHONY: cic ci
-
 cic: formatc lintc haddockc
 
-ci: lint format
+ci: lint format haddockc
 
 # formatting
 
-.PHONY: formatc format hsformat hsformatc cabalfmt nixpkgsfmt nixpkgsfmtc lint lintc haddock haddockc
+formatc:
+	nix run github:tbidne/nix-hs-tools/0.7#nixpkgs-fmt -- --check ;\
+	nix run github:tbidne/nix-hs-tools/0.7#cabal-fmt -- --check ;\
+	nix run github:tbidne/nix-hs-tools/0.7#ormolu -- --mode check
 
-formatc: cabalfmtc hsformatc nixpkgsfmtc
-
-format: cabalfmt hsformat nixpkgsfmt
-
-hsformat:
-	nix run github:tbidne/nix-hs-tools/0.6.1#ormolu -- --mode inplace
-
-hsformatc:
-	nix run github:tbidne/nix-hs-tools/0.6.1#ormolu -- --mode check
-
-cabalfmt:
-	nix run github:tbidne/nix-hs-tools/0.6.1#cabal-fmt -- --inplace
-
-cabalfmtc:
-	nix run github:tbidne/nix-hs-tools/0.6.1#cabal-fmt -- --check
-
-nixpkgsfmt:
-	nix run github:tbidne/nix-hs-tools/0.6.1#nixpkgs-fmt
-
-nixpkgsfmtc:
-	nix run github:tbidne/nix-hs-tools/0.6.1#nixpkgs-fmt -- --check
+format:
+	nix run github:tbidne/nix-hs-tools/0.7#nixpkgs-fmt ;\
+	nix run github:tbidne/nix-hs-tools/0.7#cabal-fmt -- --inplace ;\
+	nix run github:tbidne/nix-hs-tools/0.7#ormolu -- --mode inplace
 
 # linting
 
 lint:
-	nix run github:tbidne/nix-hs-tools/0.6.1#hlint -- --refact
+	nix run github:tbidne/nix-hs-tools/0.7#hlint -- --refact
 
 lintc:
-	nix run github:tbidne/nix-hs-tools/0.6.1#hlint
+	nix run github:tbidne/nix-hs-tools/0.7#hlint
 
 haddock:
 	cabal haddock --haddock-hyperlink-source --haddock-quickjump ;\
@@ -93,4 +68,4 @@ haddock:
 
 haddockc:
 # threshold dropped to 90 because on reexport (TimeLocale) does not have any haddocks.
-	nix run github:tbidne/nix-hs-tools/0.6.1#haddock-cov -- . --threshold 90
+	nix run github:tbidne/nix-hs-tools/0.7#haddock-cov -- . --threshold 90

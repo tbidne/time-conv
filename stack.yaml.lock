@@ -5,22 +5,22 @@
 
 packages:
 - completed:
+    hackage: env-guard-0.2@sha256:59410eed9b9ddbd115760a59c7170927320d8612e414701d323a0c8985c97523,1251
     pantry-tree:
       sha256: c8135d95be0df0ce63d0ee398af20e38f505153032b32c4ab0e8f0f615501d46
       size: 419
-    hackage: env-guard-0.2@sha256:59410eed9b9ddbd115760a59c7170927320d8612e414701d323a0c8985c97523,1251
   original:
     hackage: env-guard-0.2@sha256:59410eed9b9ddbd115760a59c7170927320d8612e414701d323a0c8985c97523,1251
 - completed:
+    hackage: package-version-0.1.0.0@sha256:bb9fc93e905540aa8e1b32f80c2dc82756a4481c63779bd92e3796ed8085ab98,2854
     pantry-tree:
       sha256: 8e33ac2f8d2db754cf11d1439fa970dbf14c6756746426ba89f54a7183a9d2d7
       size: 981
-    hackage: package-version-0.1.0.0@sha256:bb9fc93e905540aa8e1b32f80c2dc82756a4481c63779bd92e3796ed8085ab98,2854
   original:
     hackage: package-version-0.1.0.0@sha256:bb9fc93e905540aa8e1b32f80c2dc82756a4481c63779bd92e3796ed8085ab98,2854
 snapshots:
 - completed:
-    sha256: 4c31d4ef975b0211078862566aedf3b82b6cea569fc2cde4c72a51e5a8d236ce
-    size: 618951
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/19/14.yaml
-  original: lts-19.14
+    sha256: 7f4393ad659c579944d12202cffb12d8e4b8114566b015f77bbc303a24cff934
+    size: 619405
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/19/28.yaml
+  original: lts-19.28

@@ -17,6 +17,9 @@ import Data.Time.LocalTime (TimeZone)
 -- and knowledge of __all__ timezones, per 'TZLabel'. Using this, we can parse
 -- non-American labels like @CES@ and @NZST@.
 --
+-- FIXME: This does _not_ include daylight savings time e.g. EDT, NZDT.
+-- That is, if this is used to parse a time zone like EDT then it will fail.
+--
 -- @since 0.1
 timeLocaleAllZones :: TimeLocale
 timeLocaleAllZones =
