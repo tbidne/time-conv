@@ -61,6 +61,10 @@ import Optics.Core
     (^.),
   )
 
+-- $setup
+-- >>> import Data.Default (Default (def))
+-- >>> import Data.Time.Zones.All (TZLabel (..))
+
 -- | Determines how to read a time string.
 --
 -- @since 0.1

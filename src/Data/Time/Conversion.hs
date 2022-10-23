@@ -95,6 +95,10 @@ import Data.Time.Zones.All (TZLabel (..))
 import Data.Time.Zones.All qualified as All
 import Optics.Core ((^.), (^?))
 
+-- $setup
+-- >>> import Data.Time.Conversion.Types qualified as Types
+-- >>> import Data.Time.Conversion.Utils qualified as Utils
+
 -- | Reads the given time string based on the source 'TimeReader' and
 -- converts to the destination timezone. This is the composition of
 -- 'readTime' and 'convertTime'. If the source is 'Nothing' then we read

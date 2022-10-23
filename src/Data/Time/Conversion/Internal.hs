@@ -33,6 +33,9 @@ import Data.Time.Zones qualified as Zones
 import Data.Time.Zones.All (TZLabel (..))
 import Data.Time.Zones.All qualified as All
 
+-- $setup
+-- >>> import Data.Time.Zones.All (TZLabel (..))
+
 -- | Catches synchronous exceptions.
 --
 -- @since 0.1
