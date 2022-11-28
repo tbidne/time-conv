@@ -31,10 +31,6 @@ module Data.Time.Conversion.Types
     _TZDatabaseLabel,
     _TZDatabaseText,
     _MkTimeFormat,
-    _MkParseTimeException,
-    _MkParseTZDatabaseException,
-    _MkLocalTimeZoneException,
-    _MkLocalSystemTimeException,
   )
 where
 
@@ -48,16 +44,15 @@ import Data.Time.Conversion.Utils qualified as Utils
 import Data.Time.Format (TimeLocale (..))
 import Data.Time.Zones.All (TZLabel (..))
 import GHC.Generics (Generic)
+import GHC.Stack (CallStack, prettyCallStack)
 import Optics.Core
   ( A_Lens,
     Iso',
     LabelOptic (..),
     Prism',
-    Review,
     iso,
     lens,
     prism,
-    unto,
     (^.),
   )
 
@@ -357,11 +352,9 @@ rfc822 = "%a, %_d %b %Y %H:%M:%S %Z"
 -- | Exception parsing time string.
 --
 -- @since 0.1
-data ParseTimeException = MkParseTimeException TimeFormat Text
+data ParseTimeException = MkParseTimeException !TimeFormat !Text !CallStack
   deriving stock
     ( -- | @since 0.1
-      Eq,
-      -- | @since 0.1
       Generic,
       -- | @since 0.1
       Show
@@ -373,26 +366,20 @@ data ParseTimeException = MkParseTimeException TimeFormat Text
 
 -- | @since 0.1
 instance Exception ParseTimeException where
-  displayException (MkParseTimeException f t) =
+  displayException (MkParseTimeException f t cs) =
     "Could not parse time string <"
       <> T.unpack t
       <> "> with format <"
       <> T.unpack (f ^. _MkTimeFormat)
-      <> ">"
-
--- | @since 0.1
-_MkParseTimeException :: Iso' ParseTimeException (TimeFormat, Text)
-_MkParseTimeException = iso (\(MkParseTimeException f t) -> (f, t)) (uncurry MkParseTimeException)
-{-# INLINE _MkParseTimeException #-}
+      <> "> at:\n"
+      <> appendPrettyCs cs
 
 -- | Exception parsing tz database names.
 --
 -- @since 0.1
-newtype ParseTZDatabaseException = MkParseTZDatabaseException Text
+data ParseTZDatabaseException = MkParseTZDatabaseException !Text !CallStack
   deriving stock
     ( -- | @since 0.1
-      Eq,
-      -- | @since 0.1
       Generic,
       -- | @since 0.1
       Show
@@ -403,50 +390,52 @@ newtype ParseTZDatabaseException = MkParseTZDatabaseException Text
     )
 
 -- | @since 0.1
-_MkParseTZDatabaseException :: Iso' ParseTZDatabaseException Text
-_MkParseTZDatabaseException = iso (\(MkParseTZDatabaseException t) -> t) MkParseTZDatabaseException
-{-# INLINE _MkParseTZDatabaseException #-}
-
--- | @since 0.1
 instance Exception ParseTZDatabaseException where
-  displayException (MkParseTZDatabaseException tzdb) =
-    T.unpack $
-      "Could not parse tz database name <"
-        <> tzdb
-        <> ">. Wanted a name like America/New_York."
+  displayException (MkParseTZDatabaseException tzdb cs) =
+    "Could not parse tz database name <"
+      <> T.unpack tzdb
+      <> ">. Wanted a name like America/New_York. At:\n"
+      <> appendPrettyCs cs
 
 -- | Exception reading local system timezone.
 --
 -- @since 0.1
-data LocalTimeZoneException = forall e. Exception e => MkLocalTimeZoneException e
+data LocalTimeZoneException
+  = forall e. Exception e => MkLocalTimeZoneException !e !CallStack
 
 -- | @since 0.1
 deriving stock instance Show LocalTimeZoneException
 
 -- | @since 0.1
 instance Exception LocalTimeZoneException where
-  displayException (MkLocalTimeZoneException e) =
-    "Local timezone exception: " <> displayException e
-
--- | @since 0.1
-_MkLocalTimeZoneException :: Exception e => Review LocalTimeZoneException e
-_MkLocalTimeZoneException = unto MkLocalTimeZoneException
-{-# INLINE _MkLocalTimeZoneException #-}
+  displayException (MkLocalTimeZoneException e cs) =
+    "Local timezone exception: "
+      <> displayException e
+      <> "at:\n"
+      <> appendPrettyCs cs
 
 -- | Exception reading local system time.
 --
 -- @since 0.1
-data LocalSystemTimeException = forall e. Exception e => MkLocalSystemTimeException e
+data LocalSystemTimeException
+  = forall e.
+    Exception e =>
+    MkLocalSystemTimeException !e !CallStack
 
 -- | @since 0.1
 deriving stock instance Show LocalSystemTimeException
 
 -- | @since 0.1
 instance Exception LocalSystemTimeException where
-  displayException (MkLocalSystemTimeException e) =
-    "Local system time exception: " <> displayException e
+  displayException (MkLocalSystemTimeException e cs) =
+    "Local system time exception: "
+      <> displayException e
+      <> "at\n"
+      <> appendPrettyCs cs
 
--- | @since 0.1
-_MkLocalSystemTimeException :: Exception e => Review LocalSystemTimeException e
-_MkLocalSystemTimeException = unto MkLocalSystemTimeException
-{-# INLINE _MkLocalSystemTimeException #-}
+appendPrettyCs :: CallStack -> String
+appendPrettyCs cs =
+  mconcat
+    [ "\n\n",
+      prettyCallStack cs
+    ]

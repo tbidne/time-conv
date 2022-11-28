@@ -50,6 +50,7 @@ formatTests =
     "Input Format"
     [ testFormatDefault,
       testFormatCustom,
+      testFormatDST,
       testFormatFails
     ]
 
@@ -62,6 +63,11 @@ testFormatCustom :: TestTree
 testFormatCustom = testCase "Uses custom parsing" $ do
   result <- captureTimeConv ["-f", "%Y-%m-%d %H:%M", "-o", "%Y-%m-%d %H:%M", "2022-06-15 08:30"]
   "2022-06-15 08:30" @=? result
+
+testFormatDST :: TestTree
+testFormatDST = testCase "Uses parsing with daylight savings" $ do
+  result <- captureTimeConv ["-f", "%H:%M %Z", "-s", "literal", "08:30 NZDT"]
+  "08:30" @=? result
 
 testFormatFails :: TestTree
 testFormatFails =
