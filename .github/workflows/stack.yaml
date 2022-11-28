@@ -36,7 +36,7 @@ jobs:
       - name: Unit Tests
         env:
           STACK_YAML: ${{ matrix.stack_yaml }}
-        run: stack test time-conv:unit --test-arguments "--max-runs 10000"
+        run: stack test time-conv:unit --test-arguments "--hedgehog-tests 10000"
 
       - name: Functional Tests
         env:

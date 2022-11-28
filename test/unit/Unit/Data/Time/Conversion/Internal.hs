@@ -22,11 +22,9 @@ import Hedgehog
     failure,
     forAll,
     property,
-    withTests,
   )
 import Props.Generators qualified as G
-import Props.MaxRuns (MaxRuns (..))
-import Test.Tasty (TestName, TestTree, askOption, testGroup)
+import Test.Tasty (TestName, TestTree, testGroup)
 #if MIN_VERSION_tasty_hedgehog(1, 2, 0)
 import Test.Tasty.Hedgehog (testPropertyNamed)
 #else
@@ -59,14 +57,13 @@ tzNameMapParses =
     mp = Internal.tzLowerNameLabelMapWith TError.strictDecode
 
 tzNameRandomCase :: TestTree
-tzNameRandomCase = askOption $ \(MkMaxRuns limit) ->
+tzNameRandomCase =
   testPropertyCompat "tzNameToTZLabel handles random case" "tzNameRandomCase" $
-    withTests limit $
-      property $ do
-        txt <- forAll G.tzText
-        case Internal.tzNameToTZLabel txt of
-          Just _ -> pure ()
-          Nothing -> failure
+    property $ do
+      txt <- forAll G.tzText
+      case Internal.tzNameToTZLabel txt of
+        Just _ -> pure ()
+        Nothing -> failure
 
 exceptionTests :: TestTree
 exceptionTests =

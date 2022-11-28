@@ -34,7 +34,7 @@ jobs:
           RUN_DOCTEST=1 cabal test doctest
 
       - name: Unit Tests
-        run: cabal test unit --test-options "--max-runs 10000"
+        run: cabal test unit --test-options "--hedgehog-tests 10000"
 
       - name: Functional Tests
         run: cabal test functional
