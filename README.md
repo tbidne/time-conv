@@ -74,37 +74,30 @@ The timezone names are based on the tz_database. See https://en.wikipedia.org/wi
 ```
 time-conv: A tool for timezone conversions.
 
-Usage: time-conv [-f|--format-in <rfc822 | FORMAT_STRING>]
-                 [-o|--format-out <rfc822 | FORMAT_STRING>]
-                 [-s|--src-tz <literal | TZ_DATABASE>]
-                 [-d|--dest-tz TZ_DATABASE] [-t|--today] [TIME_STRING]
-                 [-v|--version]
+Usage: time-conv [-f|--format-in FORMAT_STRING]
+                 [-o|--format-out (rfc822 | FORMAT_STRING)]
+                 [-s|--src-tz TZ_DATABASE] [-d|--dest-tz TZ_DATABASE]
+                 [-t|--today] [TIME_STRING] [-v|--version]
 
-time-conv reads time strings and converts between timezones. For the src and dest options, TZ_DATABASE refers to labels like america/new_york. See https://en.wikipedia.org/wiki/Tz_database.
+time-conv reads time strings and converts between timezones. For the src and dest options, TZ_DATABASE refers to labels like America/New_York. See https://en.wikipedia.org/wiki/Tz_database.
 
 Available options:
-  -f,--format-in <rfc822 | FORMAT_STRING>
+  -f,--format-in FORMAT_STRING
                            Glibc-style format string -- e.g. %Y-%m-%d for
-                           yyyy-mm-dd -- for parsing the time string. Defaults
-                           to%H:%M i.e. 24-hr hour:minute. If the string
-                           'rfc822' is given then we use RFC822. See 'man date'
-                           for basic examples, and
+                           yyyy-mm-dd -- for parsing the time string. Should not
+                           contain a timezone flag like %Z, see --src-tz
+                           instead. Defaults to %H:%M i.e. 24-hr hour:minute.
+                           See 'man date' for basic examples, and
                            https://hackage.haskell.org/package/time-1.13/docs/Data-Time-Format.html#v:formatTime
                            for the exact spec.
-  -o,--format-out <rfc822 | FORMAT_STRING>
+  -o,--format-out (rfc822 | FORMAT_STRING)
                            Like --format-in, but used for the output. If this is
-                           not present we default to rfc822.
-  -s,--src-tz <literal | TZ_DATABASE>
-                           Timezone in which to read the string. Can be
-                           'literal' or a tz database label. If none is given
-                           then we use the local system timezone. The literal
-                           option means we read the (possibly empty) timezone
-                           from the string itself e.g. '7:00 EST'. If a timezone
-                           is included, then a formatter using the '%Z' flag
-                           should be present. If literal is specified and no
-                           timezone is included then we assume UTC.
+                           not present we default to rfc822 i.e. RFC822.
+  -s,--src-tz TZ_DATABASE  Timezone in which to read the string. Must be a tz
+                           database label like America/New_York. If none is
+                           given then we use the local system timezone.
   -d,--dest-tz TZ_DATABASE Timezone in which to convert the read string. Must be
-                           a tz database label like america/new_york. If none is
+                           a tz database label like America/New_York. If none is
                            given then we use the local system timezone.
   -t,--today               Used when reading a time string, adds the local date.
                            This is a convenience option and should only be used
@@ -122,23 +115,23 @@ Version: 0.1
 
 ## Format
 
-**Arg:** `-f,--format <rfc822 | FORMAT_STRING>`
+**Arg:** `-f,--format-in FORMAT_STRING`
 
-**Description:** Custom format -- e.g. `%Y-%m-%d` for `yyyy-mm-dd` -- for parsing the time string. By default we use the format `%H-%M` which is 24-hour `hours:minutes`. If the string `rfc822` is given, we use the time string as defined by RFC822: `%a, %_d %b %Y %H:%M:%S %Z`.
+**Description:** Glibc-style format string -- e.g. `%Y-%m-%d` for `yyyy-mm-dd` -- for parsing the time string. Should not contain a timezone flag like `%Z`, see `--src-tz` instead. Defaults to %H:%M i.e. 24-hr hour:minute. See 'man date' for basic examples, and https://hackage.haskell.org/package/time-1.13/docs/Data-Time-Format.html#v:formatTime for the exact spec.
 
 **Examples:**
 
 ```
-$ time-conv "08:30"
-08:30
+$ time-conv 08:30
+Thu,  1 Jan 1970 08:30:00 NZDT
 
 $ time-conv -f "%Y-%m-%d %H:%M" "2022-06-15 08:30"
-2022-06-15 08:30
+Wed, 15 Jun 2022 08:30:00 NZDT
 ```
 
 ## Format Out
 
-**Arg:** `-o,--format-out <rfc822 | FORMAT_STRING>`
+**Arg:** `-o,--format-out (rfc822 | FORMAT_STRING)`
 
 **Description:** Like `--format-in` except it applies to the output format only. If `--format-out` is not given we default to `rfc822`.
 
@@ -150,15 +143,15 @@ $ time-conv 08:30
 Thu,  1 Jan 1970 08:30:00 NZST
 
 # overriding output format
-$ time-conv -o %H:%M:%s 08:30
+$ time-conv -o %H:%M:%S 08:30
 08:30:00
 ```
 
 ## Source Timezone
 
-**Arg:** `-s,--src-tz <literal | TZ_DATABASE>`
+**Arg:** `-s,--src-tz TZ_DATABASE`
 
-**Description:** This option allows one to change how the time string is interpreted. Can be 'literal' or a tz database label. If none is given then we interpret the time string in the system's local timezone. The literal option is used for reading the timezone in the string itself e.g. `07:00 EST`. If a timezone is included then a formatter using the `%Z` flag should be present. If `literal` is specified and no timezone is included then we assume UTC.
+**Description:** Timezone in which to read the string. Must be a tz database label like `America/New_York`. If none is given then we use the local system timezone.
 
 **Examples:**
 
@@ -166,13 +159,6 @@ $ time-conv -o %H:%M:%s 08:30
 # use the local system timezone
 $ time-conv 08:30
 Thu,  1 Jan 1970 08:30:00 NZST
-
-# notice the literal is overridden unless '-s literal' is added
-$ time-conv -f "%H:%M %Z" "08:30 EST"
-Thu,  1 Jan 1970 08:30:00 NZST
-
-$ time-conv -f "%H:%M %Z" -s literal "08:30 EST"
-Fri,  2 Jan 1970 01:30:00 NZST
 
 # using tz database name
 $ time-conv -s america/new_york 08:30
@@ -183,7 +169,7 @@ Fri,  2 Jan 1970 01:30:00 NZST
 
 **Arg:** `-d,--dest-tz TZ_DATABASE`
 
-**Description:** This option allows one to convert the read timezone. By default, we convert to the local timezone.
+**Description:** This option allows one to convert the read timezone. Must be a tz database label like America/New_York. If none is given then we use the local system timezone.
 
 **Examples:**
 
@@ -204,7 +190,7 @@ Thu,  1 Jan 1970 13:30:00 UTC
 
 **Arg:** `-t,--today`
 
-**Description:** This option interprets the time string with today's date, as determined by the `--src-tz` option. This is useful when converting timezones, as the conversion can depend on the date (e.g. daylight savings time).
+**Description:** Used when reading a time string, adds the local date. This is a convenience option and should only be used if the time string and format do not explicitly mention date.
 
 **Examples:**
 

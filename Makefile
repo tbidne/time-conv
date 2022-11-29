@@ -26,13 +26,17 @@ test:
 
 repl:
 	if [ -z "$(ARGS)" ]; then \
-		cabal repl; \
+		cabal repl time-conv; \
 	else \
 		cabal repl $(ARGS); \
 	fi
 
 watch:
-	ghcid --command "cabal repl $(ARGS)"
+	if [ -z "$(ARGS)" ]; then \
+		ghcid --command "cabal repl time-conv"; \
+	else \
+		ghcid --command "cabal repl $(ARGS)"; \
+	fi
 
 # ci
 
@@ -64,7 +68,7 @@ haddock:
 	cabal haddock --haddock-hyperlink-source --haddock-quickjump ;\
 	mkdir -p docs/ ;\
 	find docs/ -type f | xargs -I % sh -c "rm -r %" ;\
-	cp -r dist-newstyle/build/x86_64-linux/ghc-9.2.3/time-conv-0.1/opt/doc/html/time-conv/* docs/
+	cp -r dist-newstyle/build/x86_64-linux/ghc-9.2.4/time-conv-0.1/opt/doc/html/time-conv/* docs/
 
 haddockc:
 # threshold dropped to 90 because on reexport (TimeLocale) does not have any haddocks.

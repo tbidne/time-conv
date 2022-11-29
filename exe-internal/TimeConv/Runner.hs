@@ -12,8 +12,6 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Conversion qualified as Conv
 import Data.Time.Conversion.Internal qualified as Internal
-import Data.Time.Conversion.Types (_MkTimeFormat)
-import Data.Time.Conversion.Utils qualified as Utils
 import Data.Time.Format qualified as Format
 import Optics.Core ((^.))
 import Options.Applicative qualified as OApp
@@ -47,11 +45,15 @@ runTimeConvHandler handler = do
 runWithArgs :: (Text -> IO a) -> Args -> IO a
 runWithArgs handler args = do
   let (mtimeReader, destTZ, formatOut) = args ^. argsToBuilder
-      formatStr = T.unpack $ formatOut ^. _MkTimeFormat
+      formatStr = T.unpack $ formatOut ^. #unTimeFormat
 
   readAndHandle mtimeReader destTZ formatStr
   where
     readAndHandle tr d fmt = do
       time <- Conv.readConvertTime tr d
-      let result = T.pack $ Format.formatTime Utils.timeLocaleAllZones fmt time
+      let result = T.pack $ Format.formatTime locale fmt time
       handler result
+    -- NOTE: It seems that the locale's timezone info is not used when
+    -- formatting the output, so we do not have to worry about including
+    -- extra tz info here.
+    locale = Format.defaultTimeLocale

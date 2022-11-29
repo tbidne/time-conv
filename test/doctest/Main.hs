@@ -9,4 +9,4 @@ main =
     "RUN_DOCTEST"
     ExpectEnvSet
     (DocTest.mainFromCabal "time-conv" [])
-    (putStrLn "*** Doctests Disabled ***")
+    (putStrLn "*** Doctests Disabled. Set RUN_DOCTEST=1 to run ***")

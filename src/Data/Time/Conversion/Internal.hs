@@ -28,7 +28,6 @@ import Data.Text.Encoding qualified as TEnc
 import Data.Text.Encoding.Error (OnDecodeError)
 import Data.Text.Encoding.Error qualified as TError
 import Data.Time.LocalTime (TimeZone)
-import Data.Time.LocalTime qualified as Local
 import Data.Time.Zones qualified as Zones
 import Data.Time.Zones.All (TZLabel (..))
 import Data.Time.Zones.All qualified as All
@@ -64,7 +63,11 @@ tzLabelToTimeZone = (`Zones.timeZoneForPOSIX` 0) . All.tzByLabel
 --
 -- @since 0.1
 tzLabelToTimeZoneAbbrv :: TZLabel -> Text
-tzLabelToTimeZoneAbbrv = T.pack . Local.timeZoneName . tzLabelToTimeZone
+tzLabelToTimeZoneAbbrv = T.pack . show . tzLabelToTimeZone
+
+-- NOTE: show instead of Local.timeZoneName since the former reduces to the
+-- latter when the timeZoneName is non-empty, but when it is empty includes
+-- an offset, so it is strictly more flexible.
 
 -- | Looks up a tz database label by name. Case-insensitive.
 --

@@ -5,18 +5,16 @@
 -- @since 0.1
 module Main (main) where
 
-import Control.Exception (Exception (..))
-import Data.Functor (($>))
+import Control.Exception (Exception (..), try)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Conversion (ParseTZDatabaseException, ParseTimeException)
-import Data.Time.Conversion.Internal qualified as Internal
 import System.Environment qualified as SysEnv
 import System.Environment.Guard (ExpectEnv (..), guardOrElse')
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty qualified as Tasty
-import Test.Tasty.HUnit (Assertion, assertBool, testCase, (@=?))
+import Test.Tasty.HUnit (Assertion, assertBool, assertFailure, testCase, (@=?))
 import TimeConv.Runner (runTimeConvHandler)
 
 -- | Runs functional tests.
@@ -50,7 +48,6 @@ formatTests =
     "Input Format"
     [ testFormatDefault,
       testFormatCustom,
-      testFormatDST,
       testFormatFails
     ]
 
@@ -64,11 +61,6 @@ testFormatCustom = testCase "Uses custom parsing" $ do
   result <- captureTimeConv ["-f", "%Y-%m-%d %H:%M", "-o", "%Y-%m-%d %H:%M", "2022-06-15 08:30"]
   "2022-06-15 08:30" @=? result
 
-testFormatDST :: TestTree
-testFormatDST = testCase "Uses parsing with daylight savings" $ do
-  result <- captureTimeConv ["-f", "%H:%M %Z", "-s", "literal", "08:30 NZDT"]
-  "08:30" @=? result
-
 testFormatFails :: TestTree
 testFormatFails =
   testCase "Bad format fails" $
@@ -76,7 +68,7 @@ testFormatFails =
       captureTimeConv args
   where
     args = pureTZ <> ["-f", "%Y %H:%M", "08:30"]
-    expected = "Could not parse time string <08:30> with format <%Y %H:%M>"
+    expected = "Could not parse time string <08:30 UTC> with format <%Y %H:%M %Z>"
 
 formatOutputTests :: TestTree
 formatOutputTests =
@@ -100,28 +92,22 @@ srcTzTests :: TestTree
 srcTzTests =
   testGroup
     "Source Timezone"
-    [ testSrcTzLiteral,
-      testSrcTzDatabase,
+    [ testSrcTzDatabase,
       testSrcTzDatabaseCase,
       testSrcTzFails
     ]
 
-testSrcTzLiteral :: TestTree
-testSrcTzLiteral = testCase "Uses source timezone from literal" $ do
-  result <- captureTimeConv $ pureTZ ++ ["-f", "%H:%M %Z", "08:30 EST"]
-  "Thu,  1 Jan 1970 13:30:00 UTC" @=? result
-
 testSrcTzDatabase :: TestTree
 testSrcTzDatabase = testCase "Uses source timezone from tz database" $ do
-  result <- captureTimeConv $ pureDestTZ ++ ["-f", "%H:%M %Z", "-s", "Europe/Paris", "08:30 EST"]
+  result <- captureTimeConv $ pureDestTZ ++ ["-f", "%H:%M", "-s", "Europe/Paris", "08:30"]
   "Thu,  1 Jan 1970 07:30:00 UTC" @=? result
 
 testSrcTzDatabaseCase :: TestTree
 testSrcTzDatabaseCase = testCase "Uses source timezone from tz database with 'wrong' case" $ do
-  result <- captureTimeConv $ pureDestTZ ++ ["-f", "%H:%M %Z", "-s", "aMeRiCa/new_yoRk", "08:30 EST"]
+  result <- captureTimeConv $ pureDestTZ ++ ["-f", "%H:%M", "-s", "aMeRiCa/new_yoRk", "08:30"]
   "Thu,  1 Jan 1970 13:30:00 UTC" @=? result
 
-  result2 <- captureTimeConv $ pureDestTZ ++ ["-f", "%H:%M %Z", "-s", "etc/utc", "08:30 EST"]
+  result2 <- captureTimeConv $ pureDestTZ ++ ["-f", "%H:%M", "-s", "etc/utc", "08:30"]
   "Thu,  1 Jan 1970 08:30:00 UTC" @=? result2
 
 testSrcTzFails :: TestTree
@@ -142,8 +128,8 @@ destTzTests =
 
 testDestTzDatabase :: TestTree
 testDestTzDatabase = testCase "Uses dest timezone from tz database" $ do
-  result <- captureTimeConv $ pureSrcTZ ++ ["-f", "%H:%M %Z", "-d", "Europe/Paris", "08:30 EST"]
-  "Thu,  1 Jan 1970 14:30:00 CET" @=? result
+  result <- captureTimeConv $ pureSrcTZ ++ ["-f", "%H:%M", "-d", "Europe/Paris", "08:30"]
+  "Thu,  1 Jan 1970 09:30:00 CET" @=? result
 
 testSrcDestTzDatabase :: TestTree
 testSrcDestTzDatabase = testCase "Uses src to dest" $ do
@@ -177,10 +163,13 @@ testToday = testCase "Today arg succeeds" $ do
 
 assertException :: forall e a. Exception e => String -> IO a -> Assertion
 assertException expected io = do
-  result <- (io $> Nothing) `catchSync` (pure . Just)
-  Just expected @=? fmap displayException result
-  where
-    catchSync = Internal.catchSync @e
+  try @e io >>= \case
+    Right _ -> assertFailure "Expected exception, received none"
+    Left result -> do
+      let result' = displayException result
+      assertBool
+        ("Encountered exception: " <> expected <> "\nReceived: " <> result')
+        (startsWith expected result')
 
 captureTimeConv :: [String] -> IO Text
 captureTimeConv argList = do
@@ -194,7 +183,14 @@ pureTZ :: [String]
 pureTZ = pureSrcTZ ++ pureDestTZ
 
 pureSrcTZ :: [String]
-pureSrcTZ = ["-s", "literal"]
+pureSrcTZ = ["-s", "Etc/UTC"]
 
 pureDestTZ :: [String]
 pureDestTZ = ["-d", "Etc/UTC"]
+
+startsWith :: Eq a => [a] -> [a] -> Bool
+startsWith [] _ = True
+startsWith (_ : _) [] = False
+startsWith (x : xs) (y : ys)
+  | x == y = startsWith xs ys
+  | otherwise = False
