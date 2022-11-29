@@ -237,7 +237,7 @@ readTimeString timeReader = do
     throwParseEx :: HasCallStack => TimeFormat -> Text -> IO void
     throwParseEx f e = throwIO $ MkParseTimeException f e ?callStack
 
-    maybeAddDate :: Maybe TZLabel -> IO (Text, TimeFormat)
+    maybeAddDate :: HasCallStack => Maybe TZLabel -> IO (Text, TimeFormat)
     maybeAddDate mlabel = do
       if timeReader ^. #today
         then do
