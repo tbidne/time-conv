@@ -11,12 +11,14 @@ module Data.Time.Conversion.Internal
 
     -- * Miscellaneous
     catchSync,
+    catchAny,
   )
 where
 
 import Control.Exception
   ( Exception (..),
     SomeAsyncException (..),
+    SomeException,
     catch,
     throwIO,
   )
@@ -44,6 +46,12 @@ catchSync io handler =
     case fromException (toException ex) of
       Just (SomeAsyncException _) -> throwIO ex
       Nothing -> handler ex
+
+-- | 'catchSync' specialized to 'SomeException'.
+--
+-- @since 0.1
+catchAny :: IO a -> (SomeException -> IO a) -> IO a
+catchAny = catchSync
 
 -- | Converts the 'TZLabel' into a 'TimeZone'.
 --

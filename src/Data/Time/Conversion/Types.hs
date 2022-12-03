@@ -1,4 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
 
@@ -37,7 +36,6 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Zones.All (TZLabel (..))
 import GHC.Generics (Generic)
-import GHC.Stack (CallStack, prettyCallStack)
 import Optics.Core ((^.))
 import Optics.TH (makeFieldLabelsNoPrefix, makePrisms)
 
@@ -149,7 +147,9 @@ hm12h :: TimeFormat
 hm12h = "%I:%M %P"
 {-# INLINE hm12h #-}
 
--- | Format for 24-hour @hours:minutes TZ@.
+-- | Format for 24-hour @hours:minutes TZ@. As this contains a timezone
+-- flag, it should be used for formatting output only. In particular, it should
+-- __not__ be used with 'TimeReader'\'s 'format'.
 --
 -- >>> hmTZ
 -- MkTimeFormat {unTimeFormat = "%H:%M %Z"}
@@ -159,7 +159,9 @@ hmTZ :: TimeFormat
 hmTZ = "%H:%M %Z"
 {-# INLINE hmTZ #-}
 
--- | Format for 12-hour @hours:minutes am/pm TZ@.
+-- | Format for 12-hour @hours:minutes am/pm TZ@. As this contains a timezone
+-- flag, it should be used for formatting output only. In particular, it should
+-- __not__ be used with 'TimeReader'\'s 'format'.
 --
 -- >>> hmTZ12h
 -- MkTimeFormat {unTimeFormat = "%I:%M %P %Z"}
@@ -169,7 +171,9 @@ hmTZ12h :: TimeFormat
 hmTZ12h = "%I:%M %P %Z"
 {-# INLINE hmTZ12h #-}
 
--- | Format for RFC822: @%a, %_d %b %Y %H:%M:%S %Z@.
+-- | Format for RFC822: @%a, %_d %b %Y %H:%M:%S %Z@. As this contains a timezone
+-- flag, it should be used for formatting output only. In particular, it should
+-- __not__ be used with 'TimeReader'\'s 'format'.
 --
 -- >>> rfc822
 -- MkTimeFormat {unTimeFormat = "%a, %_d %b %Y %H:%M:%S %Z"}
@@ -184,7 +188,7 @@ rfc822 = "%a, %_d %b %Y %H:%M:%S %Z"
 -- @since 0.1
 data TimeReader = MkTimeReader
   { -- | Format used when parsing the time string. This should __not__ include
-    -- timezone formatting e.g. '%Z'. Use 'srcTZ' instead.
+    -- timezone formatting e.g. @%Z@. Use 'srcTZ' instead.
     --
     -- @since 0.1
     format :: TimeFormat,
@@ -234,7 +238,7 @@ defaultTimeReader = MkTimeReader def Nothing False
 -- | Exception parsing time string.
 --
 -- @since 0.1
-data ParseTimeException = MkParseTimeException !TimeFormat !Text !CallStack
+data ParseTimeException = MkParseTimeException !TimeFormat !Text
   deriving stock
     ( -- | @since 0.1
       Generic,
@@ -248,18 +252,17 @@ data ParseTimeException = MkParseTimeException !TimeFormat !Text !CallStack
 
 -- | @since 0.1
 instance Exception ParseTimeException where
-  displayException (MkParseTimeException f t cs) =
+  displayException (MkParseTimeException f t) =
     "Could not parse time string <"
       <> T.unpack t
       <> "> with format <"
       <> T.unpack (f ^. #unTimeFormat)
-      <> "> at:"
-      <> appendPrettyCs cs
+      <> ">"
 
 -- | Exception parsing tz database names.
 --
 -- @since 0.1
-data ParseTZDatabaseException = MkParseTZDatabaseException !Text !CallStack
+newtype ParseTZDatabaseException = MkParseTZDatabaseException Text
   deriving stock
     ( -- | @since 0.1
       Generic,
@@ -273,51 +276,35 @@ data ParseTZDatabaseException = MkParseTZDatabaseException !Text !CallStack
 
 -- | @since 0.1
 instance Exception ParseTZDatabaseException where
-  displayException (MkParseTZDatabaseException tzdb cs) =
+  displayException (MkParseTZDatabaseException tzdb) =
     "Could not parse tz database name <"
       <> T.unpack tzdb
-      <> ">. Wanted a name like America/New_York. At:\n"
-      <> appendPrettyCs cs
+      <> ">. Wanted a name like America/New_York."
 
 -- | Exception reading local system timezone.
 --
 -- @since 0.1
 data LocalTimeZoneException
-  = forall e. Exception e => MkLocalTimeZoneException !e !CallStack
+  = forall e. Exception e => MkLocalTimeZoneException !e
 
 -- | @since 0.1
 deriving stock instance Show LocalTimeZoneException
 
 -- | @since 0.1
 instance Exception LocalTimeZoneException where
-  displayException (MkLocalTimeZoneException e cs) =
-    "Local timezone exception: "
-      <> displayException e
-      <> "at:"
-      <> appendPrettyCs cs
+  displayException (MkLocalTimeZoneException e) =
+    "Local timezone exception: " <> displayException e
 
 -- | Exception reading local system time.
 --
 -- @since 0.1
 data LocalSystemTimeException
-  = forall e.
-    Exception e =>
-    MkLocalSystemTimeException !e !CallStack
+  = forall e. Exception e => MkLocalSystemTimeException !e
 
 -- | @since 0.1
 deriving stock instance Show LocalSystemTimeException
 
 -- | @since 0.1
 instance Exception LocalSystemTimeException where
-  displayException (MkLocalSystemTimeException e cs) =
-    "Local system time exception: "
-      <> displayException e
-      <> " at:"
-      <> appendPrettyCs cs
-
-appendPrettyCs :: CallStack -> String
-appendPrettyCs cs =
-  mconcat
-    [ "\n\n",
-      prettyCallStack cs
-    ]
+  displayException (MkLocalSystemTimeException e) =
+    "Local system time exception: " <> displayException e

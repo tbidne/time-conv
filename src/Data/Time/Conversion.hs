@@ -1,5 +1,3 @@
-{-# LANGUAGE ImplicitParams #-}
-
 -- | This module provides functions for reading time strings. We also provide
 -- functions for converting between timezones.
 --
@@ -51,7 +49,6 @@ module Data.Time.Conversion
   )
 where
 
-import Control.Exception (SomeException (..), throwIO)
 import Data.String (IsString)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -77,14 +74,18 @@ import Data.Time.LocalTime qualified as Local
 import Data.Time.Zones qualified as Zones
 import Data.Time.Zones.All (TZLabel (..))
 import Data.Time.Zones.All qualified as All
-import GHC.Stack (HasCallStack)
+import Effects.MonadCallStack
+  ( HasCallStack,
+    MonadCallStack (throwWithCallStack),
+  )
 import Optics.Core ((^.))
 
 -- $setup
--- >>> import Control.Exception (SomeException, catch)
+-- >>> import Control.Exception (SomeException)
 -- >>> import Data.Functor (void)
 -- >>> import Data.Time.Conversion.Types qualified as Types
 -- >>> import Data.Time.Conversion.Utils qualified as Utils
+-- >>> import Effects.MonadCallStack (catch)
 -- >>> let parseTimeEx = \(e :: ParseTimeException) -> putStrLn "parse time exception"
 -- >>> let parseTzDbEx = \(e :: ParseTZDatabaseException) -> putStrLn "parse tzdb exception"
 
@@ -165,9 +166,7 @@ readTime :: HasCallStack => Maybe TimeReader -> IO ZonedTime
 readTime (Just timeReader) = readTimeString timeReader
 readTime Nothing =
   Local.getZonedTime
-    `Internal.catchSync` \(e :: SomeException) ->
-      throwIO $
-        MkLocalSystemTimeException e ?callStack
+    `Internal.catchAny` (throwWithCallStack . MkLocalSystemTimeException)
 
 -- | Converts the given time to the destination timezone. If no destination
 -- timezone is given then we convert to the local system timezone.
@@ -198,10 +197,7 @@ convertTime inTime Nothing = do
   let inTimeUtc = Local.zonedTimeToUTC inTime
   currTZ <-
     Local.getCurrentTimeZone
-      `Internal.catchSync` ( \(e :: SomeException) ->
-                               throwIO $
-                                 MkLocalTimeZoneException e ?callStack
-                           )
+      `Internal.catchAny` (throwWithCallStack . MkLocalTimeZoneException)
   pure $ Local.utcToZonedTime currTZ inTimeUtc
 convertTime inTime (Just tzdb) = convertZonedLabel inTime <$> tzDatabaseToTZLabel tzdb
 
@@ -235,7 +231,7 @@ readTimeString timeReader = do
     timeStr = timeReader ^. #timeString
 
     throwParseEx :: HasCallStack => TimeFormat -> Text -> IO void
-    throwParseEx f e = throwIO $ MkParseTimeException f e ?callStack
+    throwParseEx f = throwWithCallStack . MkParseTimeException f
 
     maybeAddDate :: HasCallStack => Maybe TZLabel -> IO (Text, TimeFormat)
     maybeAddDate mlabel = do
@@ -249,19 +245,13 @@ currentDate :: HasCallStack => Maybe TZLabel -> IO String
 currentDate mlabel = do
   currTime <-
     Local.getZonedTime
-      `Internal.catchSync` \(e :: SomeException) ->
-        throwIO $
-          MkLocalSystemTimeException e ?callStack
+      `Internal.catchAny` (throwWithCallStack . MkLocalSystemTimeException)
 
   -- Convert into the given label if present. Otherwise keep in system
   -- timezone.
   let currTime' = maybe currTime (convertZonedLabel currTime) mlabel
 
-  pure $ Format.formatTime locale dateString currTime'
-  where
-    -- REVIEW: Since we are merely converting a timezone to a year string, do
-    -- we need anything other than a basic locale?
-    locale = Format.defaultTimeLocale
+  pure $ Format.formatTime Format.defaultTimeLocale dateString currTime'
 
 dateString :: IsString s => s
 dateString = "%Y-%m-%d"
@@ -291,10 +281,7 @@ readInLocalTimeZone :: HasCallStack => TimeFormat -> Text -> IO ZonedTime
 readInLocalTimeZone format timeStr = do
   localTz <-
     Local.getCurrentTimeZone
-      `Internal.catchSync` ( \(e :: SomeException) ->
-                               throwIO $
-                                 MkLocalTimeZoneException e ?callStack
-                           )
+      `Internal.catchAny` (throwWithCallStack . MkLocalTimeZoneException)
   let tzStr = T.pack $ show localTz
       locale =
         -- Need to add the local timezone to our known locales.
@@ -305,7 +292,7 @@ readInLocalTimeZone format timeStr = do
       timeStr' = timeStr +-+ tzStr
   case readTimeFormat locale format' timeStr' of
     Just zt -> pure zt
-    Nothing -> throwIO $ MkParseTimeException format' timeStr' ?callStack
+    Nothing -> throwWithCallStack $ MkParseTimeException format' timeStr'
   where
     format' = format +-+ tzString
 
@@ -367,7 +354,7 @@ tzDatabaseToTZLabel (TZDatabaseLabel lbl) = pure lbl
 tzDatabaseToTZLabel (TZDatabaseText txt) =
   case Internal.tzNameToTZLabel txt of
     Just lbl -> pure lbl
-    Nothing -> throwIO $ MkParseTZDatabaseException txt ?callStack
+    Nothing -> throwWithCallStack $ MkParseTZDatabaseException txt
 
 -- concat with a space
 (+-+) :: (Semigroup a, IsString a) => a -> a -> a

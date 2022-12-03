@@ -5,11 +5,12 @@
 -- @since 0.1
 module Main (main) where
 
-import Control.Exception (Exception (..), try)
+import Control.Exception (Exception (..))
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Conversion (ParseTZDatabaseException, ParseTimeException)
+import Effects.MonadCallStack (try)
 import System.Environment qualified as SysEnv
 import System.Environment.Guard (ExpectEnv (..), guardOrElse')
 import Test.Tasty (TestTree, testGroup)
@@ -64,6 +65,13 @@ testFormatCustom = testCase "Uses custom parsing" $ do
 testFormatFails :: TestTree
 testFormatFails =
   testCase "Bad format fails" $
+    -- NOTE: Despite our library throwing AnnotatedExceptions, the below works
+    -- because catch "sees through" the AnnotatedException to the underlying
+    -- exception, in this case, ParseTimeException. So we can capture the underlying
+    -- exception, throwing away all of the extraneous data (i.e. callstacks).
+    --
+    -- In real code we actually want these data, so we should either catch
+    -- SomeException or (AnnotatedException E) for some E.
     assertException @ParseTimeException expected $
       captureTimeConv args
   where
