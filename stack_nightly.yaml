@@ -11,7 +11,7 @@ extra-deps:
 - env-guard-0.2@sha256:feaecb437c597537dbef656300068c50a97e28ae83a8b63426ee14a1413207f5,1312
 - package-version-0.3@sha256:190490fde31f673054d317c7eb8c0638591c5b41b96860cb2ce232ea75665dcd,2792
 - git: https://github.com/tbidne/monad-effects.git
-  commit: b3d1b6b414d9a0561da5ed529a9ff663a0345270
+  commit: 3fddc571755e7b01a0c665058e9e0503b5c07250
   subdirs:
   - monad-callstack
 nix:

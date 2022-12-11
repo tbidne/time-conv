@@ -1,5 +1,63 @@
 {
   "nodes": {
+    "algebra-simple": {
+      "inputs": {
+        "flake-compat": [
+          "monad-effects",
+          "flake-compat"
+        ],
+        "flake-parts": [
+          "monad-effects",
+          "flake-parts"
+        ],
+        "nixpkgs": [
+          "monad-effects",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1670371950,
+        "narHash": "sha256-hcFAqLXp7N2nE3FRaxjmZ9eRu9k3AiFEMZMgi76XhZM=",
+        "owner": "tbidne",
+        "repo": "algebra-simple",
+        "rev": "2c8a79e8d3bf67c99e4851c557bf68a44c512307",
+        "type": "github"
+      },
+      "original": {
+        "owner": "tbidne",
+        "repo": "algebra-simple",
+        "type": "github"
+      }
+    },
+    "bounds": {
+      "inputs": {
+        "flake-compat": [
+          "monad-effects",
+          "flake-compat"
+        ],
+        "flake-parts": [
+          "monad-effects",
+          "flake-parts"
+        ],
+        "nixpkgs": [
+          "monad-effects",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1670372005,
+        "narHash": "sha256-CptBUtBlMGhmq2TnCAEAF3U4KMMeVNT5A1wpzhwLQs4=",
+        "owner": "tbidne",
+        "repo": "bounds",
+        "rev": "004f03aec46f29069fd0bf5115a384cd2b3141b3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "tbidne",
+        "repo": "bounds",
+        "type": "github"
+      }
+    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -36,6 +94,8 @@
     },
     "monad-effects": {
       "inputs": {
+        "algebra-simple": "algebra-simple",
+        "bounds": "bounds",
         "flake-compat": [
           "flake-compat"
         ],
@@ -47,11 +107,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1670093131,
-        "narHash": "sha256-97xFvQAO+fl/15Iwr3Yv/O2T7BbpAEwUQOtV42RqAbY=",
+        "lastModified": 1670798210,
+        "narHash": "sha256-c3gMbOFAtqXfWdFXTUZ1qkSEIFyA5O/4jl55UPznrp0=",
         "owner": "tbidne",
         "repo": "monad-effects",
-        "rev": "b3d1b6b414d9a0561da5ed529a9ff663a0345270",
+        "rev": "3fddc571755e7b01a0c665058e9e0503b5c07250",
         "type": "github"
       },
       "original": {
