@@ -52,9 +52,9 @@
                   (buildTools compiler ++
                     (if withDevTools then devTools compiler else [ ]));
               overrides = final: prev: with compiler; {
-                monad-callstack =
-                  final.callCabal2nix "monad-callstack"
-                    "${monad-effects}/monad-callstack"
+                monad-exceptions =
+                  final.callCabal2nix "monad-exceptions"
+                    "${monad-effects}/monad-exceptions"
                     { };
               };
             };

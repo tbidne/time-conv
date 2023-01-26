@@ -7,12 +7,12 @@ module TimeConv.Runner
   )
 where
 
-import Control.Exception (SomeException, displayException)
+import Control.Exception (displayException)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Conversion qualified as Conv
-import Data.Time.Conversion.Internal qualified as Internal
 import Data.Time.Format qualified as Format
+import Effects.Exception (catchAny)
 import Optics.Core ((^.))
 import Options.Applicative qualified as OApp
 import System.Exit (exitFailure)
@@ -27,7 +27,7 @@ runTimeConv = do
   -- catch needs to be _within_ this call (i.e. not applied to the execParser
   -- function) otherwise e.g. we catch the --help "exception".
   runWithArgs (putStrLn . T.unpack) args
-    `Internal.catchSync` \(e :: SomeException) -> do
+    `catchAny` \e -> do
       _ <- putStrLn $ displayException e
       exitFailure
 

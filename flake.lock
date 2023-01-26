@@ -108,11 +108,11 @@
         "smart-math": "smart-math"
       },
       "locked": {
-        "lastModified": 1673642447,
-        "narHash": "sha256-cDvazEfeWBkTF4x2IEmGlyED4+fnl8jz+22FyU4X6u4=",
+        "lastModified": 1674691542,
+        "narHash": "sha256-3uzk9fa1Dc4MPDKkqp/xdAVXcOQrPn0g2q1k4MsFuQU=",
         "owner": "tbidne",
         "repo": "monad-effects",
-        "rev": "6a8e53ce774a327bd6e010110c65ef2fd050fa51",
+        "rev": "7e8d48849ebb340c9e983ca945254675a292b1b1",
         "type": "github"
       },
       "original": {

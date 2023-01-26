@@ -8,20 +8,9 @@ module Data.Time.Conversion.Internal
     tzLabelToTimeZoneAbbrv,
     tzLowerNameLabelMap,
     tzLowerNameLabelMapWith,
-
-    -- * Miscellaneous
-    catchSync,
-    catchAny,
   )
 where
 
-import Control.Exception
-  ( Exception (..),
-    SomeAsyncException (..),
-    SomeException,
-    catch,
-    throwIO,
-  )
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Text (Text)
@@ -36,22 +25,6 @@ import Data.Time.Zones.All qualified as All
 
 -- $setup
 -- >>> import Data.Time.Zones.All (TZLabel (..))
-
--- | Catches synchronous exceptions.
---
--- @since 0.1
-catchSync :: Exception e => IO a -> (e -> IO a) -> IO a
-catchSync io handler =
-  io `catch` \ex ->
-    case fromException (toException ex) of
-      Just (SomeAsyncException _) -> throwIO ex
-      Nothing -> handler ex
-
--- | 'catchSync' specialized to 'SomeException'.
---
--- @since 0.1
-catchAny :: IO a -> (SomeException -> IO a) -> IO a
-catchAny = catchSync
 
 -- | Converts the 'TZLabel' into a 'TimeZone'.
 --
