@@ -86,7 +86,7 @@ import Optics.Core ((^.))
 -- >>> import Data.Functor (void)
 -- >>> import Data.Time.Conversion.Types qualified as Types
 -- >>> import Data.Time.Conversion.Utils qualified as Utils
--- >>> import Effects.MonadCallStack (catch)
+-- >>> import Effects.Exception (catchWithCS)
 -- >>> let parseTimeEx = \(e :: ParseTimeException) -> putStrLn "parse time exception"
 -- >>> let parseTzDbEx = \(e :: ParseTZDatabaseException) -> putStrLn "parse tzdb exception"
 
@@ -114,11 +114,11 @@ import Optics.Core ((^.))
 -- 1970-01-01 13:15:00 UTC
 --
 -- >>> let badTimeString = reader { timeString = "bad" }
--- >>> (void $ readConvertTime (Just badTimeString) toUtc) `catch` parseTimeEx
+-- >>> (void $ readConvertTime (Just badTimeString) toUtc) `catchWithCS` parseTimeEx
 -- parse time exception
 --
 -- >>> let badTZDatabase = reader { srcTZ = Just (TZDatabaseText "America/NewYork")}
--- >>> (void $ readConvertTime (Just badTZDatabase) toUtc) `catch` parseTzDbEx
+-- >>> (void $ readConvertTime (Just badTZDatabase) toUtc) `catchWithCS` parseTzDbEx
 -- parse tzdb exception
 --
 -- @since 0.1
@@ -155,11 +155,11 @@ readConvertTime mtimeReader destTZ =
 -- 1970-01-01 08:15:00 EST
 --
 -- >>> let badTimeString = reader { timeString = "bad" }
--- >>> (void $ readTime (Just badTimeString)) `catch` parseTimeEx
+-- >>> (void $ readTime (Just badTimeString)) `catchWithCS` parseTimeEx
 -- parse time exception
 --
 -- >>> let badTZDatabase = reader { srcTZ = Just (TZDatabaseText "America/NewYork")}
--- >>> (void $ readTime (Just badTZDatabase)) `catch` parseTzDbEx
+-- >>> (void $ readTime (Just badTZDatabase)) `catchWithCS` parseTzDbEx
 -- parse tzdb exception
 --
 -- @since 0.1
@@ -188,7 +188,7 @@ readTime Nothing =
 -- >>> convertTime zoned toNy
 -- 1995-10-09 20:00:00 EDT
 --
--- >>> (void $ convertTime zoned (Just $ TZDatabaseText "America/NewYork")) `catch` parseTzDbEx
+-- >>> (void $ convertTime zoned (Just $ TZDatabaseText "America/NewYork")) `catchWithCS` parseTzDbEx
 -- parse tzdb exception
 --
 -- @since 0.1
