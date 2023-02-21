@@ -10,7 +10,7 @@ import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Conversion (ParseTZDatabaseException, ParseTimeException)
-import Effects.Exception (tryWithCS)
+import Effects.Exception (tryCS)
 import System.Environment qualified as SysEnv
 import System.Environment.Guard (ExpectEnv (..), guardOrElse')
 import Test.Tasty (TestTree, testGroup)
@@ -171,7 +171,7 @@ testToday = testCase "Today arg succeeds" $ do
 
 assertException :: forall e a. (Exception e) => String -> IO a -> Assertion
 assertException expected io = do
-  tryWithCS @_ @e io >>= \case
+  tryCS @_ @e io >>= \case
     Right _ -> assertFailure "Expected exception, received none"
     Left result -> do
       let result' = displayException result
