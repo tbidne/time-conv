@@ -285,7 +285,7 @@ instance Exception ParseTZDatabaseException where
 --
 -- @since 0.1
 data LocalTimeZoneException
-  = forall e. Exception e => MkLocalTimeZoneException !e
+  = forall e. (Exception e) => MkLocalTimeZoneException !e
 
 -- | @since 0.1
 deriving stock instance Show LocalTimeZoneException
@@ -299,7 +299,7 @@ instance Exception LocalTimeZoneException where
 --
 -- @since 0.1
 data LocalSystemTimeException
-  = forall e. Exception e => MkLocalSystemTimeException !e
+  = forall e. (Exception e) => MkLocalSystemTimeException !e
 
 -- | @since 0.1
 deriving stock instance Show LocalSystemTimeException

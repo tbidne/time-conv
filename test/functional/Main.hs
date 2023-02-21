@@ -169,7 +169,7 @@ testToday = testCase "Today arg succeeds" $ do
   result <- captureTimeConv ["-t"]
   assertBool ("Should be non-empty: " <> T.unpack result) $ (not . T.null) result
 
-assertException :: forall e a. Exception e => String -> IO a -> Assertion
+assertException :: forall e a. (Exception e) => String -> IO a -> Assertion
 assertException expected io = do
   tryWithCS @_ @e io >>= \case
     Right _ -> assertFailure "Expected exception, received none"
@@ -196,7 +196,7 @@ pureSrcTZ = ["-s", "Etc/UTC"]
 pureDestTZ :: [String]
 pureDestTZ = ["-d", "Etc/UTC"]
 
-startsWith :: Eq a => [a] -> [a] -> Bool
+startsWith :: (Eq a) => [a] -> [a] -> Bool
 startsWith [] _ = True
 startsWith (_ : _) [] = False
 startsWith (x : xs) (y : ys)

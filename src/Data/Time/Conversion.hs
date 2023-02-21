@@ -123,7 +123,7 @@ import Optics.Core ((^.))
 --
 -- @since 0.1
 readConvertTime ::
-  HasCallStack =>
+  (HasCallStack) =>
   -- | Source time.
   Maybe TimeReader ->
   -- | Dest timezone.
@@ -163,7 +163,7 @@ readConvertTime mtimeReader destTZ =
 -- parse tzdb exception
 --
 -- @since 0.1
-readTime :: HasCallStack => Maybe TimeReader -> IO ZonedTime
+readTime :: (HasCallStack) => Maybe TimeReader -> IO ZonedTime
 readTime (Just timeReader) = readTimeString timeReader
 readTime Nothing =
   Local.getZonedTime `catchAny` (throwWithCS . MkLocalSystemTimeException)
@@ -192,7 +192,7 @@ readTime Nothing =
 -- parse tzdb exception
 --
 -- @since 0.1
-convertTime :: HasCallStack => ZonedTime -> Maybe TZDatabase -> IO ZonedTime
+convertTime :: (HasCallStack) => ZonedTime -> Maybe TZDatabase -> IO ZonedTime
 convertTime inTime Nothing = do
   let inTimeUtc = Local.zonedTimeToUTC inTime
   currTZ <-
@@ -201,7 +201,7 @@ convertTime inTime Nothing = do
   pure $ Local.utcToZonedTime currTZ inTimeUtc
 convertTime inTime (Just tzdb) = convertZonedLabel inTime <$> tzDatabaseToTZLabel tzdb
 
-readTimeString :: HasCallStack => TimeReader -> IO ZonedTime
+readTimeString :: (HasCallStack) => TimeReader -> IO ZonedTime
 readTimeString timeReader = do
   case timeReader ^. #srcTZ of
     -- read in local timezone
@@ -230,10 +230,10 @@ readTimeString timeReader = do
     format = timeReader ^. #format
     timeStr = timeReader ^. #timeString
 
-    throwParseEx :: HasCallStack => TimeFormat -> Text -> IO void
+    throwParseEx :: (HasCallStack) => TimeFormat -> Text -> IO void
     throwParseEx f = throwWithCS . MkParseTimeException f
 
-    maybeAddDate :: HasCallStack => Maybe TZLabel -> IO (Text, TimeFormat)
+    maybeAddDate :: (HasCallStack) => Maybe TZLabel -> IO (Text, TimeFormat)
     maybeAddDate mlabel = do
       if timeReader ^. #today
         then do
@@ -241,7 +241,7 @@ readTimeString timeReader = do
           pure (T.pack currDateStr +-+ timeStr, dateString +-+ format)
         else pure (timeStr, format)
 
-currentDate :: HasCallStack => Maybe TZLabel -> IO String
+currentDate :: (HasCallStack) => Maybe TZLabel -> IO String
 currentDate mlabel = do
   currTime <-
     Local.getZonedTime
@@ -253,10 +253,10 @@ currentDate mlabel = do
 
   pure $ Format.formatTime Format.defaultTimeLocale dateString currTime'
 
-dateString :: IsString s => s
+dateString :: (IsString s) => s
 dateString = "%Y-%m-%d"
 
-tzString :: IsString s => s
+tzString :: (IsString s) => s
 tzString = "%Z"
 
 -- | @readInLocalTimeZone locale format timeStr@ attempts to parse the
@@ -277,7 +277,7 @@ tzString = "%Z"
 -- * 'LocalTimeZoneException': Error retrieving local timezone.
 --
 -- @since 0.1
-readInLocalTimeZone :: HasCallStack => TimeFormat -> Text -> IO ZonedTime
+readInLocalTimeZone :: (HasCallStack) => TimeFormat -> Text -> IO ZonedTime
 readInLocalTimeZone format timeStr = do
   localTz <-
     Local.getCurrentTimeZone
@@ -349,7 +349,7 @@ convertZonedLabel zt tzLabel =
       timeZone = Zones.timeZoneForUTCTime tz utc
    in Local.utcToZonedTime timeZone utc
 
-tzDatabaseToTZLabel :: HasCallStack => TZDatabase -> IO TZLabel
+tzDatabaseToTZLabel :: (HasCallStack) => TZDatabase -> IO TZLabel
 tzDatabaseToTZLabel (TZDatabaseLabel lbl) = pure lbl
 tzDatabaseToTZLabel (TZDatabaseText txt) =
   case Internal.tzNameToTZLabel txt of
