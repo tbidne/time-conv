@@ -60,9 +60,9 @@
                   (buildTools compiler ++
                     (if returnShellEnv then devTools compiler else [ ]));
               overrides = final: prev: with compiler; {
-                monad-exceptions =
-                  final.callCabal2nix "monad-exceptions"
-                    "${monad-effects}/monad-exceptions"
+                effects-exceptions =
+                  final.callCabal2nix "effects-exceptions"
+                    "${monad-effects}/effects-exceptions"
                     { };
                 package-version = hlib.doJailbreak prev.package-version;
                 tasty-hedgehog = prev.tasty-hedgehog_1_4_0_0;
