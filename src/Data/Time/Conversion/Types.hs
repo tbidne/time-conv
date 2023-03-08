@@ -1,4 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 -- | This module provides types for reading / converting
@@ -36,8 +35,16 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Zones.All (TZLabel (..))
 import GHC.Generics (Generic)
-import Optics.Core ((^.))
-import Optics.TH (makeFieldLabelsNoPrefix, makePrisms)
+import Optics.Core
+  ( A_Lens,
+    An_Iso,
+    LabelOptic (labelOptic),
+    Prism',
+    iso,
+    lensVL,
+    prism,
+    (^.),
+  )
 
 -- $setup
 -- >>> import Data.Default (Default (def))
@@ -78,7 +85,26 @@ data TZDatabase
     )
 
 -- | @since 0.1
-makePrisms ''TZDatabase
+_TZDatabaseLabel :: Prism' TZDatabase TZLabel
+_TZDatabaseLabel =
+  prism
+    TZDatabaseLabel
+    ( \x -> case x of
+        TZDatabaseLabel lbl -> Right lbl
+        _ -> Left x
+    )
+{-# INLINE _TZDatabaseLabel #-}
+
+-- | @since 0.1
+_TZDatabaseText :: Prism' TZDatabase Text
+_TZDatabaseText =
+  prism
+    TZDatabaseText
+    ( \x -> case x of
+        TZDatabaseText t -> Right t
+        _ -> Left x
+    )
+{-# INLINE _TZDatabaseText #-}
 
 -- | Time formatting string. The 'Monoid' instance behaves like 'Text',
 -- whereas 'Default' is an alias for 'hm'.
@@ -119,7 +145,12 @@ newtype TimeFormat = MkTimeFormat
     via Text
 
 -- | @since 0.1
-makeFieldLabelsNoPrefix ''TimeFormat
+instance
+  (k ~ An_Iso, a ~ Text, b ~ Text) =>
+  LabelOptic "unTimeFormat" k TimeFormat TimeFormat a b
+  where
+  labelOptic = iso (\(MkTimeFormat f) -> f) MkTimeFormat
+  {-# INLINE labelOptic #-}
 
 -- | Alias for 'hm'.
 --
@@ -223,7 +254,40 @@ instance NFData TimeReader where
     f `deepseq` s `deepseq` td `deepseq` ts `deepseq` ()
 
 -- | @since 0.1
-makeFieldLabelsNoPrefix ''TimeReader
+instance
+  (k ~ A_Lens, a ~ TimeFormat, b ~ TimeFormat) =>
+  LabelOptic "format" k TimeReader TimeReader a b
+  where
+  labelOptic = lensVL $ \f (MkTimeReader _format _srcTZ _today _timeString) ->
+    fmap (\format' -> MkTimeReader format' _srcTZ _today _timeString) (f _format)
+  {-# INLINE labelOptic #-}
+
+-- | @since 0.1
+instance
+  (k ~ A_Lens, a ~ Maybe TZDatabase, b ~ Maybe TZDatabase) =>
+  LabelOptic "srcTZ" k TimeReader TimeReader a b
+  where
+  labelOptic = lensVL $ \f (MkTimeReader _format _srcTZ _today _timeString) ->
+    fmap (\srcTZ' -> MkTimeReader _format srcTZ' _today _timeString) (f _srcTZ)
+  {-# INLINE labelOptic #-}
+
+-- | @since 0.1
+instance
+  (k ~ A_Lens, a ~ Bool, b ~ Bool) =>
+  LabelOptic "today" k TimeReader TimeReader a b
+  where
+  labelOptic = lensVL $ \f (MkTimeReader _format _srcTZ _today _timeString) ->
+    fmap (\today' -> MkTimeReader _format _srcTZ today' _timeString) (f _today)
+  {-# INLINE labelOptic #-}
+
+-- | @since 0.1
+instance
+  (k ~ A_Lens, a ~ Text, b ~ Text) =>
+  LabelOptic "timeString" k TimeReader TimeReader a b
+  where
+  labelOptic = lensVL $ \f (MkTimeReader _format _srcTZ _today _timeString) ->
+    fmap (MkTimeReader _format _srcTZ _today) (f _timeString)
+  {-# INLINE labelOptic #-}
 
 -- | Given a time string, returns a default time reader.
 --
