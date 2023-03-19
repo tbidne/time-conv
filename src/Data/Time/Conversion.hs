@@ -39,9 +39,6 @@ module Data.Time.Conversion
     LocalTimeZoneException (..),
     LocalSystemTimeException (..),
 
-    -- * Misc
-    Utils.timeLocaleAllLabels,
-
     -- * Reexports
     ZonedTime (..),
     TZLabel (..),
@@ -66,7 +63,6 @@ import Data.Time.Conversion.Types
     _TZDatabaseText,
   )
 import Data.Time.Conversion.Types qualified as Types
-import Data.Time.Conversion.Utils qualified as Utils
 import Data.Time.Format (TimeLocale (..))
 import Data.Time.Format qualified as Format
 import Data.Time.LocalTime (ZonedTime)
@@ -85,7 +81,6 @@ import Optics.Core ((^.))
 -- >>> import Control.Exception (SomeException)
 -- >>> import Data.Functor (void)
 -- >>> import Data.Time.Conversion.Types qualified as Types
--- >>> import Data.Time.Conversion.Utils qualified as Utils
 -- >>> import Effects.Exception (catchCS)
 -- >>> let parseTimeEx = \(e :: ParseTimeException) -> putStrLn "parse time exception"
 -- >>> let parseTzDbEx = \(e :: ParseTZDatabaseException) -> putStrLn "parse tzdb exception"
@@ -148,11 +143,11 @@ readConvertTime mtimeReader destTZ =
 --
 -- >>> -- convert from est
 -- >>> readTime (Just (reader { srcTZ = Just (TZDatabaseLabel America__New_York) }))
--- 1970-01-01 17:24:00 EST
+-- 1970-01-01 17:24:00 -0500
 --
 -- >>> let nyReader = reader { srcTZ = Just (TZDatabaseLabel America__New_York) }
 -- >>> readTime (Just (nyReader { timeString = "08:15" }))
--- 1970-01-01 08:15:00 EST
+-- 1970-01-01 08:15:00 -0500
 --
 -- >>> let badTimeString = reader { timeString = "bad" }
 -- >>> (void $ readTime (Just badTimeString)) `catchCS` parseTimeEx
@@ -216,16 +211,11 @@ readTimeString timeReader = do
       let name = Internal.tzLabelToTimeZoneAbbrv lbl
           timeStrDateTZ = timeStrDate +-+ name
           formatDateTZ = formatDate +-+ tzString
-          -- NOTE: Need to add the given timezone to our known locales.
-          locale =
-            Format.defaultTimeLocale
-              { knownTimeZones = [Internal.tzLabelToTimeZone lbl]
-              }
 
       maybe
         (throwParseEx formatDateTZ timeStrDateTZ)
         pure
-        (readTimeFormat locale formatDateTZ timeStrDateTZ)
+        (readTimeFormat Format.defaultTimeLocale formatDateTZ timeStrDateTZ)
   where
     format = timeReader ^. #format
     timeStr = timeReader ^. #timeString
@@ -257,7 +247,7 @@ dateString :: (IsString s) => s
 dateString = "%Y-%m-%d"
 
 tzString :: (IsString s) => s
-tzString = "%Z"
+tzString = "%z"
 
 -- | @readInLocalTimeZone locale format timeStr@ attempts to parse the
 -- @timeStr@ given the expected @format@. We parse into the current
@@ -282,15 +272,11 @@ readInLocalTimeZone format timeStr = do
   localTz <-
     Local.getCurrentTimeZone
       `catchAny` (throwCS . MkLocalTimeZoneException)
-  let tzStr = T.pack $ show localTz
-      locale =
-        -- Need to add the local timezone to our known locales.
-        Format.defaultTimeLocale
-          { knownTimeZones = [localTz]
-          }
+  let tzStr = T.pack $ Local.timeZoneOffsetString localTz
+
       -- Add the local tz string to the time string, and the tz flag to the format
       timeStr' = timeStr +-+ tzStr
-  case readTimeFormat locale format' timeStr' of
+  case readTimeFormat Format.defaultTimeLocale format' timeStr' of
     Just zt -> pure zt
     Nothing -> throwCS $ MkParseTimeException format' timeStr'
   where
@@ -301,17 +287,17 @@ readInLocalTimeZone format timeStr = do
 -- the result is UTC.
 --
 -- ==== __Examples__
--- >>> readTimeFormat Utils.timeLocaleAllLabels Types.hm "17:24"
+-- >>> readTimeFormat Format.defaultTimeLocale Types.hm "17:24"
 -- Just 1970-01-01 17:24:00 +0000
 --
--- >>> readTimeFormat Utils.timeLocaleAllLabels Types.hm12h "07:24 pm"
+-- >>> readTimeFormat Format.defaultTimeLocale Types.hm12h "07:24 pm"
 -- Just 1970-01-01 19:24:00 +0000
 --
--- >>> readTimeFormat Utils.timeLocaleAllLabels Types.hmTZ "07:24 CET"
--- Just 1970-01-01 07:24:00 CET
+-- >>> readTimeFormat Format.defaultTimeLocale Types.hmTZ "07:24 +5000"
+-- Just 1970-01-01 07:24:00 +5000
 --
--- >>> readTimeFormat Utils.timeLocaleAllLabels Types.hmTZ12h "07:24 pm EST"
--- Just 1970-01-01 19:24:00 EST
+-- >>> readTimeFormat Format.defaultTimeLocale Types.hmTZ12h "07:24 pm -5000"
+-- Just 1970-01-01 19:24:00 -5000
 --
 -- @since 0.1
 readTimeFormat :: TimeLocale -> TimeFormat -> Text -> Maybe ZonedTime
@@ -323,7 +309,7 @@ readTimeFormat locale format timeStr = Format.parseTimeM True locale format' tim
 -- | Converts a zoned time to the given timezone.
 --
 -- ==== __Examples__
--- >>> let (Just sixPmUtc) = readTimeFormat Utils.timeLocaleAllLabels Types.hm "18:00"
+-- >>> let (Just sixPmUtc) = readTimeFormat Format.defaultTimeLocale Types.hm "18:00"
 -- >>> convertZoned sixPmUtc "America/New_York"
 -- Just 1970-01-01 13:00:00 EST
 --
@@ -337,7 +323,7 @@ convertZoned zt = fmap (convertZonedLabel zt) . Internal.tzNameToTZLabel
 -- | Converts a zoned time to the given timezone.
 --
 -- ==== __Examples__
--- >>> let (Just sixPmUtc) = readTimeFormat Utils.timeLocaleAllLabels Types.hm "18:00"
+-- >>> let (Just sixPmUtc) = readTimeFormat Format.defaultTimeLocale Types.hm "18:00"
 -- >>> convertZonedLabel sixPmUtc America__New_York
 -- 1970-01-01 13:00:00 EST
 --

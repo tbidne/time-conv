@@ -22,9 +22,13 @@ jobs:
           - "9.2.7"
           - "9.4.4"
         platform:
-          - "macos-latest"
-          - "ubuntu-latest"
-    runs-on: ${{ matrix.platform }}
+          - os: "macos-latest"
+            set-env: "export"
+          - os: "ubuntu-latest"
+            set-env: "export"
+          - os: "windows-latest"
+            set-env: "set"
+    runs-on: ${{ matrix.platform.os }}
     steps:
       - uses: actions/checkout@v3.3.0
 
@@ -37,11 +41,11 @@ jobs:
 
       - name: Doc Tests
         run : |
-          cabal configure \
-            --enable-tests \
-            --write-ghc-environment-files always
+          cabal configure --enable-tests --write-ghc-environment-files always
           cabal build
-          RUN_DOCTEST=1 cabal test doctest
+
+          ${{ matrix.platform.set-env }} RUN_DOCTEST=1
+          cabal test doctest
 
       - name: Unit Tests
         run: cabal test unit --test-options "--hedgehog-tests 10000"

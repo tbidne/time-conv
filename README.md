@@ -230,7 +230,7 @@ You will need one of:
   * [ghc 9.2](https://www.haskell.org/ghc/download_ghc_9_2_2.html)
 * [nix](https://nixos.org/download.html)
 
-If you have never built a haskell program before, `stack` is probably the best choice.
+If you have never built a haskell program before, `cabal` is probably the best choice.
 
 ## Cabal
 

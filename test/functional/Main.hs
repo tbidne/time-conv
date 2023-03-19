@@ -27,11 +27,19 @@ main = do
     guardOrElse'
       "FUNCTIONAL_IMPURE"
       ExpectEnvSet
-      (pure pureAndImpureTests)
-      (pure pureTests)
+      runImpure
+      runPure
 
   Tasty.defaultMain $ testGroup "Functional tests" allTests
   where
+    runPure = do
+      putStrLn "*** Skipping non-deterministic tests. Enable with FUNCTIONAL_IMPURE=1 ***"
+      pure pureTests
+
+    runImpure = do
+      putStrLn "*** Running non-deterministic tests ***"
+      pure pureAndImpureTests
+
     pureTests =
       [ formatTests,
         formatOutputTests,
@@ -76,13 +84,14 @@ testFormatFails =
       captureTimeConv args
   where
     args = pureTZ <> ["-f", "%Y %H:%M", "08:30"]
-    expected = "Could not parse time string <08:30 UTC> with format <%Y %H:%M %Z>"
+    expected = "Could not parse time string <08:30 +0000> with format <%Y %H:%M %z>"
 
 formatOutputTests :: TestTree
 formatOutputTests =
   testGroup
     "Output Format"
     [ testFormatOutputCustom,
+      testFormatOutputCustomTZOffset,
       testFormatOutputRfc822
     ]
 
@@ -90,6 +99,11 @@ testFormatOutputCustom :: TestTree
 testFormatOutputCustom = testCase "Overrides input formatting" $ do
   result <- captureTimeConv $ pureTZ ++ ["-o", "%H:%M %Z", "08:30"]
   "08:30 UTC" @=? result
+
+testFormatOutputCustomTZOffset :: TestTree
+testFormatOutputCustomTZOffset = testCase "Overrides input formatting tz offset" $ do
+  result <- captureTimeConv $ pureTZ ++ ["-o", "%H:%M %z", "08:30"]
+  "08:30 +0000" @=? result
 
 testFormatOutputRfc822 :: TestTree
 testFormatOutputRfc822 = testCase "Uses rfc822 output" $ do

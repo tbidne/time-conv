@@ -64,7 +64,6 @@ library
     Data.Time.Conversion
     Data.Time.Conversion.Internal
     Data.Time.Conversion.Types
-    Data.Time.Conversion.Utils
 
   build-depends:
     , base                >=4.14.0.0 && <4.18
