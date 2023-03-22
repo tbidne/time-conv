@@ -25,7 +25,7 @@ main :: IO ()
 main = do
   allTests <-
     guardOrElse'
-      "FUNCTIONAL_IMPURE"
+      "FUNC_IMPURE"
       ExpectEnvSet
       runImpure
       runPure
@@ -33,7 +33,7 @@ main = do
   Tasty.defaultMain $ testGroup "Functional tests" allTests
   where
     runPure = do
-      putStrLn "*** Skipping non-deterministic tests. Enable with FUNCTIONAL_IMPURE=1 ***"
+      putStrLn "*** Skipping non-deterministic tests. Enable with FUNC_IMPURE=1 ***"
       pure pureTests
 
     runImpure = do
@@ -102,8 +102,8 @@ testFormatOutputCustom = testCase "Overrides input formatting" $ do
 
 testFormatOutputCustomTZOffset :: TestTree
 testFormatOutputCustomTZOffset = testCase "Overrides input formatting tz offset" $ do
-  result <- captureTimeConv $ pureTZ ++ ["-o", "%H:%M %z", "08:30"]
-  "08:30 +0000" @=? result
+  result <- captureTimeConv $ pureTZ ++ ["-o", "%H:%M %Z", "08:30"]
+  "08:30 UTC" @=? result
 
 testFormatOutputRfc822 :: TestTree
 testFormatOutputRfc822 = testCase "Uses rfc822 output" $ do

@@ -183,11 +183,11 @@ hm12h = "%I:%M %P"
 -- __not__ be used with 'TimeReader'\'s 'format'.
 --
 -- >>> hmTZ
--- MkTimeFormat {unTimeFormat = "%H:%M %z"}
+-- MkTimeFormat {unTimeFormat = "%H:%M %Z"}
 --
 -- @since 0.1
 hmTZ :: TimeFormat
-hmTZ = "%H:%M %z"
+hmTZ = "%H:%M %Z"
 {-# INLINE hmTZ #-}
 
 -- | Format for 12-hour @hours:minutes am/pm TZ@. As this contains a timezone
@@ -195,11 +195,11 @@ hmTZ = "%H:%M %z"
 -- __not__ be used with 'TimeReader'\'s 'format'.
 --
 -- >>> hmTZ12h
--- MkTimeFormat {unTimeFormat = "%I:%M %P %z"}
+-- MkTimeFormat {unTimeFormat = "%I:%M %P %Z"}
 --
 -- @since 0.1
 hmTZ12h :: TimeFormat
-hmTZ12h = "%I:%M %P %z"
+hmTZ12h = "%I:%M %P %Z"
 {-# INLINE hmTZ12h #-}
 
 -- | Format for RFC822: @%a, %_d %b %Y %H:%M:%S %Z@. As this contains a timezone

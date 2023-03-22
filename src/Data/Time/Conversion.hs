@@ -208,7 +208,7 @@ readTimeString timeReader = do
       lbl <- tzDatabaseToTZLabel tzdb
       -- add src date if specified
       (timeStrDate, formatDate) <- maybeAddDate (Just lbl)
-      let name = Internal.tzLabelToTimeZoneAbbrv lbl
+      let name = Internal.tzLabelToTimeZoneOffset lbl
           timeStrDateTZ = timeStrDate +-+ name
           formatDateTZ = formatDate +-+ tzString
 
