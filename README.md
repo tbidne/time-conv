@@ -78,7 +78,9 @@ Usage: time-conv [-f|--format-in FORMAT_STRING]
                  [-s|--src-tz TZ_DATABASE] [-d|--dest-tz TZ_DATABASE]
                  [-t|--today] [TIME_STRING] [-v|--version]
 
-time-conv reads time strings and converts between timezones. For the src and dest options, TZ_DATABASE refers to labels like America/New_York. See https://en.wikipedia.org/wiki/Tz_database.
+  time-conv reads time strings and converts between timezones. For the src and
+  dest options, TZ_DATABASE refers to labels like America/New_York. See
+  https://en.wikipedia.org/wiki/Tz_database.
 
 Available options:
   -f,--format-in FORMAT_STRING
@@ -89,22 +91,28 @@ Available options:
                            See 'man date' for basic examples, and
                            https://hackage.haskell.org/package/time-1.13/docs/Data-Time-Format.html#v:formatTime
                            for the exact spec.
+
   -o,--format-out (rfc822 | FORMAT_STRING)
                            Like --format-in, but used for the output. If this is
                            not present we default to rfc822 i.e. RFC822.
+
   -s,--src-tz TZ_DATABASE  Timezone in which to read the string. Must be a tz
                            database label like America/New_York. If none is
                            given then we use the local system timezone.
+
   -d,--dest-tz TZ_DATABASE Timezone in which to convert the read string. Must be
                            a tz database label like America/New_York. If none is
                            given then we use the local system timezone.
+
   -t,--today               Used when reading a time string, adds the local date.
                            This is a convenience option and should only be used
                            if the time string and format do not explicitly
                            mention date.
+
   TIME_STRING              Time string to parse. If none is given then we parse
                            the local system time. To format the output, use
                            --format-out.
+
   -h,--help                Show this help text
 
 Version: 0.1

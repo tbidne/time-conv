@@ -36,6 +36,8 @@ import Options.Applicative
   )
 import Options.Applicative qualified as OApp
 import Options.Applicative.Help (Chunk (..))
+import Options.Applicative.Help.Chunk qualified as Chunk
+import Options.Applicative.Help.Pretty qualified as Pretty
 import Options.Applicative.Types (ArgPolicy (..), ReadM)
 
 -- | CLI args.
@@ -61,7 +63,7 @@ parserInfo =
   ParserInfo
     { infoParser = parseArgs,
       infoFullDesc = True,
-      infoProgDesc = Chunk desc,
+      infoProgDesc = desc,
       infoHeader = Chunk header,
       infoFooter = Chunk footer,
       infoFailureCode = 1,
@@ -71,8 +73,8 @@ parserInfo =
     header = Just "time-conv: A tool for timezone conversions."
     footer = Just $ fromString $ T.unpack versNum
     desc =
-      Just $
-        "\ntime-conv reads time strings and converts between timezones."
+      Chunk.paragraph $
+        "time-conv reads time strings and converts between timezones."
           <> " For the src and dest options, TZ_DATABASE refers to labels like"
           <> " America/New_York. See https://en.wikipedia.org/wiki/Tz_database."
 
@@ -123,7 +125,7 @@ parseDestTZ =
         <> OApp.long "dest-tz"
         <> OApp.short 'd'
         <> OApp.metavar "TZ_DATABASE"
-        <> OApp.help helpTxt
+        <> mkHelp helpTxt
     )
   where
     helpTxt =
@@ -144,7 +146,7 @@ parseFormatIn =
         <> OApp.long "format-in"
         <> OApp.short 'f'
         <> OApp.metavar "FORMAT_STRING"
-        <> OApp.help helpTxt
+        <> mkHelp helpTxt
     )
   where
     helpTxt =
@@ -166,7 +168,7 @@ parseFormatOut =
       ( OApp.long "format-out"
           <> OApp.short 'o'
           <> OApp.metavar "(rfc822 | FORMAT_STRING)"
-          <> OApp.help helpTxt
+          <> mkHelp helpTxt
       )
   where
     helpTxt =
@@ -189,7 +191,7 @@ parseSrcTZ =
         <> OApp.long "src-tz"
         <> OApp.short 's'
         <> OApp.metavar "TZ_DATABASE"
-        <> OApp.help helpTxt
+        <> mkHelp helpTxt
     )
   where
     helpTxt =
@@ -205,7 +207,7 @@ parseToday =
     mconcat
       [ OApp.long "today",
         OApp.short 't',
-        OApp.help helpTxt
+        mkHelp helpTxt
       ]
   where
     helpTxt =
@@ -221,7 +223,7 @@ parseTimeStr =
     T.pack
       <$> OApp.argument
         OApp.str
-        (OApp.metavar "TIME_STRING" <> OApp.help helpTxt)
+        (OApp.metavar "TIME_STRING" <> mkHelp helpTxt)
   where
     helpTxt =
       "Time string to parse. If none is given then we parse the"
@@ -241,3 +243,10 @@ version = OApp.infoOption txt (OApp.long "version" <> OApp.short 'v')
 
 versNum :: Text
 versNum = "Version: " <> $$(PV.packageVersionTextTH "time-conv.cabal")
+
+mkHelp :: String -> OApp.Mod f a
+mkHelp =
+  OApp.helpDoc
+    . fmap (<> Pretty.hardline)
+    . Chunk.unChunk
+    . Chunk.paragraph
