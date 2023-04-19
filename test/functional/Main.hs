@@ -11,7 +11,10 @@ import Control.Monad.Trans.Class (MonadTrans (..))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT), ask)
 import Data.Text (Text)
 import Data.Text qualified as T
-import Data.Time.Conversion (ParseTZDatabaseException, ParseTimeException)
+import Data.Time.Conversion.Types.Exception
+  ( ParseTZDatabaseException,
+    ParseTimeException,
+  )
 import Data.Time.Format qualified as Format
 import Effects.Exception (MonadCatch, MonadThrow, tryCS)
 import Effects.IORef (MonadIORef, modifyIORef', newIORef, readIORef)

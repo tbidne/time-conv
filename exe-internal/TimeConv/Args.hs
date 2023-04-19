@@ -18,12 +18,10 @@ import Data.Maybe (fromMaybe)
 import Data.String (IsString (fromString))
 import Data.Text (Text)
 import Data.Text qualified as T
-import Data.Time.Conversion.Types
-  ( TZDatabase (..),
-    TimeFormat (..),
-    TimeReader (..),
-  )
-import Data.Time.Conversion.Types qualified as Types
+import Data.Time.Conversion.Types.TZDatabase (TZDatabase (..))
+import Data.Time.Conversion.Types.TimeFormat (TimeFormat (..))
+import Data.Time.Conversion.Types.TimeFormat qualified as TimeFmt
+import Data.Time.Conversion.Types.TimeReader (TimeReader (..))
 import Data.Version.Package qualified as PV
 import Development.GitRev qualified as GitRev
 import Optics.Core (Getter, (^.))
@@ -114,7 +112,7 @@ argsToBuilder = O.to to
                     timeString = str
                   }
             Nothing -> Nothing
-          formatOut = fromMaybe Types.rfc822 (args ^. #formatOut)
+          formatOut = fromMaybe TimeFmt.rfc822 (args ^. #formatOut)
        in (mtimeReader, args ^. #destTZ, formatOut)
 
 parseDestTZ :: Parser (Maybe TZDatabase)
@@ -180,7 +178,7 @@ parseFormatOut =
 readFormat :: ReadM TimeFormat
 readFormat =
   OApp.str <&> \case
-    "rfc822" -> Types.rfc822
+    "rfc822" -> TimeFmt.rfc822
     other -> fromString other
 
 parseSrcTZ :: Parser (Maybe TZDatabase)

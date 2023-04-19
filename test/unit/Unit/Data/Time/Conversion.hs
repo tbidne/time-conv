@@ -5,8 +5,9 @@ module Unit.Data.Time.Conversion (tests) where
 import Control.Monad.IO.Class (MonadIO (..))
 import Data.Text qualified as T
 import Data.Time.Conversion qualified as Conversion
-import Data.Time.Conversion.Types (TZDatabase (..), TimeReader (..))
-import Data.Time.Conversion.Types qualified as Types
+import Data.Time.Conversion.Types.TZDatabase (TZDatabase (..))
+import Data.Time.Conversion.Types.TimeFormat qualified as TimeFmt
+import Data.Time.Conversion.Types.TimeReader (TimeReader (..))
 import Data.Time.Format qualified as Format
 import Hedgehog (Property, PropertyName)
 import Hedgehog qualified as H
@@ -39,7 +40,7 @@ testDestSrcRoundtrips =
       let currTimeDestStr = fmt currTimeDest
           timeReader =
             MkTimeReader
-              { format = Types.hm,
+              { format = TimeFmt.hm,
                 srcTZ = Just tzdb,
                 today = True,
                 timeString = T.pack currTimeDestStr

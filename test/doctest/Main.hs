@@ -16,7 +16,10 @@ main =
 files :: [String]
 files =
   [ "-isrc",
-    "src/Data/Time/Conversion/Types.hs",
+    "src/Data/Time/Conversion/Types/Exception.hs",
+    "src/Data/Time/Conversion/Types/TimeFormat.hs",
+    "src/Data/Time/Conversion/Types/TimeReader.hs",
+    "src/Data/Time/Conversion/Types/TZDatabase.hs",
     "src/Data/Time/Conversion.hs"
   ]
 

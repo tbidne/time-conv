@@ -65,7 +65,10 @@ library
   exposed-modules:
     Data.Time.Conversion
     Data.Time.Conversion.Internal
-    Data.Time.Conversion.Types
+    Data.Time.Conversion.Types.Exception
+    Data.Time.Conversion.Types.TimeFormat
+    Data.Time.Conversion.Types.TimeReader
+    Data.Time.Conversion.Types.TZDatabase
 
   build-depends:
     , base                >=4.14.0.0 && <4.19

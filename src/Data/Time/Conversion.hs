@@ -8,21 +8,6 @@ module Data.Time.Conversion
     readTime,
     convertTime,
 
-    -- ** Types
-    TimeReader (..),
-    defaultTimeReader,
-    TZDatabase (..),
-    _TZDatabaseLabel,
-    _TZDatabaseText,
-    TimeFormat (..),
-
-    -- ** Formatting
-    Types.hm,
-    Types.hm12h,
-    Types.hmTZ,
-    Types.hmTZ12h,
-    Types.rfc822,
-
     -- * Low-level functions
 
     -- ** Parsing time strings
@@ -32,17 +17,6 @@ module Data.Time.Conversion
     -- ** Converting ZonedTime
     convertZoned,
     convertZonedLabel,
-
-    -- * Errors
-    ParseTimeException (..),
-    ParseTZDatabaseException (..),
-    LocalTimeZoneException (..),
-    LocalSystemTimeException (..),
-
-    -- * Reexports
-    ZonedTime (..),
-    TZLabel (..),
-    TimeLocale (..),
   )
 where
 
@@ -50,19 +24,15 @@ import Data.String (IsString)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Conversion.Internal qualified as Internal
-import Data.Time.Conversion.Types
+import Data.Time.Conversion.Types.Exception
   ( LocalSystemTimeException (..),
     LocalTimeZoneException (..),
     ParseTZDatabaseException (..),
     ParseTimeException (..),
-    TZDatabase (..),
-    TimeFormat (..),
-    TimeReader (..),
-    defaultTimeReader,
-    _TZDatabaseLabel,
-    _TZDatabaseText,
   )
-import Data.Time.Conversion.Types qualified as Types
+import Data.Time.Conversion.Types.TZDatabase (TZDatabase (..))
+import Data.Time.Conversion.Types.TimeFormat (TimeFormat (..))
+import Data.Time.Conversion.Types.TimeReader (TimeReader (..))
 import Data.Time.Format (TimeLocale (..))
 import Data.Time.Format qualified as Format
 import Data.Time.LocalTime (TimeZone, ZonedTime (ZonedTime))
@@ -83,7 +53,8 @@ import Optics.Core ((^.))
 -- $setup
 -- >>> import Control.Exception (SomeException)
 -- >>> import Data.Functor (void)
--- >>> import Data.Time.Conversion.Types qualified as Types
+-- >>> import Data.Time.Conversion.Types.TimeFormat qualified as TimeFmt
+-- >>> import Data.Time.Conversion.Types.TimeReader (defaultTimeReader)
 -- >>> import Effects.Exception (catchCS)
 -- >>> let parseTimeEx = \(e :: ParseTimeException) -> putStrLn "parse time exception"
 -- >>> let parseTzDbEx = \(e :: ParseTZDatabaseException) -> putStrLn "parse tzdb exception"
@@ -328,16 +299,16 @@ readInLocalTimeZone format timeStr = do
 -- the result is UTC.
 --
 -- ==== __Examples__
--- >>> readTimeFormat Format.defaultTimeLocale Types.hm "17:24"
+-- >>> readTimeFormat Format.defaultTimeLocale TimeFmt.hm "17:24"
 -- Just 1970-01-01 17:24:00 +0000
 --
--- >>> readTimeFormat Format.defaultTimeLocale Types.hm12h "07:24 pm"
+-- >>> readTimeFormat Format.defaultTimeLocale TimeFmt.hm12h "07:24 pm"
 -- Just 1970-01-01 19:24:00 +0000
 --
--- >>> readTimeFormat Format.defaultTimeLocale Types.hmTZ "07:24 +5000"
+-- >>> readTimeFormat Format.defaultTimeLocale TimeFmt.hmTZ "07:24 +5000"
 -- Just 1970-01-01 07:24:00 +5000
 --
--- >>> readTimeFormat Format.defaultTimeLocale Types.hmTZ12h "07:24 pm -5000"
+-- >>> readTimeFormat Format.defaultTimeLocale TimeFmt.hmTZ12h "07:24 pm -5000"
 -- Just 1970-01-01 19:24:00 -5000
 --
 -- @since 0.1
@@ -350,7 +321,7 @@ readTimeFormat locale format timeStr = Format.parseTimeM True locale format' tim
 -- | Converts a zoned time to the given timezone.
 --
 -- ==== __Examples__
--- >>> let (Just sixPmUtc) = readTimeFormat Format.defaultTimeLocale Types.hm "18:00"
+-- >>> let (Just sixPmUtc) = readTimeFormat Format.defaultTimeLocale TimeFmt.hm "18:00"
 -- >>> convertZoned sixPmUtc "America/New_York"
 -- Just 1970-01-01 13:00:00 EST
 --
@@ -364,7 +335,7 @@ convertZoned zt = fmap (convertZonedLabel zt) . Internal.tzNameToTZLabel
 -- | Converts a zoned time to the given timezone.
 --
 -- ==== __Examples__
--- >>> let (Just sixPmUtc) = readTimeFormat Format.defaultTimeLocale Types.hm "18:00"
+-- >>> let (Just sixPmUtc) = readTimeFormat Format.defaultTimeLocale TimeFmt.hm "18:00"
 -- >>> convertZonedLabel sixPmUtc America__New_York
 -- 1970-01-01 13:00:00 EST
 --
