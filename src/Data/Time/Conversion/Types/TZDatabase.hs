@@ -12,10 +12,6 @@ import Data.Time.Zones.All (TZLabel (..))
 import GHC.Generics (Generic)
 import Optics.Core (Prism', prism)
 
--- $setup
--- >>> import Data.Default (Default (def))
--- >>> import Data.Time.Zones.All (TZLabel (..))
-
 -- | Options for interpreting a timezone.
 --
 -- ==== __Examples__
@@ -31,12 +27,12 @@ data TZDatabase
     -- total conversions.
     --
     -- @since 0.1
-    TZDatabaseLabel TZLabel
+    TZDatabaseLabel !TZLabel
   | -- | Interprets the 'Text' as a tz database name e.g. America/New_York.
     -- Obviously such conversions cannot be total.
     --
     -- @since 0.1
-    TZDatabaseText Text
+    TZDatabaseText !Text
   deriving stock
     ( -- | @since 0.1
       Eq,

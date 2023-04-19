@@ -5,6 +5,8 @@ module Unit.Data.Time.Conversion (tests) where
 import Control.Monad.IO.Class (MonadIO (..))
 import Data.Text qualified as T
 import Data.Time.Conversion qualified as Conversion
+import Data.Time.Conversion.Types.Date (Date (..))
+import Data.Time.Conversion.Types.Date.Internal (DateString (..))
 import Data.Time.Conversion.Types.TZDatabase (TZDatabase (..))
 import Data.Time.Conversion.Types.TimeFormat qualified as TimeFmt
 import Data.Time.Conversion.Types.TimeReader (TimeReader (..))
@@ -24,7 +26,8 @@ tests :: TestTree
 tests =
   testGroup
     "Data.Time.Conversion"
-    [ testDestSrcRoundtrips
+    [ testDestSrcRoundtrips,
+      testDestSrcDateRoundtrips
     ]
 
 testDestSrcRoundtrips :: TestTree
@@ -42,7 +45,7 @@ testDestSrcRoundtrips =
             MkTimeReader
               { format = TimeFmt.hm,
                 srcTZ = Just tzdb,
-                today = True,
+                date = Just DateToday,
                 timeString = T.pack currTimeDestStr
               }
 
@@ -53,6 +56,43 @@ testDestSrcRoundtrips =
   where
     fmt = Format.formatTime locale fmtOut
     fmtOut = "%H:%M"
+    locale = Format.defaultTimeLocale
+
+testDestSrcDateRoundtrips :: TestTree
+testDestSrcDateRoundtrips =
+  testPropertyCompat "currTime == fromSource . toDest (date literal)" "testDestSrcDateRoundtrips" $
+    H.property $ do
+      tzdb <- TZDatabaseLabel <$> H.forAll G.tzLabel
+
+      currTime <- liftIO $ Conversion.readConvertTime Nothing Nothing
+      H.annotateShow currTime
+      currTimeDest <- liftIO $ Conversion.readConvertTime Nothing (Just tzdb)
+      H.annotateShow currTime
+      let (currDateDestStr, currTimeDestStr) = case T.split (== ' ') (T.pack $ fmt currTimeDest) of
+            [y, d] -> (y, d)
+            _ ->
+              error $
+                mconcat
+                  [ "Unit.Data.Time.Conversion: date should have format YYYY-MM-DD, ",
+                    "received: '",
+                    fmt currTimeDest,
+                    "'"
+                  ]
+          timeReader =
+            MkTimeReader
+              { format = TimeFmt.hm,
+                srcTZ = Just tzdb,
+                date = Just $ DateLiteral $ UnsafeDateString currDateDestStr,
+                timeString = currTimeDestStr
+              }
+
+      currTime' <- liftIO $ Conversion.readConvertTime (Just timeReader) Nothing
+      H.annotateShow currTime'
+
+      fmt currTime === fmt currTime'
+  where
+    fmt = Format.formatTime locale fmtOut
+    fmtOut = "%Y-%m-%d %H:%M"
     locale = Format.defaultTimeLocale
 
 #if MIN_VERSION_tasty_hedgehog(1, 2, 0)

@@ -70,7 +70,7 @@ testFormatFails =
       captureTimeConv args
   where
     args = pureTZ <> ["-f", "%Y %H:%M", "08:30"]
-    expected = "Could not parse time string <08:30 +0000> with format <%Y %H:%M %z>"
+    expected = "Could not parse time string <08:30> with format <%Y %H:%M>"
 
 formatOutputTests :: TestTree
 formatOutputTests =
@@ -103,6 +103,7 @@ srcTzTests =
     [ testSrcTzDatabase,
       testSrcTzDatabaseCase,
       testSrcTzFails,
+      testSrcTzDST,
       testSrcTzToday
     ]
 
@@ -126,6 +127,25 @@ testSrcTzFails = testCase "Bad source timezone fails" $ do
     args = pureDestTZ <> ["-s", "Europe/Pariss", "08:30"]
     expected = "Could not parse tz database name <Europe/Pariss>. Wanted a name like America/New_York."
 
+testSrcTzDST :: TestTree
+testSrcTzDST = testCase "Correctly converts src w/ DST" $ do
+  result <- captureTimeConv $ pureDestTZ ++ argsDST
+  "Mon, 10 Apr 2023 12:30:00 UTC" @=? result
+
+  result2 <- captureTimeConv $ pureDestTZ ++ argsNoDST
+  "Tue, 10 Jan 2023 13:30:00 UTC" @=? result2
+  where
+    argsDST = withDate ["--date", "2023-04-10"]
+    argsNoDST = withDate ["--date", "2023-01-10"]
+    withDate ds =
+      ds
+        ++ [ "-f",
+             "%H:%M",
+             "-s",
+             "America/New_York",
+             "08:30"
+           ]
+
 testSrcTzToday :: TestTree
 testSrcTzToday = testCase "Correctly converts src w/ --date today" $ do
   resultUtcSrcDst <- captureTimeConvMock currTimeSrcDst $ pureDestTZ ++ args
@@ -145,7 +165,8 @@ testSrcTzToday = testCase "Correctly converts src w/ --date today" $ do
     args =
       [ "-f",
         "%H:%M",
-        "--today",
+        "--date",
+        "today",
         "-s",
         "America/New_York",
         "19:30"
@@ -197,7 +218,7 @@ testNoTimeString = testCase "No time string gets current time" $ do
 
 testToday :: TestTree
 testToday = testCase "Today arg succeeds" $ do
-  result <- captureTimeConv ["--today"]
+  result <- captureTimeConv ["--date", "today"]
   assertBool ("Should be non-empty: " <> T.unpack result) $ (not . T.null) result
 
 assertException :: forall e a. (Exception e) => String -> IO a -> Assertion

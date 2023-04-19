@@ -4,8 +4,6 @@
 module Data.Time.Conversion.Internal
   ( -- * TZ Database Labels
     tzNameToTZLabel,
-    tzLabelToTimeZone,
-    tzLabelToTimeZoneOffset,
     tzLowerNameLabelMap,
     tzLowerNameLabelMapWith,
   )
@@ -18,34 +16,8 @@ import Data.Text qualified as T
 import Data.Text.Encoding qualified as TEnc
 import Data.Text.Encoding.Error (OnDecodeError)
 import Data.Text.Encoding.Error qualified as TError
-import Data.Time.LocalTime (TimeZone)
-import Data.Time.LocalTime qualified as Local
-import Data.Time.Zones qualified as Zones
 import Data.Time.Zones.All (TZLabel (..))
 import Data.Time.Zones.All qualified as All
-
--- $setup
--- >>> import Data.Time.Zones.All (TZLabel (..))
-
--- | Converts the 'TZLabel' into a 'TimeZone'.
---
--- @since 0.1
-tzLabelToTimeZone :: TZLabel -> TimeZone
-tzLabelToTimeZone = (`Zones.timeZoneForPOSIX` 0) . All.tzByLabel
-
--- | Transforms a tz label into its given time zone abbreviation.
---
--- ==== __Examples__
---
--- >>> tzLabelToTimeZoneOffset America__New_York
--- "-0500"
---
--- >>> tzLabelToTimeZoneOffset Etc__UTC
--- "+0000"
---
--- @since 0.1
-tzLabelToTimeZoneOffset :: TZLabel -> Text
-tzLabelToTimeZoneOffset = T.pack . Local.timeZoneOffsetString . tzLabelToTimeZone
 
 -- | Looks up a tz database label by name. Case-insensitive.
 --

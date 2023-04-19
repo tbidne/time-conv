@@ -18,6 +18,8 @@ import Data.Maybe (fromMaybe)
 import Data.String (IsString (fromString))
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Time.Conversion.Types.Date (Date (..))
+import Data.Time.Conversion.Types.Date qualified as Date
 import Data.Time.Conversion.Types.TZDatabase (TZDatabase (..))
 import Data.Time.Conversion.Types.TimeFormat (TimeFormat (..))
 import Data.Time.Conversion.Types.TimeFormat qualified as TimeFmt
@@ -46,7 +48,7 @@ data Args = MkArgs
     formatOut :: Maybe TimeFormat,
     srcTZ :: Maybe TZDatabase,
     destTZ :: Maybe TZDatabase,
-    today :: Bool,
+    date :: Maybe Date,
     timeString :: Maybe Text
   }
   deriving stock (Eq, Show)
@@ -83,7 +85,7 @@ parseArgs =
     <*> parseFormatOut
     <*> parseSrcTZ
     <*> parseDestTZ
-    <*> parseToday
+    <*> parseDate
     <*> parseTimeStr
     <**> OApp.helper
     <**> version
@@ -108,7 +110,7 @@ argsToBuilder = O.to to
                 MkTimeReader
                   { format = args ^. #formatIn,
                     srcTZ = args ^. #srcTZ,
-                    today = args ^. #today,
+                    date = args ^. #date,
                     timeString = str
                   }
             Nothing -> Nothing
@@ -143,18 +145,17 @@ parseFormatIn =
     ( OApp.value def
         <> OApp.long "format-in"
         <> OApp.short 'f'
-        <> OApp.metavar "FORMAT_STRING"
+        <> OApp.metavar "FMT_STR"
         <> mkHelp helpTxt
     )
   where
     helpTxt =
       mconcat
-        [ "Glibc-style format string -- e.g. %Y-%m-%d for yyyy-mm-dd -- for ",
-          "parsing the time string. Should not contain a timezone flag like ",
-          "%Z, see --src-tz instead. Defaults to ",
+        [ "Glibc-style format string for parsing the time string. Should not ",
+          "contain a timezone flag like %Z (see --src-tz) nor a date ",
+          "(see --date). Defaults to ",
           defFormatStr,
-          " i.e. 24-hr hour:minute. See 'man date' for basic examples, and ",
-          "https://hackage.haskell.org/package/time-1.13/docs/Data-Time-Format.html#v:formatTime for the exact spec."
+          " i.e. 24-hr hour:minute. See 'man date' for basic examples."
         ]
     defFormatStr = T.unpack $ def @TimeFormat ^. #unTimeFormat
 
@@ -199,21 +200,23 @@ parseSrcTZ =
           " local system timezone."
         ]
 
-parseToday :: Parser Bool
-parseToday =
-  OApp.switch $
-    mconcat
-      [ OApp.long "today",
-        OApp.short 't',
-        mkHelp helpTxt
-      ]
+parseDate :: Parser (Maybe Date)
+parseDate =
+  OApp.optional $
+    OApp.option readDate $
+      mconcat
+        [ OApp.long "date",
+          OApp.metavar "(today | YYYY-mm-dd)",
+          mkHelp helpTxt
+        ]
   where
     helpTxt =
       mconcat
-        [ "Used when reading a time string, adds the local date. This is a",
-          " convenience option and should only be used if the time string",
-          " and format do not explicitly mention date."
+        [ "Date in which to read the string. Today uses the current date, as ",
+          "determined by the source. This argument is ignored unless ",
+          "a time string is specified."
         ]
+    readDate = OApp.str >>= Date.parseDate
 
 parseTimeStr :: Parser (Maybe Text)
 parseTimeStr =

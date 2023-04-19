@@ -12,10 +12,11 @@ module Data.Time.Conversion
 
     -- ** Parsing time strings
     readInLocalTimeZone,
+    readTimeFormatLocal,
+    readTimeFormatZoned,
     readTimeFormat,
 
     -- ** Converting ZonedTime
-    convertZoned,
     convertZonedLabel,
   )
 where
@@ -24,6 +25,7 @@ import Data.String (IsString)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Conversion.Internal qualified as Internal
+import Data.Time.Conversion.Types.Date (Date (..), unDateString)
 import Data.Time.Conversion.Types.Exception
   ( LocalSystemTimeException (..),
     LocalTimeZoneException (..),
@@ -33,9 +35,9 @@ import Data.Time.Conversion.Types.Exception
 import Data.Time.Conversion.Types.TZDatabase (TZDatabase (..))
 import Data.Time.Conversion.Types.TimeFormat (TimeFormat (..))
 import Data.Time.Conversion.Types.TimeReader (TimeReader (..))
-import Data.Time.Format (TimeLocale (..))
+import Data.Time.Format (ParseTime, TimeLocale (..))
 import Data.Time.Format qualified as Format
-import Data.Time.LocalTime (TimeZone, ZonedTime (ZonedTime))
+import Data.Time.LocalTime (LocalTime, TimeZone, ZonedTime (ZonedTime))
 import Data.Time.LocalTime qualified as Local
 import Data.Time.Zones qualified as Zones
 import Data.Time.Zones.All (TZLabel (..))
@@ -117,11 +119,11 @@ readConvertTime mtimeReader destTZ =
 --
 -- >>> -- convert from est
 -- >>> readTime (Just (reader { srcTZ = Just (TZDatabaseLabel America__New_York) }))
--- 1970-01-01 17:24:00 -0500
+-- 1970-01-01 17:24:00 EST
 --
 -- >>> let nyReader = reader { srcTZ = Just (TZDatabaseLabel America__New_York) }
 -- >>> readTime (Just (nyReader { timeString = "08:15" }))
--- 1970-01-01 08:15:00 -0500
+-- 1970-01-01 08:15:00 EST
 --
 -- >>> let badTimeString = reader { timeString = "bad" }
 -- >>> (void $ readTime (Just badTimeString)) `catchCS` parseTimeEx
@@ -201,14 +203,30 @@ readTimeString timeReader = do
       lbl <- tzDatabaseToTZLabel tzdb
       -- add src date if specified
       (timeStrDate, formatDate) <- maybeAddDate (Just lbl)
-      let name = Internal.tzLabelToTimeZoneOffset lbl
-          timeStrDateTZ = timeStrDate +-+ name
-          formatDateTZ = formatDate +-+ tzString
 
-      maybe
-        (throwParseEx formatDateTZ timeStrDateTZ)
-        pure
-        (readTimeFormat Format.defaultTimeLocale formatDateTZ timeStrDateTZ)
+      -- Read string as a LocalTime, no TZ info. This allow us to correctly
+      -- get the source's timezone, taking the desired date into account.
+      localTime <-
+        maybe
+          (throwParseEx formatDate timeStrDate)
+          pure
+          (readTimeFormatLocal Format.defaultTimeLocale formatDate timeStrDate)
+
+      let -- This is a TZ i.e. the preliminary timezone corresponding to our
+          -- label e.g. America/New_York -> TZ. This type is a stepping stone
+          -- to the actual ZonedTime we want.
+          srcTz = All.tzByLabel lbl
+          -- Convert the localTime to UTC, interpreting the localTime in
+          -- the src TZ.
+          utcTime = Zones.localTimeToUTCTZ srcTz localTime
+          -- Get the final TimeZone from TZ and the above UTC time. We need
+          -- the time as the TimeZone can vary with the actual time e.g.
+          -- America/New_York -> EST / EDT.
+          srcTimeZone = Zones.timeZoneForUTCTime srcTz utcTime
+          -- Finally, convert the UTC time to our ZonedTime using the
+          -- derived TimeZone.
+          zonedTime = Local.utcToZonedTime srcTimeZone utcTime
+      pure zonedTime
   where
     format = timeReader ^. #format
     timeStr = timeReader ^. #timeString
@@ -223,12 +241,15 @@ readTimeString timeReader = do
       ) =>
       Maybe TZLabel ->
       m (Text, TimeFormat)
-    maybeAddDate mlabel = do
-      if timeReader ^. #today
-        then do
-          currDateStr <- currentDate mlabel
-          pure (T.pack currDateStr +-+ timeStr, dateString +-+ format)
-        else pure (timeStr, format)
+    maybeAddDate mlabel = case timeReader ^. #date of
+      Nothing -> pure (timeStr, format)
+      Just (DateLiteral dateStr) -> do
+        let str = unDateString dateStr
+        pure (str +-+ timeStr, dateString +-+ format)
+      Just DateToday -> do
+        -- get the current date in the system timezone
+        currDateStr <- currentDate mlabel
+        pure (T.pack currDateStr +-+ timeStr, dateString +-+ format)
 
 currentDate ::
   ( HasCallStack,
@@ -288,49 +309,47 @@ readInLocalTimeZone format timeStr = do
 
       -- Add the local tz string to the time string, and the tz flag to the format
       timeStr' = timeStr +-+ tzStr
-  case readTimeFormat Format.defaultTimeLocale format' timeStr' of
+  case readTimeFormatZoned Format.defaultTimeLocale format' timeStr' of
     Just zt -> pure zt
     Nothing -> throwCS $ MkParseTimeException format' timeStr'
   where
     format' = format +-+ tzString
 
+-- | 'readTimeFormat' specialized to 'ZonedTime'.
+--
+-- ==== __Examples__
+-- >>> readTimeFormatZoned Format.defaultTimeLocale TimeFmt.hm "17:24"
+-- Just 1970-01-01 17:24:00 +0000
+--
+-- >>> readTimeFormatZoned Format.defaultTimeLocale TimeFmt.hm12h "07:24 pm"
+-- Just 1970-01-01 19:24:00 +0000
+--
+-- >>> readTimeFormatZoned Format.defaultTimeLocale TimeFmt.hmTZ "07:24 +5000"
+-- Just 1970-01-01 07:24:00 +5000
+--
+-- >>> readTimeFormatZoned Format.defaultTimeLocale TimeFmt.hmTZ12h "07:24 pm -5000"
+-- Just 1970-01-01 19:24:00 -5000
+--
+-- @since 0.1
+readTimeFormatZoned :: TimeLocale -> TimeFormat -> Text -> Maybe ZonedTime
+readTimeFormatZoned = readTimeFormat
+
+-- | 'readTimeFormat' specialized to 'LocalTime'.
+--
+-- @since 0.1
+readTimeFormatLocal :: TimeLocale -> TimeFormat -> Text -> Maybe LocalTime
+readTimeFormatLocal = readTimeFormat
+
 -- | @readTimeFormat locale format timeStr@ attempts to parse the @timeStr@ given
 -- the expected @format@. No timezone is assumed, so if it is left off then
 -- the result is UTC.
 --
--- ==== __Examples__
--- >>> readTimeFormat Format.defaultTimeLocale TimeFmt.hm "17:24"
--- Just 1970-01-01 17:24:00 +0000
---
--- >>> readTimeFormat Format.defaultTimeLocale TimeFmt.hm12h "07:24 pm"
--- Just 1970-01-01 19:24:00 +0000
---
--- >>> readTimeFormat Format.defaultTimeLocale TimeFmt.hmTZ "07:24 +5000"
--- Just 1970-01-01 07:24:00 +5000
---
--- >>> readTimeFormat Format.defaultTimeLocale TimeFmt.hmTZ12h "07:24 pm -5000"
--- Just 1970-01-01 19:24:00 -5000
---
 -- @since 0.1
-readTimeFormat :: TimeLocale -> TimeFormat -> Text -> Maybe ZonedTime
+readTimeFormat :: (ParseTime t) => TimeLocale -> TimeFormat -> Text -> Maybe t
 readTimeFormat locale format timeStr = Format.parseTimeM True locale format' timeStr'
   where
     format' = T.unpack $ format ^. #unTimeFormat
     timeStr' = T.unpack timeStr
-
--- | Converts a zoned time to the given timezone.
---
--- ==== __Examples__
--- >>> let (Just sixPmUtc) = readTimeFormat Format.defaultTimeLocale TimeFmt.hm "18:00"
--- >>> convertZoned sixPmUtc "America/New_York"
--- Just 1970-01-01 13:00:00 EST
---
--- >>> convertZoned sixPmUtc "bad tz label"
--- Nothing
---
--- @since 0.1
-convertZoned :: ZonedTime -> Text -> Maybe ZonedTime
-convertZoned zt = fmap (convertZonedLabel zt) . Internal.tzNameToTZLabel
 
 -- | Converts a zoned time to the given timezone.
 --

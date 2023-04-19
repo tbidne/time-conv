@@ -10,35 +10,37 @@ where
 import Control.DeepSeq (NFData (..), deepseq)
 import Data.Default (Default (..))
 import Data.Text (Text)
+import Data.Time.Conversion.Types.Date (Date)
 import Data.Time.Conversion.Types.TZDatabase (TZDatabase)
 import Data.Time.Conversion.Types.TimeFormat (TimeFormat)
 import GHC.Generics (Generic)
-import Optics.Core ( A_Lens, LabelOptic (labelOptic), lensVL)
+import Optics.Core (A_Lens, LabelOptic (labelOptic), lensVL)
 
 -- | Determines how to read a time string.
 --
 -- @since 0.1
 data TimeReader = MkTimeReader
   { -- | Format used when parsing the time string. This should __not__ include
-    -- timezone formatting e.g. @%Z@. Use 'srcTZ' instead.
+    -- timezone formatting e.g. @%Z@. Use 'srcTZ' instead. It should also
+    -- not include date information. Use 'date' instead.
     --
     -- @since 0.1
-    format :: TimeFormat,
+    format :: !TimeFormat,
     -- | Timezone in which to read the string. 'Nothing' corresponds to
     -- local timezone.
     --
     -- @since 0.1
-    srcTZ :: Maybe TZDatabase,
-    -- | 'True' if this is the current day. This is a convenient way to parse
-    -- the string as if it includes the current day's date.
+    srcTZ :: !(Maybe TZDatabase),
+    -- | Date corresponding to the 'timeString'. If 'Nothing', uses the
+    -- unix epoch.
     --
     -- @since 0.1
-    today :: Bool,
+    date :: !(Maybe Date),
     -- | The time string to parse. This should __not__ include a timezone
     -- e.g. EST. Use 'srcTZ' instead.
     --
     -- @since 0.1
-    timeString :: Text
+    timeString :: !Text
   }
   deriving stock
     ( -- | @since 0.1
@@ -74,11 +76,11 @@ instance
 
 -- | @since 0.1
 instance
-  (k ~ A_Lens, a ~ Bool, b ~ Bool) =>
-  LabelOptic "today" k TimeReader TimeReader a b
+  (k ~ A_Lens, a ~ Maybe Date, b ~ Maybe Date) =>
+  LabelOptic "date" k TimeReader TimeReader a b
   where
-  labelOptic = lensVL $ \f (MkTimeReader _format _srcTZ _today _timeString) ->
-    fmap (\today' -> MkTimeReader _format _srcTZ today' _timeString) (f _today)
+  labelOptic = lensVL $ \f (MkTimeReader _format _srcTZ _date _timeString) ->
+    fmap (\date' -> MkTimeReader _format _srcTZ date' _timeString) (f _date)
   {-# INLINE labelOptic #-}
 
 -- | @since 0.1
@@ -98,4 +100,4 @@ instance
 --
 -- @since 0.1
 defaultTimeReader :: Text -> TimeReader
-defaultTimeReader = MkTimeReader def Nothing False
+defaultTimeReader = MkTimeReader def Nothing Nothing

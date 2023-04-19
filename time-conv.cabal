@@ -65,6 +65,8 @@ library
   exposed-modules:
     Data.Time.Conversion
     Data.Time.Conversion.Internal
+    Data.Time.Conversion.Types.Date
+    Data.Time.Conversion.Types.Date.Internal
     Data.Time.Conversion.Types.Exception
     Data.Time.Conversion.Types.TimeFormat
     Data.Time.Conversion.Types.TimeReader
