@@ -6,13 +6,19 @@
 module Main (main) where
 
 import Control.Exception (Exception (..))
-import Data.IORef (modifyIORef', newIORef, readIORef)
+import Control.Monad.IO.Class (MonadIO, liftIO)
+import Control.Monad.Trans.Class (MonadTrans (..))
+import Control.Monad.Trans.Reader (ReaderT (runReaderT), ask)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Conversion (ParseTZDatabaseException, ParseTimeException)
-import Effects.Exception (tryCS)
-import System.Environment qualified as SysEnv
-import System.Environment.Guard (ExpectEnv (..), guardOrElse')
+import Data.Time.Format qualified as Format
+import Effects.Exception (MonadCatch, MonadThrow, tryCS)
+import Effects.IORef (MonadIORef, modifyIORef', newIORef, readIORef)
+import Effects.Optparse (MonadOptparse)
+import Effects.System.Environment (MonadEnv)
+import Effects.System.Environment qualified as SysEnv
+import Effects.Time (MonadTime (..))
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty qualified as Tasty
 import Test.Tasty.HUnit (Assertion, assertBool, assertFailure, testCase, (@=?))
@@ -22,33 +28,17 @@ import TimeConv.Runner (runTimeConvHandler)
 --
 -- @since 0.1
 main :: IO ()
-main = do
-  allTests <-
-    guardOrElse'
-      "FUNC_IMPURE"
-      ExpectEnvSet
-      runImpure
-      runPure
-
-  Tasty.defaultMain $ testGroup "Functional tests" allTests
-  where
-    runPure = do
-      putStrLn "*** Skipping non-deterministic tests. Enable with FUNC_IMPURE=1 ***"
-      pure pureTests
-
-    runImpure = do
-      putStrLn "*** Running non-deterministic tests ***"
-      pure pureAndImpureTests
-
-    pureTests =
+main =
+  Tasty.defaultMain $
+    testGroup
+      "Functional tests"
       [ formatTests,
         formatOutputTests,
         srcTzTests,
-        destTzTests
-      ]
-    pureAndImpureTests =
-      [ testGroup "Pure tests" pureTests,
-        impureTests
+        destTzTests,
+        testNoArgs,
+        testNoTimeString,
+        testToday
       ]
 
 formatTests :: TestTree
@@ -73,13 +63,6 @@ testFormatCustom = testCase "Uses custom parsing" $ do
 testFormatFails :: TestTree
 testFormatFails =
   testCase "Bad format fails" $
-    -- NOTE: Despite our library throwing AnnotatedExceptions, the below works
-    -- because catch "sees through" the AnnotatedException to the underlying
-    -- exception, in this case, ParseTimeException. So we can capture the underlying
-    -- exception, throwing away all of the extraneous data (i.e. callstacks).
-    --
-    -- In real code we actually want these data, so we should either catch
-    -- SomeException or (AnnotatedException E) for some E.
     assertException @ParseTimeException expected $
       captureTimeConv args
   where
@@ -116,7 +99,8 @@ srcTzTests =
     "Source Timezone"
     [ testSrcTzDatabase,
       testSrcTzDatabaseCase,
-      testSrcTzFails
+      testSrcTzFails,
+      testSrcTzToday
     ]
 
 testSrcTzDatabase :: TestTree
@@ -138,6 +122,31 @@ testSrcTzFails = testCase "Bad source timezone fails" $ do
   where
     args = pureDestTZ <> ["-s", "Europe/Pariss", "08:30"]
     expected = "Could not parse tz database name <Europe/Pariss>. Wanted a name like America/New_York."
+
+testSrcTzToday :: TestTree
+testSrcTzToday = testCase "Correctly converts src w/ --date today" $ do
+  resultUtcSrcDst <- captureTimeConvMock currTimeSrcDst $ pureDestTZ ++ args
+  "Tue, 18 Apr 2023 23:30:00 UTC" @=? resultUtcSrcDst
+
+  resultNzstSrcDst <- captureTimeConvMock currTimeSrcDst $ ["-d", "Pacific/Auckland"] ++ args
+  "Wed, 19 Apr 2023 11:30:00 NZST" @=? resultNzstSrcDst
+
+  resultUtcDestDst <- captureTimeConvMock currTimeDestDst $ pureDestTZ ++ args
+  "Sun, 19 Feb 2023 00:30:00 UTC" @=? resultUtcDestDst
+
+  resultNzstDestDst <- captureTimeConvMock currTimeDestDst $ ["-d", "Pacific/Auckland"] ++ args
+  "Sun, 19 Feb 2023 13:30:00 NZDT" @=? resultNzstDestDst
+  where
+    currTimeSrcDst = "2023-04-18 19:30 -0400"
+    currTimeDestDst = "2023-02-18 19:30 -0500"
+    args =
+      [ "-f",
+        "%H:%M",
+        "--today",
+        "-s",
+        "America/New_York",
+        "19:30"
+      ]
 
 destTzTests :: TestTree
 destTzTests =
@@ -165,22 +174,27 @@ testDestTzFails = testCase "Bad dest timezone fails" $ do
     args = pureSrcTZ <> ["-d", "Europe/Pariss", "08:30"]
     expected = "Could not parse tz database name <Europe/Pariss>. Wanted a name like America/New_York."
 
-impureTests :: TestTree
-impureTests =
-  testGroup
-    "Impure Tests"
-    [ testNoArgs,
-      testToday
-    ]
-
 testNoArgs :: TestTree
 testNoArgs = testCase "No args succeeds" $ do
   result <- captureTimeConv []
   assertBool ("Should be non-empty: " <> T.unpack result) $ (not . T.null) result
 
+testNoTimeString :: TestTree
+testNoTimeString = testCase "No time string gets current time" $ do
+  resultsLocal <- captureTimeConvMock currTime []
+  "Tue, 18 Apr 2023 19:30:00 -0400" @=? resultsLocal
+
+  resultsUtc <- captureTimeConvMock currTime ["-d", "etc/utc"]
+  "Tue, 18 Apr 2023 23:30:00 UTC" @=? resultsUtc
+
+  resultsParis <- captureTimeConvMock currTime ["-d", "europe/paris"]
+  "Wed, 19 Apr 2023 01:30:00 CEST" @=? resultsParis
+  where
+    currTime = "2023-04-18 19:30 -0400"
+
 testToday :: TestTree
 testToday = testCase "Today arg succeeds" $ do
-  result <- captureTimeConv ["-t"]
+  result <- captureTimeConv ["--today"]
   assertBool ("Should be non-empty: " <> T.unpack result) $ (not . T.null) result
 
 assertException :: forall e a. (Exception e) => String -> IO a -> Assertion
@@ -194,7 +208,57 @@ assertException expected io = do
         (startsWith expected result')
 
 captureTimeConv :: [String] -> IO Text
-captureTimeConv argList = do
+captureTimeConv = captureTimeConvM
+
+newtype MockTimeM m a = MkMockTimeM (m a)
+  deriving
+    ( Applicative,
+      Functor,
+      Monad,
+      MonadCatch,
+      MonadEnv,
+      MonadIO,
+      MonadIORef,
+      MonadOptparse,
+      MonadThrow
+    )
+    via m
+
+instance MonadTrans MockTimeM where
+  lift = MkMockTimeM
+
+type MockTimeIO = MockTimeM (ReaderT String IO)
+
+runMockTimeIO :: MockTimeIO a -> String -> IO a
+runMockTimeIO (MkMockTimeM rdr) = runReaderT rdr
+
+usingMockTimeIO :: String -> MockTimeIO a -> IO a
+usingMockTimeIO = flip runMockTimeIO
+
+instance MonadTime MockTimeIO where
+  getSystemZonedTime = do
+    str <- lift ask
+    liftIO $
+      Format.parseTimeM
+        True
+        Format.defaultTimeLocale
+        "%Y-%m-%d %H:%M %z"
+        str
+  getMonotonicTime = pure 0
+
+captureTimeConvMock :: String -> [String] -> IO Text
+captureTimeConvMock timeStr = usingMockTimeIO timeStr . captureTimeConvM
+
+captureTimeConvM ::
+  ( MonadEnv m,
+    MonadCatch m,
+    MonadIORef m,
+    MonadOptparse m,
+    MonadTime m
+  ) =>
+  [String] ->
+  m Text
+captureTimeConvM argList = do
   output <- newIORef ""
   let handler txt = modifyIORef' output (txt <>)
   SysEnv.withArgs argList (runTimeConvHandler handler)

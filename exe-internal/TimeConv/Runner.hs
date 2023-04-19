@@ -12,37 +12,51 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Conversion qualified as Conv
 import Data.Time.Format qualified as Format
-import Effects.Exception (catchAny)
+import Effects.Exception (MonadCatch, catchAny, exitFailure)
+import Effects.Optparse (MonadOptparse (execParser))
+import Effects.System.Terminal (MonadTerminal)
+import Effects.System.Terminal qualified as T
+import Effects.Time (MonadTime)
 import Optics.Core ((^.))
-import Options.Applicative qualified as OApp
-import System.Exit (exitFailure)
 import TimeConv.Args (Args, argsToBuilder, parserInfo)
 
 -- | 'runTimeConvHandler' that prints the result.
 --
 -- @since 0.1
-runTimeConv :: IO ()
+runTimeConv ::
+  ( MonadCatch m,
+    MonadOptparse m,
+    MonadTerminal m,
+    MonadTime m
+  ) =>
+  m ()
 runTimeConv = do
-  args <- OApp.execParser parserInfo
+  args <- execParser parserInfo
   -- catch needs to be _within_ this call (i.e. not applied to the execParser
   -- function) otherwise e.g. we catch the --help "exception".
-  runWithArgs (putStrLn . T.unpack) args
+  runWithArgs T.putTextLn args
     `catchAny` \e -> do
-      _ <- putStrLn $ displayException e
+      _ <- T.putStrLn $ displayException e
       exitFailure
 
 -- | Runs time-conv and applies the given handler.
 --
 -- @since 0.1
-runTimeConvHandler :: (Text -> IO a) -> IO a
+runTimeConvHandler ::
+  ( MonadCatch m,
+    MonadOptparse m,
+    MonadTime m
+  ) =>
+  (Text -> m a) ->
+  m a
 runTimeConvHandler handler = do
-  args <- OApp.execParser parserInfo
+  args <- execParser parserInfo
   runWithArgs handler args
 
 -- | Runs time-conv and applies the given handler.
 --
 -- @since 0.1
-runWithArgs :: (Text -> IO a) -> Args -> IO a
+runWithArgs :: (MonadCatch m, MonadTime m) => (Text -> m a) -> Args -> m a
 runWithArgs handler args = do
   let (mtimeReader, destTZ, formatOut) = args ^. argsToBuilder
       formatStr = T.unpack $ formatOut ^. #unTimeFormat

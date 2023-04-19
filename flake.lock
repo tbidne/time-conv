@@ -3,15 +3,12 @@
     "algebra-simple": {
       "inputs": {
         "flake-compat": [
-          "monad-effects",
           "flake-compat"
         ],
         "flake-parts": [
-          "monad-effects",
           "flake-parts"
         ],
         "nixpkgs": [
-          "monad-effects",
           "nixpkgs"
         ]
       },
@@ -32,15 +29,12 @@
     "bounds": {
       "inputs": {
         "flake-compat": [
-          "monad-effects",
           "flake-compat"
         ],
         "flake-parts": [
-          "monad-effects",
           "flake-parts"
         ],
         "nixpkgs": [
-          "monad-effects",
           "nixpkgs"
         ]
       },
@@ -94,8 +88,12 @@
     },
     "monad-effects": {
       "inputs": {
-        "algebra-simple": "algebra-simple",
-        "bounds": "bounds",
+        "algebra-simple": [
+          "algebra-simple"
+        ],
+        "bounds": [
+          "bounds"
+        ],
         "flake-compat": [
           "flake-compat"
         ],
@@ -157,6 +155,8 @@
     },
     "root": {
       "inputs": {
+        "algebra-simple": "algebra-simple",
+        "bounds": "bounds",
         "flake-compat": "flake-compat",
         "flake-parts": "flake-parts",
         "monad-effects": "monad-effects",

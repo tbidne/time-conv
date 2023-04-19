@@ -23,7 +23,7 @@ doctest:
 	rm .ghc.environment*
 
 functional:
-	FUNC_IMPURE=1 cabal test functional
+	cabal test functional
 
 repl:
 	if [ -z "$(ARGS)" ]; then \
