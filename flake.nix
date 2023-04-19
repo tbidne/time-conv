@@ -52,6 +52,12 @@
             (hlib.dontCheck c.ghcid)
             (hlib.dontCheck c.haskell-language-server)
           ];
+          formatters = c: [
+            (hlib.dontCheck c.cabal-fmt)
+            (hlib.dontCheck c.hlint)
+            (hlib.dontCheck c.ormolu)
+            pkgs.nixpkgs-fmt
+          ];
           ghc-version = "ghc944";
           compiler = pkgs.haskell.packages."${ghc-version}".override {
             overrides = final: prev: {
@@ -60,7 +66,7 @@
             };
           };
           hlib = pkgs.haskell.lib;
-          mkPkg = returnShellEnv:
+          mkPkg = returnShellEnv: withDevTools:
             compiler.developPackage {
               inherit returnShellEnv;
               name = "time-conv";
@@ -68,7 +74,8 @@
               modifier = drv:
                 pkgs.haskell.lib.addBuildTools drv
                   (buildTools compiler ++
-                    (if returnShellEnv then devTools compiler else [ ]));
+                    (if returnShellEnv then formatters compiler else [ ]) ++
+                    (if withDevTools then devTools compiler else [ ]));
               overrides = final: prev: with compiler; {
                 algebra-simple = final.callCabal2nix "algebra-simple" algebra-simple { };
                 bounds = final.callCabal2nix "bounds" bounds { };
@@ -102,8 +109,9 @@
             };
         in
         {
-          packages.default = mkPkg false;
-          devShells.default = mkPkg true;
+          packages.default = mkPkg false false;
+          devShells.default = mkPkg true true;
+          devShells.ci = mkPkg true false;
         };
       systems = [
         "x86_64-darwin"
