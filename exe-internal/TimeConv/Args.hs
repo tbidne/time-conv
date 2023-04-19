@@ -45,11 +45,11 @@ import Paths_time_conv qualified as Paths
 --
 -- @since 0.1
 data Args = MkArgs
-  { formatIn :: TimeFormat,
+  { date :: Maybe Date,
+    destTZ :: Maybe TZDatabase,
+    formatIn :: TimeFormat,
     formatOut :: Maybe TimeFormat,
     srcTZ :: Maybe TZDatabase,
-    destTZ :: Maybe TZDatabase,
-    date :: Maybe Date,
     timeString :: Maybe Text
   }
   deriving stock (Eq, Show)
@@ -76,17 +76,17 @@ parserInfo =
     desc =
       Chunk.paragraph $
         "time-conv reads time strings and converts between timezones."
-          <> " For the src and dest options, TZ_DATABASE refers to labels like"
+          <> " For the src and dest options, TZ_DB refers to labels like"
           <> " America/New_York. See https://en.wikipedia.org/wiki/Tz_database."
 
 parseArgs :: Parser Args
 parseArgs =
   MkArgs
-    <$> parseFormatIn
+    <$> parseDate
+    <*> parseDestTZ
+    <*> parseFormatIn
     <*> parseFormatOut
     <*> parseSrcTZ
-    <*> parseDestTZ
-    <*> parseDate
     <*> parseTimeStr
     <**> OApp.helper
     <**> version
@@ -125,7 +125,7 @@ parseDestTZ =
     ( OApp.value Nothing
         <> OApp.long "dest-tz"
         <> OApp.short 'd'
-        <> OApp.metavar "TZ_DATABASE"
+        <> OApp.metavar "TZ_DB"
         <> mkHelp helpTxt
     )
   where
@@ -167,7 +167,7 @@ parseFormatOut =
       readFormat
       ( OApp.long "format-out"
           <> OApp.short 'o'
-          <> OApp.metavar "(rfc822 | FORMAT_STRING)"
+          <> OApp.metavar "(rfc822 | FMT_STR)"
           <> mkHelp helpTxt
       )
   where
@@ -190,7 +190,7 @@ parseSrcTZ =
     ( OApp.value Nothing
         <> OApp.long "src-tz"
         <> OApp.short 's'
-        <> OApp.metavar "TZ_DATABASE"
+        <> OApp.metavar "TZ_DB"
         <> mkHelp helpTxt
     )
   where
@@ -225,7 +225,7 @@ parseTimeStr =
     T.pack
       <$> OApp.argument
         OApp.str
-        (OApp.metavar "TIME_STRING" <> mkHelp helpTxt)
+        (OApp.metavar "TIME_STR" <> mkHelp helpTxt)
   where
     helpTxt =
       "Time string to parse. If none is given then we parse the"

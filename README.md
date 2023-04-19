@@ -19,11 +19,11 @@
 * [Introduction](#introduction)
   * [Usage](#usage)
 * [Options](#options)
-  * [Format](#format)
+  * [Date](#date)
+  * [Destination Timezone](#destination-timezone)
+  * [Format In](#format-in)
   * [Format Out](#format-out)
   * [Source Timezone](#source-timezone)
-  * [Destination Timezone](#destination-timezone)
-  * [Today](#today)
   * [Time String](#time-string)
 * [Building](#building)
   * [Prerequisites](#prerequisites)
@@ -48,10 +48,10 @@
 2. Converting a "time string" from one timezone to another:
 
     ````
-    $ time-conv -t -s america/new_york 18:30
+    $ time-conv --date today -s america/new_york 18:30
     Sat, 18 Jun 2022 11:30:00 NZST
 
-    # -t means "today's date" as determined by the source
+    # --date today means "today's date" as determined by the source
     # -s sets the "source" timezone
     # no dest means we convert to local time
     # i.e. 6:30 pm in New York on its current day (17 Jun 2022) will be 11:30 am NZST (18 Jun 2022)
@@ -73,43 +73,40 @@ The timezone names are based on the tz_database. See https://en.wikipedia.org/wi
 ```
 time-conv: A tool for timezone conversions.
 
-Usage: time-conv [-f|--format-in FORMAT_STRING]
-                 [-o|--format-out (rfc822 | FORMAT_STRING)]
-                 [-s|--src-tz TZ_DATABASE] [-d|--dest-tz TZ_DATABASE]
-                 [-t|--today] [TIME_STRING] [-v|--version]
+Usage: time-conv [--date (today | YYYY-mm-dd)] [-d|--dest-tz TZ_DB]
+          [-f|--format-in FMT_STR] [-o|--format-out (rfc822 | FMT_STR)]
+          [-s|--src-tz TZ_DB] [TIME_STR] [-v|--version]
 
   time-conv reads time strings and converts between timezones. For the src and
-  dest options, TZ_DATABASE refers to labels like America/New_York. See
+  dest options, TZ_DB refers to labels like America/New_York. See
   https://en.wikipedia.org/wiki/Tz_database.
 
 Available options:
-  -f,--format-in FORMAT_STRING
-                           Glibc-style format string -- e.g. %Y-%m-%d for
-                           yyyy-mm-dd -- for parsing the time string. Should not
-                           contain a timezone flag like %Z, see --src-tz
-                           instead. Defaults to %H:%M i.e. 24-hr hour:minute.
-                           See 'man date' for basic examples, and
-                           https://hackage.haskell.org/package/time-1.13/docs/Data-Time-Format.html#v:formatTime
-                           for the exact spec.
+  --date (today | YYYY-mm-dd)
+                           Date in which to read the string. Today uses the
+                           current date, as determined by the source. This
+                           argument is ignored unless a time string is
+                           specified.
 
-  -o,--format-out (rfc822 | FORMAT_STRING)
-                           Like --format-in, but used for the output. If this is
-                           not present we default to rfc822 i.e. RFC822.
-
-  -s,--src-tz TZ_DATABASE  Timezone in which to read the string. Must be a tz
-                           database label like America/New_York. If none is
-                           given then we use the local system timezone.
-
-  -d,--dest-tz TZ_DATABASE Timezone in which to convert the read string. Must be
+  -d,--dest-tz TZ_DB       Timezone in which to convert the read string. Must be
                            a tz database label like America/New_York. If none is
                            given then we use the local system timezone.
 
-  -t,--today               Used when reading a time string, adds the local date.
-                           This is a convenience option and should only be used
-                           if the time string and format do not explicitly
-                           mention date.
+  -f,--format-in FMT_STR   Glibc-style format string for parsing the time
+                           string. Should not contain a timezone flag like %Z
+                           (see --src-tz) nor a date (see --date). Defaults to
+                           %H:%M i.e. 24-hr hour:minute. See 'man date' for
+                           basic examples.
 
-  TIME_STRING              Time string to parse. If none is given then we parse
+  -o,--format-out (rfc822 | FMT_STR)
+                           Like --format-in, but used for the output. If this is
+                           not present we default to rfc822 i.e. RFC822.
+
+  -s,--src-tz TZ_DB        Timezone in which to read the string. Must be a tz
+                           database label like America/New_York. If none is
+                           given then we use the local system timezone.
+
+  TIME_STR                 Time string to parse. If none is given then we parse
                            the local system time. To format the output, use
                            --format-out.
 
@@ -120,61 +117,32 @@ Version: 0.1
 
 # Options
 
-## Format
+## Date
 
-**Arg:** `-f,--format-in FORMAT_STRING`
+**Arg:** `--date (today | YYYY-mm-dd)`
 
-**Description:** Glibc-style format string -- e.g. `%Y-%m-%d` for `yyyy-mm-dd` -- for parsing the time string. Should not contain a timezone flag like `%Z`, see `--src-tz` instead. Defaults to %H:%M i.e. 24-hr hour:minute. See 'man date' for basic examples, and https://hackage.haskell.org/package/time-1.13/docs/Data-Time-Format.html#v:formatTime for the exact spec.
-
-**Examples:**
-
-```
-$ time-conv 08:30
-Thu,  1 Jan 1970 08:30:00 NZDT
-
-$ time-conv -f "%Y-%m-%d %H:%M" "2022-06-15 08:30"
-Wed, 15 Jun 2022 08:30:00 NZDT
-```
-
-## Format Out
-
-**Arg:** `-o,--format-out (rfc822 | FORMAT_STRING)`
-
-**Description:** Like `--format-in` except it applies to the output format only. If `--format-out` is not given we default to `rfc822`.
+**Description:** Date in which to read the string. Today uses the current date, as determined by the source. This argument is ignored unless a time string is specified.
 
 **Examples:**
 
 ```
-# using implicit rc822 format for output
 $ time-conv 08:30
 Thu,  1 Jan 1970 08:30:00 NZST
 
-# overriding output format
-$ time-conv -o %H:%M:%S 08:30
-08:30:00
-```
+# use today's date instead of initial unix time
+$ time-conv --date today 08:30
+Thu, 20 Apr 2023 08:30:00 NZST
 
-## Source Timezone
+$ time-conv --date today -s america/new_york 08:30
+Thu, 20 Apr 2023 00:30:00 NZST
 
-**Arg:** `-s,--src-tz TZ_DATABASE`
-
-**Description:** Timezone in which to read the string. Must be a tz database label like `America/New_York`. If none is given then we use the local system timezone.
-
-**Examples:**
-
-```
-# use the local system timezone
-$ time-conv 08:30
-Thu,  1 Jan 1970 08:30:00 NZST
-
-# using tz database name
-$ time-conv -s america/new_york 08:30
-Fri,  2 Jan 1970 01:30:00 NZST
+$ time-conv --date 2022-04-10 -s america/new_york 08:30
+Mon, 11 Apr 2022 00:30:00 NZST
 ```
 
 ## Destination Timezone
 
-**Arg:** `-d,--dest-tz TZ_DATABASE`
+**Arg:** `-d,--dest-tz TZ_DB`
 
 **Description:** This option allows one to convert the read timezone. Must be a tz database label like America/New_York. If none is given then we use the local system timezone.
 
@@ -193,11 +161,84 @@ $ time-conv -s america/new_york -d etc/utc 08:30
 Thu,  1 Jan 1970 13:30:00 UTC
 ```
 
-## Today
+## Format In
 
-**Arg:** `-t,--today`
+**Arg:** `-f,--format-in FMT_STR`
 
-**Description:** Used when reading a time string, adds the local date. This is a convenience option and should only be used if the time string and format do not explicitly mention date.
+**Description:** Glibc-style format string for parsing the time string. Should not contain a timezone flag like `%Z` (see [`--src-tz`](#source_timezone)) nor a date (see [`--date`](#date)). Defaults to `%H:%M` i.e. 24-hr hour:minute. See 'man date' for basic examples.
+
+**Examples:**
+
+```
+$ time-conv 08:30
+Thu,  1 Jan 1970 08:30:00 NZDT
+
+$ time-conv -f "%I:%M %p" "08:00 pm"
+Thu,  1 Jan 1970 20:00:00 NZST
+```
+
+## Format Out
+
+**Arg:** `-o,--format-out (rfc822 | FMT_STR)`
+
+**Description:** Like `--format-in` except it applies to the output format only. If `--format-out` is not given we default to `rfc822`.
+
+**Examples:**
+
+```
+# using implicit rc822 format for output
+$ time-conv 08:30
+Thu,  1 Jan 1970 08:30:00 NZST
+
+# overriding output format
+$ time-conv -o %H:%M:%S 08:30
+08:30:00
+```
+
+## Source Timezone
+
+**Arg:** `-s,--src-tz TZ_DB`
+
+**Description:** Timezone in which to read the string. Must be a tz database label like `America/New_York`. If none is given then we use the local system timezone.
+
+**Examples:**
+
+```
+# use the local system timezone
+$ time-conv 08:30
+Thu,  1 Jan 1970 08:30:00 NZST
+
+# using tz database name
+$ time-conv -s america/new_york 08:30
+Fri,  2 Jan 1970 01:30:00 NZST
+```
+
+## Destination Timezone
+
+**Arg:** `-d,--dest-tz TZ_DB`
+
+**Description:** This option allows one to convert the read timezone. Must be a tz database label like America/New_York. If none is given then we use the local system timezone.
+
+**Examples:**
+
+```
+# use the local system timezone
+$ time-conv 08:30
+Thu,  1 Jan 1970 08:30:00 NZST
+
+# using tz database name
+$ time-conv -d america/new_york 08:30
+Wed, 31 Dec 1969 15:30:00 EST
+
+$ time-conv -s america/new_york -d etc/utc 08:30
+Thu,  1 Jan 1970 13:30:00 UTC
+```
+
+## Date
+
+**Arg:** `--date (today | YYYY-mm-dd)`
+
+**Description:** Date in which to read the string. Today uses the current date, as determined by the source. This argument is ignored unless a time string is specified.
 
 **Examples:**
 
@@ -206,13 +247,19 @@ $ time-conv 08:30
 Thu,  1 Jan 1970 08:30:00 NZST
 
 # use today's date instead of initial unix time
-$ time-conv -t 08:30
-Fri, 17 Jun 2022 08:30:00 NZST
+$ time-conv --date today 08:30
+Thu, 20 Apr 2023 08:30:00 NZST
+
+$ time-conv --date today -s america/new_york 08:30
+Thu, 20 Apr 2023 00:30:00 NZST
+
+$ time-conv --date 2022-04-10 -s america/new_york 08:30
+Mon, 11 Apr 2022 00:30:00 NZST
 ```
 
 ## Time String
 
-**Arg:** `TIME_STRING`
+**Arg:** `TIME_STR`
 
 **Description:** This is the time string to parse. If none is given then we parse the local system time. Naturally, the local system time overrides the `--src-tz` option. To format the output, use [`--format-out`](format-out).
 
@@ -228,64 +275,48 @@ Thu, 16 Jun 2022 12:30:00 CEST
 
 # Building
 
-## Prerequisites
-
-You will need one of:
-
-* [cabal-install 2.4+](https://www.haskell.org/cabal/download.html) and one of:
-  * [ghc 8.10](https://www.haskell.org/ghc/download_ghc_8_10_7.html)
-  * [ghc 9.0](https://www.haskell.org/ghc/download_ghc_9_0_2.html)
-  * [ghc 9.2](https://www.haskell.org/ghc/download_ghc_9_2_2.html)
-* [nix](https://nixos.org/download.html)
-
-If you have never built a haskell program before, `cabal` is probably the best choice.
+If you have never built a haskell program before, [Cabal](#cabal) is probably the best choice.
 
 ## Cabal
 
-You will need `ghc` and `cabal-install`. From there `time-conv` can be built with `cabal build` or installed globally (i.e. `~/.cabal/bin/`) with `cabal install`.
+### Prerequisites
+
+* [`ghcup`](https://www.haskell.org/ghcup/)
+
+Using `ghcup`, install `cabal 2.4+` and the latest `ghc`.
+
+### Build Time-Conv
+
+Once you have `cabal` and `ghc`, `time-conv` can be built with `cabal build` or installed globally (i.e. `~/.cabal/bin/`) with `cabal install`.
 
 ## Nix
 
-Because `time-conv` is a flake, it can be built as part of a nix expression. For instance, if you want to add `time-conv` to `NixOS`, your `flake.nix` might look something like:
+### Prerequisites
+
+* [nix](https://nixos.org/download.html)
+
+### Manually
+
+Building with `nix` uses [flakes](https://nixos.wiki/wiki/Flakes). `time-conv` can be built with `nix build`, which will compile and run the tests.
+
+### Nix expression
+
+Because `time-conv` is a flake, it be built as part of a nix expression. For instance, if you want to add `time-conv` to `NixOS`, your `flake.nix` should have:
 
 ```nix
+# flake.nix
 {
-  description = "My flake";
-
-  inputs = {
-    nixpkgs.url = "github:nixpkgs/nixos-unstable";
-    time-conv-src.url= "github:tbidne/time-conv/main";
-  };
-
-  outputs = { self, nixpkgs, time-conv-src, ... }:
-    let
-      system = "x86_64-linux";
-      pkgs = import nixpkgs {
-        system = system;
-      };
-      time-conv = time-conv-src.packages.${system}.default;
-    in
-    {
-      nixosConfigurations = {
-        nixos = nixpkgs.lib.nixosSystem {
-          system = system;
-          modules = [
-            (import ./configuration.nix { inherit pkgs time-conv; })
-          ];
-        };
-      };
-    };
+  inputs.time-conv.url = "github:tbidne/time-conv/main";
 }
 ```
 
-Then in `configuration.nix` you can simply have:
+Then include this in the `systemPackages`:
 
 ```nix
-{ pkgs, time-conv, ... }:
-
+# wherever your global packages are defined
 {
   environment.systemPackages = [
-    time-conv
+    time-conv.packages."${system}".default
   ];
 }
 ```
