@@ -14,6 +14,7 @@ where
 
 import Data.Default (Default (..))
 import Data.Functor ((<&>))
+import Data.List qualified as L
 import Data.Maybe (fromMaybe)
 import Data.String (IsString (fromString))
 import Data.Text (Text)
@@ -24,8 +25,7 @@ import Data.Time.Conversion.Types.TZDatabase (TZDatabase (..))
 import Data.Time.Conversion.Types.TimeFormat (TimeFormat (..))
 import Data.Time.Conversion.Types.TimeFormat qualified as TimeFmt
 import Data.Time.Conversion.Types.TimeReader (TimeReader (..))
-import Data.Version.Package qualified as PV
-import Development.GitRev qualified as GitRev
+import Data.Version (Version (versionBranch))
 import Optics.Core (Getter, (^.))
 import Optics.Core qualified as O
 import Optics.TH (makeFieldLabelsNoPrefix)
@@ -39,6 +39,7 @@ import Options.Applicative.Help (Chunk (..))
 import Options.Applicative.Help.Chunk qualified as Chunk
 import Options.Applicative.Help.Pretty qualified as Pretty
 import Options.Applicative.Types (ArgPolicy (..), ReadM)
+import Paths_time_conv qualified as Paths
 
 -- | CLI args.
 --
@@ -71,7 +72,7 @@ parserInfo =
     }
   where
     header = Just "time-conv: A tool for timezone conversions."
-    footer = Just $ fromString $ T.unpack versNum
+    footer = Just $ fromString versNum
     desc =
       Chunk.paragraph $
         "time-conv reads time strings and converts between timezones."
@@ -231,19 +232,10 @@ parseTimeStr =
         <> " local system time. To format the output, use --format-out."
 
 version :: Parser (a -> a)
-version = OApp.infoOption txt (OApp.long "version" <> OApp.short 'v')
-  where
-    txt =
-      T.unpack $
-        T.unlines
-          [ "time-conv",
-            versNum,
-            "Revision:" <> $(GitRev.gitHash),
-            $(GitRev.gitCommitDate)
-          ]
+version = OApp.infoOption versNum (OApp.long "version" <> OApp.short 'v')
 
-versNum :: Text
-versNum = "Version: " <> $$(PV.packageVersionTextTH "time-conv.cabal")
+versNum :: String
+versNum = "Version: " <> L.intercalate "." (show <$> versionBranch Paths.version)
 
 mkHelp :: String -> OApp.Mod f a
 mkHelp =

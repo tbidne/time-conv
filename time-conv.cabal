@@ -25,7 +25,7 @@ source-repository head
   type:     git
   location: https://github.com/tbidne/time-conv
 
-common common-exts
+common common-lang
   default-extensions:
     BangPatterns
     ConstraintKinds
@@ -61,7 +61,7 @@ common common-exts
     TypeOperators
 
 library
-  import:           common-exts
+  import:           common-lang
   exposed-modules:
     Data.Time.Conversion
     Data.Time.Conversion.Internal
@@ -88,7 +88,9 @@ library
   default-language: Haskell2010
 
 library time-conv-exe-internal
-  import:           common-exts
+  import:           common-lang
+  other-modules:    Paths_time_conv
+  autogen-modules:  Paths_time_conv
   exposed-modules:
     TimeConv.Args
     TimeConv.Runner
@@ -100,11 +102,9 @@ library time-conv-exe-internal
     , effects-optparse      ^>=0.1
     , effects-terminal      ^>=0.1
     , effects-time
-    , gitrev                >=1.2.0    && <1.4
     , optics-core
     , optics-th             ^>=0.4
     , optparse-applicative  >=0.16.1.0 && <0.18
-    , package-version       >=0.1.0.0  && <0.4
     , text
     , time
     , time-conv
@@ -113,7 +113,7 @@ library time-conv-exe-internal
   default-language: Haskell2010
 
 executable time-conv
-  import:           common-exts
+  import:           common-lang
   main-is:          Main.hs
   build-depends:
     , base
@@ -124,7 +124,7 @@ executable time-conv
   default-language: Haskell2010
 
 test-suite doctest
-  import:           common-exts
+  import:           common-lang
   type:             exitcode-stdio-1.0
   main-is:          Main.hs
   build-depends:
@@ -136,7 +136,7 @@ test-suite doctest
   default-language: Haskell2010
 
 test-suite unit
-  import:           common-exts
+  import:           common-lang
   type:             exitcode-stdio-1.0
   main-is:          Main.hs
   other-modules:
@@ -160,7 +160,7 @@ test-suite unit
   default-language: Haskell2010
 
 test-suite functional
-  import:           common-exts
+  import:           common-lang
   type:             exitcode-stdio-1.0
   main-is:          Main.hs
   build-depends:
