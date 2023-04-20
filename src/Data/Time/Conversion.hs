@@ -24,6 +24,7 @@ where
 import Data.String (IsString)
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Time.Clock (UTCTime)
 import Data.Time.Conversion.Internal qualified as Internal
 import Data.Time.Conversion.Types.Date (Date (..), unDateString)
 import Data.Time.Conversion.Types.Exception
@@ -39,6 +40,7 @@ import Data.Time.Format (ParseTime, TimeLocale (..))
 import Data.Time.Format qualified as Format
 import Data.Time.LocalTime (LocalTime, TimeZone, ZonedTime (ZonedTime))
 import Data.Time.LocalTime qualified as Local
+import Data.Time.Zones (TZ)
 import Data.Time.Zones qualified as Zones
 import Data.Time.Zones.All (TZLabel (..))
 import Data.Time.Zones.All qualified as All
@@ -212,21 +214,7 @@ readTimeString timeReader = do
           pure
           (readTimeFormatLocal Format.defaultTimeLocale formatDate timeStrDate)
 
-      let -- This is a TZ i.e. the preliminary timezone corresponding to our
-          -- label e.g. America/New_York -> TZ. This type is a stepping stone
-          -- to the actual ZonedTime we want.
-          srcTz = All.tzByLabel lbl
-          -- Convert the localTime to UTC, interpreting the localTime in
-          -- the src TZ.
-          utcTime = Zones.localTimeToUTCTZ srcTz localTime
-          -- Get the final TimeZone from TZ and the above UTC time. We need
-          -- the time as the TimeZone can vary with the actual time e.g.
-          -- America/New_York -> EST / EDT.
-          srcTimeZone = Zones.timeZoneForUTCTime srcTz utcTime
-          -- Finally, convert the UTC time to our ZonedTime using the
-          -- derived TimeZone.
-          zonedTime = Local.utcToZonedTime srcTimeZone utcTime
-      pure zonedTime
+      pure $ convertLocalLabel localTime lbl
   where
     format = timeReader ^. #format
     timeStr = timeReader ^. #timeString
@@ -360,11 +348,34 @@ readTimeFormat locale format timeStr = Format.parseTimeM True locale format' tim
 --
 -- @since 0.1
 convertZonedLabel :: ZonedTime -> TZLabel -> ZonedTime
-convertZonedLabel zt tzLabel =
-  let tz = All.tzByLabel tzLabel
-      utc = Local.zonedTimeToUTC zt
-      timeZone = Zones.timeZoneForUTCTime tz utc
-   in Local.utcToZonedTime timeZone utc
+convertZonedLabel = convertLabel (const Local.zonedTimeToUTC)
+
+-- | Converts a local time to the given timezone.
+--
+-- ==== __Examples__
+-- >>> let (Just sixPmUtc) = readTimeFormat Format.defaultTimeLocale TimeFmt.hm "18:00"
+-- >>> convertLocalLabel sixPmUtc America__New_York
+-- 1970-01-01 18:00:00 EST
+--
+-- @since 0.1
+convertLocalLabel :: LocalTime -> TZLabel -> ZonedTime
+convertLocalLabel = convertLabel Zones.localTimeToUTCTZ
+
+convertLabel :: (TZ -> a -> UTCTime) -> a -> TZLabel -> ZonedTime
+convertLabel toUtcTime t tzLabel = Local.utcToZonedTime timeZone utcTime
+  where
+    -- This is a TZ i.e. the preliminary timezone corresponding to our
+    -- label e.g. America/New_York -> TZ. This type is a stepping stone
+    -- to the actual ZonedTime we want.
+    tz = All.tzByLabel tzLabel
+    -- Convert to UTC. Localtime will use the tz param to derive TimeZone
+    -- information. ZonedTime will ignore it as it already carries TimeZone
+    -- info.
+    utcTime = toUtcTime tz t
+    -- Get the final TimeZone from TZ and the UTC time. We need
+    -- the time as the TimeZone can vary with the actual time e.g.
+    -- America/New_York -> EST / EDT.
+    timeZone = Zones.timeZoneForUTCTime tz utcTime
 
 tzDatabaseToTZLabel :: (HasCallStack, MonadThrow m) => TZDatabase -> m TZLabel
 tzDatabaseToTZLabel (TZDatabaseLabel lbl) = pure lbl
