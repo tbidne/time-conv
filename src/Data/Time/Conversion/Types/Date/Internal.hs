@@ -24,6 +24,15 @@ import Text.Read qualified as TR
 
 -- | Represents a date string in the format @YYYY-MM-DD@.
 --
+-- ==== __Examples__
+--
+-- >>> import Optics.Core (matching, re, view)
+-- >>> view #unDateString (UnsafeDateString "2022-12-21")
+-- "2022-12-21"
+--
+-- >>> (matching . re) #unDateString "bad" :: Either Text DateString
+-- Left "bad"
+--
 -- @since 0.1
 newtype DateString = UnsafeDateString Text
   deriving stock
@@ -57,6 +66,14 @@ unDateString :: DateString -> Text
 unDateString (UnsafeDateString t) = t
 
 -- | Parses a date string in @YYYY-MM-DD@ form.
+--
+-- ==== __Examples__
+--
+-- >>> parseDateString "2023-02-18"
+-- UnsafeDateString "2023-02-18"
+--
+-- >>> parseDateString "2023-02-40"
+-- *** Exception: user error (Day should be an integer between 1 and 31, received '40')
 --
 -- @since 0.1
 parseDateString :: (MonadFail f) => Text -> f DateString

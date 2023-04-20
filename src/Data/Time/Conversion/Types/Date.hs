@@ -46,6 +46,17 @@ data Date
 
 -- | Parses a date.
 --
+-- ==== __Examples__
+--
+-- >>> parseDate "today"
+-- DateToday
+--
+-- >>> parseDate "2022-12-04"
+-- DateLiteral (UnsafeDateString "2022-12-04")
+--
+-- >>> parseDate "bad"
+-- *** Exception: user error (Date has the form YYYY-MM-DD, received 'bad')
+--
 -- @since 0.1
 parseDate :: (MonadFail f) => Text -> f Date
 parseDate "today" = pure DateToday
