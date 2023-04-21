@@ -45,7 +45,9 @@ import Paths_time_conv qualified as Paths
 --
 -- @since 0.1
 data Args = MkArgs
-  { date :: Maybe Date,
+  { config :: Maybe FilePath,
+    noConfig :: Bool,
+    date :: Maybe Date,
     destTZ :: Maybe TZDatabase,
     formatIn :: TimeFormat,
     formatOut :: Maybe TimeFormat,
@@ -82,7 +84,9 @@ parserInfo =
 parseArgs :: Parser Args
 parseArgs =
   MkArgs
-    <$> parseDate
+    <$> parseConfig
+    <*> parseNoConfig
+    <*> parseDate
     <*> parseDestTZ
     <*> parseFormatIn
     <*> parseFormatOut
@@ -117,6 +121,32 @@ argsToBuilder = O.to to
             Nothing -> Nothing
           formatOut = fromMaybe TimeFmt.rfc822 (args ^. #formatOut)
        in (mtimeReader, args ^. #destTZ, formatOut)
+
+parseConfig :: Parser (Maybe FilePath)
+parseConfig =
+  OApp.optional $
+    OApp.option
+      OApp.str
+      ( OApp.long "config"
+          <> OApp.short 'c'
+          <> OApp.metavar "PATH"
+          <> mkHelp helpTxt
+      )
+  where
+    helpTxt =
+      mconcat
+        [ "Path to TOML config file. It not given we automatically look in ",
+          "the XDG config e.g. ~/.config/time-conv/config.toml."
+        ]
+
+parseNoConfig :: Parser Bool
+parseNoConfig =
+  OApp.switch
+    ( OApp.long "no-config"
+        <> mkHelp helpTxt
+    )
+  where
+    helpTxt = "Disables --config."
 
 parseDestTZ :: Parser (Maybe TZDatabase)
 parseDestTZ =

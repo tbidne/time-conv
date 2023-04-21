@@ -17,6 +17,9 @@ import Data.Time.Conversion.Types.Exception
   )
 import Data.Time.Format qualified as Format
 import Effects.Exception (MonadCatch, MonadThrow, tryCS)
+import Effects.FileSystem.FileReader (MonadFileReader)
+import Effects.FileSystem.Path ((</>))
+import Effects.FileSystem.PathReader (MonadPathReader)
 import Effects.IORef (MonadIORef, modifyIORef', newIORef, readIORef)
 import Effects.Optparse (MonadOptparse)
 import Effects.System.Environment (MonadEnv)
@@ -41,7 +44,8 @@ main =
         destTzTests,
         testNoArgs,
         testNoTimeString,
-        testToday
+        testToday,
+        testAliases
       ]
 
 formatTests :: TestTree
@@ -221,6 +225,26 @@ testToday = testCase "Today arg succeeds" $ do
   result <- captureTimeConv ["--date", "today"]
   assertBool ("Should be non-empty: " <> T.unpack result) $ (not . T.null) result
 
+testAliases :: TestTree
+testAliases = testCase "Config aliases succeed" $ do
+  resultsLA <- captureTimeConv (withDest "la")
+  "Tue, 12 Jul 2022 01:30:00 PDT" @=? resultsLA
+
+  resultZagreb <- captureTimeConv (withDest "zagreb")
+  "Tue, 12 Jul 2022 10:30:00 CEST" @=? resultZagreb
+  where
+    withDest d =
+      [ "-c",
+        "examples" </> "config.toml",
+        "-s",
+        "Etc/Utc",
+        "-d",
+        d,
+        "--date",
+        "2022-07-12",
+        "08:30"
+      ]
+
 assertException :: forall e a. (Exception e) => String -> IO a -> Assertion
 assertException expected io = do
   tryCS @_ @e io >>= \case
@@ -241,9 +265,11 @@ newtype MockTimeM m a = MkMockTimeM (m a)
       Monad,
       MonadCatch,
       MonadEnv,
+      MonadFileReader,
       MonadIO,
       MonadIORef,
       MonadOptparse,
+      MonadPathReader,
       MonadThrow
     )
     via m
@@ -276,8 +302,10 @@ captureTimeConvMock timeStr = usingMockTimeIO timeStr . captureTimeConvM
 captureTimeConvM ::
   ( MonadEnv m,
     MonadCatch m,
+    MonadFileReader m,
     MonadIORef m,
     MonadOptparse m,
+    MonadPathReader m,
     MonadTime m
   ) =>
   [String] ->

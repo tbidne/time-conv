@@ -87,6 +87,11 @@
                   final.callCabal2nix "effects-exceptions"
                     "${monad-effects}/effects-exceptions"
                     { };
+                effects-fs = hlib.overrideCabal
+                  (final.callCabal2nix "effects-fs" "${monad-effects}/effects-fs" { })
+                  (old: {
+                    configureFlags = (old.configureFlags or [ ]) ++ [ "-f -os_path" ];
+                  });
                 effects-ioref =
                   final.callCabal2nix "effects-ioref"
                     "${monad-effects}/effects-ioref"

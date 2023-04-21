@@ -24,6 +24,7 @@ source-repository-package
     subdir:
       effects-env
       effects-exceptions
+      effects-fs
       effects-ioref
       effects-optparse
       effects-terminal
@@ -31,5 +32,7 @@ source-repository-package
 
 optimization: 2
 test-show-details: direct
+
+constraints: effects-fs -os_path
 
 allow-newer: hedgehog-1.2:template-haskell

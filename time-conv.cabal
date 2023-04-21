@@ -19,6 +19,7 @@ description:
 category:           Time, Shell scripting
 extra-source-files:
   CHANGELOG.md
+  examples/config.toml
   README.md
 
 source-repository head
@@ -94,11 +95,14 @@ library time-conv-exe-internal
   exposed-modules:
     TimeConv.Args
     TimeConv.Runner
+    TimeConv.Toml
 
   build-depends:
     , base
+    , containers
     , data-default
     , effects-exceptions
+    , effects-fs            ^>=0.1
     , effects-optparse      ^>=0.1
     , effects-terminal      ^>=0.1
     , effects-time
@@ -108,6 +112,7 @@ library time-conv-exe-internal
     , text
     , time
     , time-conv
+    , toml-reader           >=0.2.0.0  && <0.3
 
   hs-source-dirs:   exe-internal
   default-language: Haskell2010
@@ -168,6 +173,7 @@ test-suite functional
     , base
     , effects-env             ^>=0.1
     , effects-exceptions
+    , effects-fs
     , effects-ioref           ^>=0.1
     , effects-optparse
     , effects-time

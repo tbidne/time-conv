@@ -73,15 +73,22 @@ The timezone names are based on the tz_database. See https://en.wikipedia.org/wi
 ```
 time-conv: A tool for timezone conversions.
 
-Usage: time-conv [--date (today | YYYY-mm-dd)] [-d|--dest-tz TZ_DB]
-          [-f|--format-in FMT_STR] [-o|--format-out (rfc822 | FMT_STR)]
-          [-s|--src-tz TZ_DB] [TIME_STR] [-v|--version]
+Usage: time-conv [-c|--config PATH] [--no-config] [--date (today | YYYY-mm-dd)]
+                 [-d|--dest-tz TZ_DB] [-f|--format-in FMT_STR]
+                 [-o|--format-out (rfc822 | FMT_STR)] [-s|--src-tz TZ_DB]
+                 [TIME_STR] [-v|--version]
 
   time-conv reads time strings and converts between timezones. For the src and
   dest options, TZ_DB refers to labels like America/New_York. See
   https://en.wikipedia.org/wiki/Tz_database.
 
 Available options:
+  -c,--config PATH         Path to TOML config file. It not given we
+                           automatically look in the XDG config e.g.
+                           ~/.config/time-conv/config.toml.
+
+  --no-config              Disables --config.
+
   --date (today | YYYY-mm-dd)
                            Date in which to read the string. Today uses the
                            current date, as determined by the source. This
@@ -116,6 +123,19 @@ Version: 0.1
 ```
 
 # Options
+
+## Config
+
+**Arg:** `-c,--config PATH `
+
+**Description:** Path to `toml` config file. Can be used to define aliases for tz_database labels. See [examples](./examples/) directory for examples.
+
+**Examples:**
+
+```
+$ time-conv -c ./examples/config.toml -d la
+Thu, 20 Apr 2023 22:25:37 PDT
+```
 
 ## Date
 
