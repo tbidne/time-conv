@@ -94,9 +94,10 @@ instance
 
 -- | Given a time string, returns a default time reader.
 --
--- * @format = "%H:%M"@: 24hr hours:minutes
--- * @srzTZ = 'Nothing'@: local
--- * @today = 'False'@: do not automatically add current day
+-- ==== __Examples__
+--
+-- >>> defaultTimeReader "08:30"
+-- MkTimeReader {format = MkTimeFormat {unTimeFormat = "%H:%M"}, srcTZ = Nothing, date = Nothing, timeString = "08:30"}
 --
 -- @since 0.1
 defaultTimeReader :: Text -> TimeReader
