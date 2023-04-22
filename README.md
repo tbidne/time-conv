@@ -23,6 +23,7 @@
 * [Introduction](#introduction)
   * [Usage](#usage)
 * [Options](#options)
+  * [Config](#config)
   * [Date](#date)
   * [Destination Timezone](#destination-timezone)
   * [Format In](#format-in)
