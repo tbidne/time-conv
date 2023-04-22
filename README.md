@@ -254,29 +254,6 @@ $ time-conv -s america/new_york -d etc/utc 08:30
 Thu,  1 Jan 1970 13:30:00 UTC
 ```
 
-## Date
-
-**Arg:** `--date (today | YYYY-mm-dd)`
-
-**Description:** Date in which to read the string. Today uses the current date, as determined by the source. This argument is ignored unless a time string is specified.
-
-**Examples:**
-
-```
-$ time-conv 08:30
-Thu,  1 Jan 1970 08:30:00 NZST
-
-# use today's date instead of initial unix time
-$ time-conv --date today 08:30
-Thu, 20 Apr 2023 08:30:00 NZST
-
-$ time-conv --date today -s america/new_york 08:30
-Thu, 20 Apr 2023 00:30:00 NZST
-
-$ time-conv --date 2022-04-10 -s america/new_york 08:30
-Mon, 11 Apr 2022 00:30:00 NZST
-```
-
 ## Time String
 
 **Arg:** `TIME_STR`
