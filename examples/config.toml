@@ -1,3 +1,8 @@
+# If set, equivalent to automatically passing --date today.
+# Will be ovewritten by CLI --date, if given.
+today = true
+
+# Aliases for convenience e.g. time-conv -s ny 08:30
 [aliases]
 la = "america/los_angeles"
 ny = "america/new_york"

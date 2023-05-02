@@ -16,23 +16,39 @@ import TOML
   )
 
 -- | @since 0.1
-newtype Toml = MkToml
+data Toml = MkToml
   { -- | @since 0.1
+    today :: Maybe Bool,
+    -- | @since 0.1
     aliases :: Maybe (Map Text Text)
   }
   deriving stock (Eq, Show)
 
 -- | @since 0.1
 instance
-  (k ~ An_Iso, a ~ Maybe (Map Text Text), b ~ Maybe (Map Text Text)) =>
+  (k ~ A_Lens, a ~ Maybe Bool, b ~ Maybe Bool) =>
+  LabelOptic "today" k Toml Toml a b
+  where
+  labelOptic = lensVL $ \f (MkToml _today _aliases) ->
+    fmap (`MkToml` _aliases) (f _today)
+  {-# INLINE labelOptic #-}
+
+-- | @since 0.1
+instance
+  (k ~ A_Lens, a ~ Maybe (Map Text Text), b ~ Maybe (Map Text Text)) =>
   LabelOptic "aliases" k Toml Toml a b
   where
-  labelOptic = iso (\(MkToml as) -> as) MkToml
+  labelOptic = lensVL $ \f (MkToml _today _aliases) ->
+    fmap (MkToml _today) (f _aliases)
   {-# INLINE labelOptic #-}
 
 -- | @since 0.1
 instance DecodeTOML Toml where
-  tomlDecoder = MkToml <$> decodeAliases
+  tomlDecoder = MkToml <$> decodeToday <*> decodeAliases
+
+-- | @since 0.1
+decodeToday :: Decoder (Maybe Bool)
+decodeToday = getFieldOptWith tomlDecoder "today"
 
 -- | @since 0.1
 decodeAliases :: Decoder (Maybe (Map Text Text))
