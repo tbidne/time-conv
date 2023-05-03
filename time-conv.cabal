@@ -149,6 +149,7 @@ test-suite unit
     Props.Generators
     Unit.Data.Time.Conversion
     Unit.Data.Time.Conversion.Internal
+    Unit.Data.Time.Conversion.Types.Date
 
   build-depends:
     , base
