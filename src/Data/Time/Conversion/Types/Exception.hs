@@ -4,6 +4,7 @@ module Data.Time.Conversion.Types.Exception
     ParseTZDatabaseException (..),
     LocalTimeZoneException (..),
     LocalSystemTimeException (..),
+    SrcTZNoTimeStringException (..),
   )
 where
 
@@ -88,3 +89,17 @@ deriving stock instance Show LocalSystemTimeException
 instance Exception LocalSystemTimeException where
   displayException (MkLocalSystemTimeException e) =
     "Local system time exception: " <> displayException e
+
+-- | Exception for when --src-tz is specified but time string is not.
+--
+-- @since 0.1
+data SrcTZNoTimeStringException = MkSrcTZNoTimeStringException
+  deriving stock
+    ( -- | @since 0.1
+      Show
+    )
+
+-- | @since 0.1
+instance Exception SrcTZNoTimeStringException where
+  displayException MkSrcTZNoTimeStringException =
+    "The --src-tz option was specified without required time string"

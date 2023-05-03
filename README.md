@@ -224,7 +224,7 @@ $ time-conv -o %H:%M:%S 08:30
 
 **Arg:** `-s,--src-tz TZ_DB`
 
-**Description:** Timezone in which to read the string. Must be a tz database label like `America/New_York`. If none is given then we use the local system timezone.
+**Description:** Timezone in which to read the string. Must be a tz database label like `America/New_York`. If none is given then we use the local system timezone. It is an error if `--src-tz` is given but [a time string](#time-string) is not.
 
 **Examples:**
 
@@ -263,7 +263,7 @@ Thu,  1 Jan 1970 13:30:00 UTC
 
 **Arg:** `TIME_STR`
 
-**Description:** This is the time string to parse. If none is given then we parse the local system time. Naturally, the local system time overrides the `--src-tz` option. To format the output, use [`--format-out`](format-out).
+**Description:** This is the time string to parse. If none is given then we parse the local system time. To format the output, use [`--format-out`](format-out).
 
 **Examples:**
 

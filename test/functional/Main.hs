@@ -14,6 +14,7 @@ import Data.Text qualified as T
 import Data.Time.Conversion.Types.Exception
   ( ParseTZDatabaseException,
     ParseTimeException,
+    SrcTZNoTimeStringException,
   )
 import Data.Time.Format qualified as Format
 import Effects.Exception (MonadCatch, MonadThrow, tryCS)
@@ -45,7 +46,8 @@ main =
         testNoArgs,
         testNoTimeString,
         testToday,
-        testAliases
+        testAliases,
+        testSrcTzNoTimeStr
       ]
 
 formatTests :: TestTree
@@ -243,6 +245,16 @@ testAliases = testCase "Config aliases succeed" $ do
         "--date",
         "2022-07-12",
         "08:30"
+      ]
+
+testSrcTzNoTimeStr :: TestTree
+testSrcTzNoTimeStr = testCase "Src w/o time string fails" $ do
+  assertException @SrcTZNoTimeStringException expected $ captureTimeConv args
+  where
+    expected = "The --src-tz option was specified without required time string"
+    args =
+      [ "-s",
+        "Etc/Utc"
       ]
 
 assertException :: forall e a. (Exception e) => String -> IO a -> Assertion

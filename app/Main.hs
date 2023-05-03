@@ -3,7 +3,9 @@
 -- @since 0.1
 module Main (main) where
 
+import Control.Exception (displayException)
 import Effects.Exception (catchCS, throwM)
+import GHC.Conc.Sync (setUncaughtExceptionHandler)
 import System.Exit (ExitCode (..))
 import TimeConv.Runner (runTimeConv)
 
@@ -11,7 +13,10 @@ import TimeConv.Runner (runTimeConv)
 --
 -- @since 0.1
 main :: IO ()
-main = runTimeConv `catchCS` doNothingOnSuccess
+main = do
+  setUncaughtExceptionHandler (putStrLn . displayException)
+
+  runTimeConv `catchCS` doNothingOnSuccess
   where
     doNothingOnSuccess ExitSuccess = pure ()
     doNothingOnSuccess ex@(ExitFailure _) = throwM ex

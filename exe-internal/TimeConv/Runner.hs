@@ -7,7 +7,6 @@ module TimeConv.Runner
   )
 where
 
-import Control.Exception (displayException)
 import Data.Functor ((<&>))
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
@@ -16,13 +15,17 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Conversion qualified as Conv
 import Data.Time.Conversion.Types.Date (Date (..))
+import Data.Time.Conversion.Types.Exception (SrcTZNoTimeStringException (..))
 import Data.Time.Conversion.Types.TZDatabase (TZDatabase, _TZDatabaseText)
 import Data.Time.Conversion.Types.TimeReader (TimeReader (..))
 import Data.Time.Format qualified as Format
-import Effects.Exception (MonadCatch, MonadThrow, catchAny, exitFailure, throwM)
+import Effects.Exception (MonadCatch, MonadThrow, throwM)
 import Effects.FileSystem.FileReader (MonadFileReader, readFileUtf8ThrowM)
 import Effects.FileSystem.Path ((</>))
-import Effects.FileSystem.PathReader (MonadPathReader (doesFileExist), getXdgConfig)
+import Effects.FileSystem.PathReader
+  ( MonadPathReader (doesFileExist),
+    getXdgConfig,
+  )
 import Effects.Optparse (MonadOptparse (execParser))
 import Effects.System.Terminal (MonadTerminal)
 import Effects.System.Terminal qualified as T
@@ -46,12 +49,7 @@ runTimeConv ::
   m ()
 runTimeConv = do
   args <- execParser parserInfo
-  -- catch needs to be _within_ this call (i.e. not applied to the execParser
-  -- function) otherwise e.g. we catch the --help "exception".
   runWithArgs T.putTextLn args
-    `catchAny` \e -> do
-      _ <- T.putStrLn $ displayException e
-      exitFailure
 
 -- | Runs time-conv and applies the given handler.
 --
@@ -82,6 +80,10 @@ runWithArgs ::
   Args ->
   m a
 runWithArgs handler args = do
+  case (args ^. #srcTZ, args ^. #timeString) of
+    (Just _, Nothing) -> throwM MkSrcTZNoTimeStringException
+    _ -> pure ()
+
   let (mtimeReader, destTZ, formatOut) = args ^. argsToBuilder
       formatStr = T.unpack $ formatOut ^. #unTimeFormat
 
