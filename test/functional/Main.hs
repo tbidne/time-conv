@@ -227,10 +227,10 @@ testToday = testCase "Today arg succeeds" $ do
 
 testAliases :: TestTree
 testAliases = testCase "Config aliases succeed" $ do
-  resultsLA <- captureTimeConv (withDest "la")
+  resultsLA <- captureTimeConvM (withDest "la")
   "Tue, 12 Jul 2022 01:30:00 PDT" @=? resultsLA
 
-  resultZagreb <- captureTimeConv (withDest "zagreb")
+  resultZagreb <- captureTimeConvM (withDest "zagreb")
   "Tue, 12 Jul 2022 10:30:00 CEST" @=? resultZagreb
   where
     withDest d =
@@ -256,7 +256,7 @@ assertException expected io = do
         (startsWith expected result')
 
 captureTimeConv :: [String] -> IO Text
-captureTimeConv = captureTimeConvM
+captureTimeConv = captureTimeConvNoConfigM
 
 newtype MockTimeM m a = MkMockTimeM (m a)
   deriving
@@ -297,7 +297,20 @@ instance MonadTime MockTimeIO where
   getMonotonicTime = pure 0
 
 captureTimeConvMock :: String -> [String] -> IO Text
-captureTimeConvMock timeStr = usingMockTimeIO timeStr . captureTimeConvM
+captureTimeConvMock timeStr = usingMockTimeIO timeStr . captureTimeConvNoConfigM
+
+captureTimeConvNoConfigM ::
+  ( MonadEnv m,
+    MonadCatch m,
+    MonadFileReader m,
+    MonadIORef m,
+    MonadOptparse m,
+    MonadPathReader m,
+    MonadTime m
+  ) =>
+  [String] ->
+  m Text
+captureTimeConvNoConfigM = captureTimeConvM . (["--no-config"] ++)
 
 captureTimeConvM ::
   ( MonadEnv m,
