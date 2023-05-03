@@ -142,8 +142,11 @@ parseConfig =
 parseNoConfig :: Parser Bool
 parseNoConfig =
   OApp.switch
-    ( OApp.long "no-config"
-        <> mkHelp helpTxt
+    ( mconcat
+        [ OApp.long "no-config",
+          OApp.hidden,
+          mkHelp helpTxt
+        ]
     )
   where
     helpTxt = "Disables --config."
@@ -228,7 +231,7 @@ parseSrcTZ =
       mconcat
         [ "Timezone in which to read the string. Must be a tz database",
           " label like America/New_York. If none is given then we use the",
-          " local system timezone."
+          " local system timezone. This option requires TIME_STR."
         ]
 
 parseDate :: Parser (Maybe Date)

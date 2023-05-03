@@ -78,7 +78,7 @@ The timezone names are based on the tz_database. See https://en.wikipedia.org/wi
 ```
 time-conv: A tool for timezone conversions.
 
-Usage: time-conv [-c|--config PATH] [--no-config] [--date (today | YYYY-mm-dd)]
+Usage: time-conv [-c|--config PATH] [--date (today | YYYY-mm-dd)]
                  [-d|--dest-tz TZ_DB] [-f|--format-in FMT_STR]
                  [-o|--format-out (rfc822 | FMT_STR)] [-s|--src-tz TZ_DB]
                  [TIME_STR] [-v|--version]
@@ -116,7 +116,8 @@ Available options:
 
   -s,--src-tz TZ_DB        Timezone in which to read the string. Must be a tz
                            database label like America/New_York. If none is
-                           given then we use the local system timezone.
+                           given then we use the local system timezone. This
+                           option requires TIME_STR.
 
   TIME_STR                 Time string to parse. If none is given then we parse
                            the local system time. To format the output, use
@@ -224,7 +225,7 @@ $ time-conv -o %H:%M:%S 08:30
 
 **Arg:** `-s,--src-tz TZ_DB`
 
-**Description:** Timezone in which to read the string. Must be a tz database label like `America/New_York`. If none is given then we use the local system timezone. It is an error if `--src-tz` is given but [a time string](#time-string) is not.
+**Description:** Timezone in which to read the string. Must be a tz database label like `America/New_York`. If none is given then we use the local system timezone. This option requires [Time String](#time-string).
 
 **Examples:**
 
