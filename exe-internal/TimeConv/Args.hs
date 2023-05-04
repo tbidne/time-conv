@@ -45,15 +45,15 @@ import Paths_time_conv qualified as Paths
 --
 -- @since 0.1
 data Args = MkArgs
-  { config :: Maybe FilePath,
-    noConfig :: Bool,
-    date :: Maybe Date,
-    noDate :: Bool,
-    destTZ :: Maybe TZDatabase,
-    formatIn :: TimeFormat,
-    formatOut :: Maybe TimeFormat,
-    srcTZ :: Maybe TZDatabase,
-    timeString :: Maybe Text
+  { config :: !(Maybe FilePath),
+    noConfig :: !Bool,
+    date :: !(Maybe Date),
+    noDate :: !Bool,
+    destTZ :: !(Maybe TZDatabase),
+    formatIn :: !TimeFormat,
+    formatOut :: !(Maybe TimeFormat),
+    srcTZ :: !(Maybe TZDatabase),
+    timeString :: !(Maybe Text)
   }
   deriving stock (Eq, Show)
 
