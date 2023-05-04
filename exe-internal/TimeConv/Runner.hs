@@ -7,7 +7,6 @@ module TimeConv.Runner
   )
 where
 
-import Data.Functor ((<&>))
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Maybe.Optics (_Just)
@@ -30,7 +29,7 @@ import Effects.Optparse (MonadOptparse (execParser))
 import Effects.System.Terminal (MonadTerminal)
 import Effects.System.Terminal qualified as T
 import Effects.Time (MonadTime)
-import Optics.Core (over', (%), (^.))
+import Optics.Core (over', (%), (%?), (^.))
 import TOML qualified
 import TimeConv.Args (Args, argsToBuilder, parserInfo)
 import TimeConv.Toml (Toml)
@@ -84,14 +83,21 @@ runWithArgs handler args = do
     (Just _, Nothing) -> throwM MkSrcTZNoTimeStringException
     _ -> pure ()
 
+  -- Transform Args to TimeReader, DestTZ and FormatOut
   let (mtimeReader, destTZ, formatOut) = args ^. argsToBuilder
       formatStr = T.unpack $ formatOut ^. #unTimeFormat
 
-  -- if the toml is set, and aliases exist, update
+  -- If the toml config exists, further transform TimeReader and DestTZ
+  -- according to its config
   (mtimeReader', destTZ') <-
     if args ^. #noConfig
       then pure (mtimeReader, destTZ)
-      else updateFromToml (args ^. #config) (mtimeReader, destTZ)
+      else
+        updateFromTomlFile
+          (args ^. #config)
+          mtimeReader
+          (args ^. #noDate)
+          destTZ
 
   readAndHandle mtimeReader' destTZ' formatStr
   where
@@ -104,15 +110,22 @@ runWithArgs handler args = do
     -- extra tz info here.
     locale = Format.defaultTimeLocale
 
-updateFromToml ::
+updateFromTomlFile ::
   ( MonadFileReader m,
     MonadPathReader m,
     MonadThrow m
   ) =>
+  -- | Path to toml config file.
   Maybe FilePath ->
-  (Maybe TimeReader, Maybe TZDatabase) ->
+  -- | TimeReader so far (CLI Args)
+  Maybe TimeReader ->
+  -- | CLI Args' noDate
+  Bool ->
+  -- | Dest TZ
+  Maybe TZDatabase ->
+  -- | Updated (TimeReader, DestTZ)
   m (Maybe TimeReader, Maybe TZDatabase)
-updateFromToml mconfigPath (mtimeReader, destTZ) = do
+updateFromTomlFile mconfigPath mtimeReader noDate mdestTZ = do
   case mconfigPath of
     Nothing -> do
       configDir <- getXdgConfig "time-conv"
@@ -120,36 +133,55 @@ updateFromToml mconfigPath (mtimeReader, destTZ) = do
       exists <- doesFileExist configPath
       if exists
         then updateFromFile configPath
-        else pure (mtimeReader, destTZ)
+        else pure (mtimeReader, mdestTZ)
     Just configPath -> updateFromFile configPath
   where
     updateFromFile configPath = do
       contents <- readFileUtf8ThrowM configPath
-      toml <- case TOML.decode @Toml contents of
+      case TOML.decode @Toml contents of
         Left ex -> throwM ex
-        Right toml -> pure toml
+        Right toml -> pure $ updateFromToml mtimeReader noDate mdestTZ toml
 
-      case toml ^. #aliases of
-        Nothing -> pure (mtimeReader, destTZ)
-        Just aliases -> do
-          let fromAliases' = fromAliases aliases
-              destTZ' = over' (_Just % _TZDatabaseText) fromAliases' destTZ
-              mtimeReader' =
-                mtimeReader <&> \timeReader ->
-                  MkTimeReader
-                    { format = timeReader ^. #format,
-                      -- translate aliases if they exist
-                      srcTZ = over' (_Just % _TZDatabaseText) fromAliases' (timeReader ^. #srcTZ),
-                      -- default to date specified by CLI; if not, try the
-                      -- today flag from the toml file; otherwise, nothing
-                      date = case timeReader ^. #date of
-                        Just d -> Just d
-                        Nothing -> case toml ^. #today of
-                          Just True -> Just DateToday
-                          _ -> Nothing,
-                      timeString = timeReader ^. #timeString
-                    }
-          pure (mtimeReader', destTZ')
+updateFromToml ::
+  -- | TimeReader from args.
+  Maybe TimeReader ->
+  -- | noDate: If true, ignore toml's 'today' field.
+  Bool ->
+  -- | Dest TZ.
+  Maybe TZDatabase ->
+  -- | Toml.
+  Toml ->
+  -- | Updated TimeReader and Dest TZ.
+  (Maybe TimeReader, Maybe TZDatabase)
+updateFromToml mtimeReader noDate mdestTZ toml =
+  let -- update timeReader's srcTZ and destTZ w/ aliases
+      (mtimeReaderAliases, mdestTZAliases) =
+        maybe
+          (mtimeReader, mdestTZ)
+          updateAliases
+          (toml ^. #aliases)
+
+      -- update timeReader's date w/ toml.today and noDate
+      mTimeReaderAliasesDate =
+        if noDate
+          then mtimeReaderAliases
+          else over' (_Just % #date) setIfNothingAndTomlToday mtimeReaderAliases
+   in (mTimeReaderAliasesDate, mdestTZAliases)
+  where
+    -- update timeReader's srcTZ and destTZ w/ aliases
+    updateAliases aliases =
+      let fromAliases' = fromAliases aliases
+          mdestTZ' = over' (_Just % _TZDatabaseText) fromAliases' mdestTZ
+          mtimeReader' =
+            over' (_Just % #srcTZ %? _TZDatabaseText) fromAliases' mtimeReader
+       in (mtimeReader', mdestTZ')
+
+    -- sets reader's date to today only if it is unspecified and set in
+    -- toml
+    setIfNothingAndTomlToday Nothing = case toml ^. #today of
+      Just True -> Just DateToday
+      _ -> Nothing
+    setIfNothingAndTomlToday x = x
 
     fromAliases :: Map.Map Text Text -> Text -> Text
     fromAliases aliasesMap txt = fromMaybe txt (Map.lookup txt aliasesMap)

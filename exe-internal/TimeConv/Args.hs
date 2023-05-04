@@ -48,6 +48,7 @@ data Args = MkArgs
   { config :: Maybe FilePath,
     noConfig :: Bool,
     date :: Maybe Date,
+    noDate :: Bool,
     destTZ :: Maybe TZDatabase,
     formatIn :: TimeFormat,
     formatOut :: Maybe TimeFormat,
@@ -87,6 +88,7 @@ parseArgs =
     <$> parseConfig
     <*> parseNoConfig
     <*> parseDate
+    <*> parseNoDate
     <*> parseDestTZ
     <*> parseFormatIn
     <*> parseFormatOut
@@ -115,7 +117,10 @@ argsToBuilder = O.to to
                 MkTimeReader
                   { format = args ^. #formatIn,
                     srcTZ = args ^. #srcTZ,
-                    date = args ^. #date,
+                    date =
+                      if args ^. #noDate
+                        then Nothing
+                        else args ^. #date,
                     timeString = str
                   }
             Nothing -> Nothing
@@ -251,6 +256,15 @@ parseDate =
           "a time string is specified."
         ]
     readDate = OApp.str >>= Date.parseDate
+
+parseNoDate :: Parser Bool
+parseNoDate =
+  OApp.switch $
+    mconcat
+      [ OApp.long "no-date",
+        OApp.hidden,
+        mkHelp "Disables --date. Useful for disabling the toml field 'today'."
+      ]
 
 parseTimeStr :: Parser (Maybe Text)
 parseTimeStr =

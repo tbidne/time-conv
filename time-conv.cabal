@@ -150,14 +150,17 @@ test-suite unit
     Unit.Data.Time.Conversion
     Unit.Data.Time.Conversion.Internal
     Unit.Data.Time.Conversion.Types.Date
+    Unit.Utils
 
   build-depends:
     , base
     , deepseq
-    , hedgehog        >=1.0.2   && <1.3
-    , tasty           >=1.1.0.3 && <1.5
-    , tasty-hedgehog  >=1.0.1.0 && <1.5
-    , tasty-hunit     >=0.9     && <0.11
+    , effects-exceptions
+    , hedgehog            >=1.0.2   && <1.3
+    , optics-core
+    , tasty               >=1.1.0.3 && <1.5
+    , tasty-hedgehog      >=1.0.1.0 && <1.5
+    , tasty-hunit         >=0.9     && <0.11
     , text
     , time
     , time-conv
@@ -178,6 +181,7 @@ test-suite functional
     , effects-ioref           ^>=0.1
     , effects-optparse
     , effects-time
+    , optics-core
     , tasty
     , tasty-hunit
     , text

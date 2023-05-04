@@ -2,13 +2,23 @@
 
 -- | @since 0.1
 module Data.Time.Conversion.Types.Date
-  ( Date (..),
+  ( -- * Date
+    Date (..),
     parseDate,
     _DateToday,
     _DateLiteral,
+
+    -- * Date String
     Internal.DateString,
+
+    -- ** Creation
     Internal.parseDateString,
+
+    -- ** Elimination
     Internal.unDateString,
+    Internal.year,
+    Internal.month,
+    Internal.day,
   )
 where
 

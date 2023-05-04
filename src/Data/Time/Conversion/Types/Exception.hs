@@ -34,11 +34,11 @@ data ParseTimeException = MkParseTimeException !TimeFormat !Text
 -- | @since 0.1
 instance Exception ParseTimeException where
   displayException (MkParseTimeException f t) =
-    "Could not parse time string <"
+    "Could not parse time string '"
       <> T.unpack t
-      <> "> with format <"
+      <> "' with format '"
       <> T.unpack (f ^. #unTimeFormat)
-      <> ">"
+      <> "'"
 
 -- | Exception parsing tz database names.
 --
@@ -58,9 +58,9 @@ newtype ParseTZDatabaseException = MkParseTZDatabaseException Text
 -- | @since 0.1
 instance Exception ParseTZDatabaseException where
   displayException (MkParseTZDatabaseException tzdb) =
-    "Could not parse tz database name <"
+    "Could not parse tz database name '"
       <> T.unpack tzdb
-      <> ">. Wanted a name like America/New_York."
+      <> "'. Wanted a name like America/New_York."
 
 -- | Exception reading local system timezone.
 --

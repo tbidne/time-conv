@@ -6,11 +6,11 @@ import Control.Monad.IO.Class (MonadIO (..))
 import Data.Text qualified as T
 import Data.Time.Conversion qualified as Conversion
 import Data.Time.Conversion.Types.Date (Date (..))
-import Data.Time.Conversion.Types.Date.Internal (DateString (..))
 import Data.Time.Conversion.Types.TZDatabase (TZDatabase (..))
 import Data.Time.Conversion.Types.TimeFormat qualified as TimeFmt
 import Data.Time.Conversion.Types.TimeReader (TimeReader (..))
 import Data.Time.Format qualified as Format
+import Effects.Exception (catchAny)
 import Hedgehog (Property, PropertyName)
 import Hedgehog qualified as H
 import Hedgehog.Internal.Property ((===))
@@ -21,6 +21,7 @@ import Test.Tasty.Hedgehog (testPropertyNamed)
 #else
 import Test.Tasty.Hedgehog (testProperty)
 #endif
+import Unit.Utils qualified as Utils
 
 tests :: TestTree
 tests =
@@ -39,7 +40,7 @@ testDestSrcRoundtrips =
       currTime <- liftIO $ Conversion.readConvertTime Nothing Nothing
       H.annotateShow currTime
       currTimeDest <- liftIO $ Conversion.readConvertTime Nothing (Just tzdb)
-      H.annotateShow currTime
+      H.annotateShow currTimeDest
       let currTimeDestStr = fmt currTimeDest
           timeReader =
             MkTimeReader
@@ -49,7 +50,11 @@ testDestSrcRoundtrips =
                 timeString = T.pack currTimeDestStr
               }
 
-      currTime' <- liftIO $ Conversion.readConvertTime (Just timeReader) Nothing
+      currTime' <-
+        liftIO (Conversion.readConvertTime (Just timeReader) Nothing)
+          `catchAny` \ex -> do
+            H.annotateShow ex
+            H.failure
       H.annotateShow currTime'
 
       fmt currTime === fmt currTime'
@@ -78,15 +83,29 @@ testDestSrcDateRoundtrips =
                     fmt currTimeDest,
                     "'"
                   ]
-          timeReader =
+      H.annotate $ T.unpack currDateDestStr
+      H.annotate $ T.unpack currTimeDestStr
+      currDateDestStr' <- case Utils.runParseDateString currDateDestStr of
+        Right s -> pure s
+        Left err -> do
+          H.annotate err
+          H.failure
+
+      H.annotateShow currDateDestStr'
+      let timeReader =
             MkTimeReader
               { format = TimeFmt.hm,
                 srcTZ = Just tzdb,
-                date = Just $ DateLiteral $ UnsafeDateString currDateDestStr,
+                date = Just $ DateLiteral currDateDestStr',
                 timeString = currTimeDestStr
               }
 
-      currTime' <- liftIO $ Conversion.readConvertTime (Just timeReader) Nothing
+      currTime' <-
+        liftIO (Conversion.readConvertTime (Just timeReader) Nothing)
+          `catchAny` \ex -> do
+            H.annotateShow ex
+            H.failure
+
       H.annotateShow currTime'
 
       fmt currTime === fmt currTime'

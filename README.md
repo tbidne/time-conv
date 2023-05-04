@@ -100,6 +100,9 @@ Available options:
                            argument is ignored unless a time string is
                            specified.
 
+  --no-date                Disables --date. Useful for disabling the toml field
+                           'today'.
+
   -d,--dest-tz TZ_DB       Timezone in which to convert the read string. Must be
                            a tz database label like America/New_York. If none is
                            given then we use the local system timezone.

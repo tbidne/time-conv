@@ -2,9 +2,17 @@
 
 -- | @since 0.1
 module Data.Time.Conversion.Types.Date.Internal
-  ( DateString (..),
-    unDateString,
+  ( -- * Type
+    DateString (..),
+
+    -- * Construction
     parseDateString,
+
+    -- * Elimination
+    unDateString,
+    year,
+    month,
+    day,
   )
 where
 
@@ -15,10 +23,12 @@ import Data.Text qualified as T
 import Data.Word (Word16, Word8)
 import GHC.Generics (Generic)
 import Optics.Core
-  ( A_ReversedPrism,
+  ( A_Getter,
+    A_ReversedPrism,
     LabelOptic (labelOptic),
     ReversibleOptic (..),
     prism,
+    to,
   )
 import Text.Read qualified as TR
 
@@ -34,7 +44,7 @@ import Text.Read qualified as TR
 -- Left "bad"
 --
 -- @since 0.1
-newtype DateString = UnsafeDateString Text
+data DateString = UnsafeDateString !Word16 !Word8 !Word8
   deriving stock
     ( -- | @since 0.1
       Eq,
@@ -58,12 +68,49 @@ instance
       setter t = case parseDateString t of
         Nothing -> Left t
         Just d -> Right d
-      getter (UnsafeDateString s) = s
+      getter = unDateString
+  {-# INLINE labelOptic #-}
+
+-- | @since 0.1
+instance
+  (k ~ A_Getter, a ~ Word16, b ~ Word16) =>
+  LabelOptic "year" k DateString DateString a b
+  where
+  labelOptic = to year
+  {-# INLINE labelOptic #-}
+
+-- | @since 0.1
+instance
+  (k ~ A_Getter, a ~ Word8, b ~ Word8) =>
+  LabelOptic "month" k DateString DateString a b
+  where
+  labelOptic = to month
+  {-# INLINE labelOptic #-}
+
+-- | @since 0.1
+instance
+  (k ~ A_Getter, a ~ Word8, b ~ Word8) =>
+  LabelOptic "day" k DateString DateString a b
+  where
+  labelOptic = to day
   {-# INLINE labelOptic #-}
 
 -- | @since 0.1
 unDateString :: DateString -> Text
-unDateString (UnsafeDateString t) = t
+unDateString (UnsafeDateString y m d) =
+  mconcat
+    [ showt y,
+      "-",
+      pad2 $ showt m,
+      "-",
+      pad2 $ showt d
+    ]
+  where
+    showt :: (Show a) => a -> Text
+    showt = T.pack . show
+    pad2 x
+      | T.length x == 1 = T.cons '0' x
+      | otherwise = x
 
 -- | Parses a date string in @YYYY-MM-DD@ form.
 --
@@ -79,8 +126,8 @@ unDateString (UnsafeDateString t) = t
 parseDateString :: (MonadFail f) => Text -> f DateString
 parseDateString txt = case T.split (== '-') txt of
   [y, m, d] | nonEmpty y && nonEmpty m && nonEmpty d ->
-    case (readYear y, readMonth m, readDay d) of
-      (Just _, Just _, Just _) -> pure $ UnsafeDateString txt
+    case (parseYear y, parseMonth m, parseDay d) of
+      (Just y', Just m', Just d') -> pure $ UnsafeDateString y' m' d'
       (Nothing, _, _) ->
         fail $
           "Year should be an integer between 1900 and 3000, received " <> squote y
@@ -92,22 +139,39 @@ parseDateString txt = case T.split (== '-') txt of
           "Day should be an integer between 1 and 31, received " <> squote d
   _ ->
     fail $ "Date has the form YYYY-MM-DD, received " <> squote txt
-  where
-    readYear = readDecimal @Word16 4 1900 3000
-    readMonth = readDecimal @Word8 2 1 12
-    readDay = readDecimal @Word8 2 1 31
 
-    readDecimal :: (Ord a, Read a) => Int -> a -> a -> Text -> Maybe a
-    readDecimal len l u =
-      (\t -> if T.length t == len then Just t else Nothing)
-        >=> TR.readMaybe . T.unpack
-        >=> \n ->
-          if n >= l && n <= u
-            then Just n
-            else Nothing
+-- | @since 0.1
+year :: DateString -> Word16
+year (UnsafeDateString y _ _) = y
 
-    nonEmpty :: Text -> Bool
-    nonEmpty = not . T.null . T.strip
+-- | @since 0.1
+month :: DateString -> Word8
+month (UnsafeDateString _ m _) = m
 
-    squote :: Text -> String
-    squote t = T.unpack $ "'" <> t <> "'"
+-- | @since 0.1
+day :: DateString -> Word8
+day (UnsafeDateString _ _ d) = d
+
+parseYear :: Text -> Maybe Word16
+parseYear = readDecimal @Word16 4 1900 3000
+
+parseMonth :: Text -> Maybe Word8
+parseMonth = readDecimal @Word8 2 1 12
+
+parseDay :: Text -> Maybe Word8
+parseDay = readDecimal @Word8 2 1 31
+
+readDecimal :: (Ord a, Read a) => Int -> a -> a -> Text -> Maybe a
+readDecimal len l u =
+  (\t -> if T.length t == len then Just t else Nothing)
+    >=> TR.readMaybe . T.unpack
+    >=> \n ->
+      if n >= l && n <= u
+        then Just n
+        else Nothing
+
+nonEmpty :: Text -> Bool
+nonEmpty = not . T.null . T.strip
+
+squote :: Text -> String
+squote t = T.unpack $ "'" <> t <> "'"
