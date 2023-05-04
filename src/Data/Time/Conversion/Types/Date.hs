@@ -62,7 +62,7 @@ data Date
 -- DateToday
 --
 -- >>> parseDate "2022-12-04"
--- DateLiteral (UnsafeDateString "2022-12-04")
+-- DateLiteral (UnsafeDateString 2022 12 4)
 --
 -- >>> parseDate "bad"
 -- *** Exception: user error (Date has the form YYYY-MM-DD, received 'bad')

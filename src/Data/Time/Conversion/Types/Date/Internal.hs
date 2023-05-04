@@ -37,7 +37,7 @@ import Text.Read qualified as TR
 -- ==== __Examples__
 --
 -- >>> import Optics.Core (matching, re, view)
--- >>> view #unDateString (UnsafeDateString "2022-12-21")
+-- >>> view #unDateString (UnsafeDateString 2022 12 21)
 -- "2022-12-21"
 --
 -- >>> (matching . re) #unDateString "bad" :: Either Text DateString
@@ -117,7 +117,7 @@ unDateString (UnsafeDateString y m d) =
 -- ==== __Examples__
 --
 -- >>> parseDateString "2023-02-18"
--- UnsafeDateString "2023-02-18"
+-- UnsafeDateString 2023 2 18
 --
 -- >>> parseDateString "2023-02-40"
 -- *** Exception: user error (Day should be an integer between 1 and 31, received '40')
