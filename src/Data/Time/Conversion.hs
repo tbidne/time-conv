@@ -18,6 +18,22 @@ module Data.Time.Conversion
 
     -- ** Converting ZonedTime
     convertZonedLabel,
+
+    -- * Types
+    Date (..),
+    TimeFormat (..),
+    TimeReader (..),
+    TZDatabase (..),
+
+    -- ** Re-exports
+    TZLabel (..),
+    ZonedTime (..),
+
+    -- ** Exceptions
+    ParseTimeException (..),
+    ParseTZDatabaseException (..),
+    LocalTimeZoneException (..),
+    LocalSystemTimeException (..),
   )
 where
 
@@ -38,7 +54,15 @@ import Data.Time.Conversion.Types.TimeFormat (TimeFormat (..))
 import Data.Time.Conversion.Types.TimeReader (TimeReader (..))
 import Data.Time.Format (ParseTime, TimeLocale (..))
 import Data.Time.Format qualified as Format
-import Data.Time.LocalTime (LocalTime, TimeZone, ZonedTime (ZonedTime))
+import Data.Time.LocalTime
+  ( LocalTime,
+    TimeZone,
+    ZonedTime
+      ( ZonedTime,
+        zonedTimeToLocalTime,
+        zonedTimeZone
+      ),
+  )
 import Data.Time.LocalTime qualified as Local
 import Data.Time.Zones (TZ)
 import Data.Time.Zones qualified as Zones

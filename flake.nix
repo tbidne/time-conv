@@ -43,6 +43,13 @@
     flake-parts.lib.mkFlake { inherit inputs; } {
       perSystem = { pkgs, ... }:
         let
+          mkLib = p: lib: p.callCabal2nix lib inputs."${lib}" { };
+          mkEffectsLib = p: lib: p.callCabal2nix lib "${monad-effects}/${lib}" { };
+          mkLibs = p: libs:
+            builtins.foldl' (acc: name: acc // { ${name} = mkLib p name; }) { } libs;
+          mkEffectLibs = p: libs:
+            builtins.foldl' (acc: x: acc // { ${x} = mkEffectsLib p x; }) { } libs;
+
           buildTools = c: [
             c.cabal-install
             pkgs.zlib
@@ -58,42 +65,27 @@
           ghc-version = "ghc944";
           compiler = pkgs.haskell.packages."${ghc-version}".override {
             overrides = final: prev: {
-              algebra-simple = final.callCabal2nix "algebra-simple" algebra-simple { };
               apply-refact = prev.apply-refact_0_11_0_0;
-              bounds = final.callCabal2nix "bounds" bounds { };
-              effects-env =
-                final.callCabal2nix "effects-env"
-                  "${monad-effects}/effects-env"
-                  { };
-              effects-exceptions =
-                final.callCabal2nix "effects-exceptions"
-                  "${monad-effects}/effects-exceptions"
-                  { };
               effects-fs = hlib.overrideCabal
-                (final.callCabal2nix "effects-fs" "${monad-effects}/effects-fs" { })
+                (mkEffectsLib final "effects-fs")
                 (old: {
                   configureFlags = (old.configureFlags or [ ]) ++ [ "-f -os_path" ];
                 });
-              effects-ioref =
-                final.callCabal2nix "effects-ioref"
-                  "${monad-effects}/effects-ioref"
-                  { };
-              effects-optparse =
-                final.callCabal2nix "effects-optparse"
-                  "${monad-effects}/effects-optparse"
-                  { };
-              effects-terminal =
-                final.callCabal2nix "effects-terminal"
-                  "${monad-effects}/effects-terminal"
-                  { };
-              effects-time =
-                final.callCabal2nix "effects-time"
-                  "${monad-effects}/effects-time"
-                  { };
               # https://github.com/ddssff/listlike/issues/23
               ListLike = hlib.dontCheck prev.ListLike;
               tasty-hedgehog = prev.tasty-hedgehog_1_4_0_0;
-            };
+            } // mkLibs final [
+              "algebra-simple"
+              "bounds"
+            ] // mkEffectLibs final [
+              "effects-env"
+              "effects-exceptions"
+              "effects-ioref"
+              "effects-optparse"
+              "effects-stm"
+              "effects-terminal"
+              "effects-time"
+            ];
           };
           hlib = pkgs.haskell.lib;
           mkPkg = returnShellEnv:
