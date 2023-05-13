@@ -8,6 +8,10 @@
   };
   inputs.flake-parts.url = "github:hercules-ci/flake-parts";
   inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+  inputs.nix-hs-utils = {
+    url = "github:tbidne/nix-hs-utils";
+    inputs.flake-compat.follows = "flake-compat";
+  };
 
   # haskell
   inputs.algebra-simple = {
@@ -37,47 +41,29 @@
     , bounds
     , flake-parts
     , monad-effects
+    , nix-hs-utils
     , self
     , ...
     }:
     flake-parts.lib.mkFlake { inherit inputs; } {
       perSystem = { pkgs, ... }:
         let
-          mkLib = p: lib: p.callCabal2nix lib inputs."${lib}" { };
-          mkEffectsLib = p: lib: p.callCabal2nix lib "${monad-effects}/${lib}" { };
-          mkLibs = p: libs:
-            builtins.foldl' (acc: name: acc // { ${name} = mkLib p name; }) { } libs;
-          mkEffectLibs = p: libs:
-            builtins.foldl' (acc: x: acc // { ${x} = mkEffectsLib p x; }) { } libs;
-
-          buildTools = c: [
-            c.cabal-install
-            pkgs.zlib
-          ];
-          devTools = c: [
-            (hlib.dontCheck c.apply-refact)
-            (hlib.dontCheck c.cabal-fmt)
-            (hlib.dontCheck c.haskell-language-server)
-            (hlib.dontCheck c.hlint)
-            (hlib.dontCheck c.ormolu)
-            pkgs.nixpkgs-fmt
-          ];
           ghc-version = "ghc944";
           compiler = pkgs.haskell.packages."${ghc-version}".override {
             overrides = final: prev: {
               apply-refact = prev.apply-refact_0_11_0_0;
               effects-fs = hlib.overrideCabal
-                (mkEffectsLib final "effects-fs")
+                (nix-hs-utils.mkRelLib monad-effects final "effects-fs")
                 (old: {
                   configureFlags = (old.configureFlags or [ ]) ++ [ "-f -os_path" ];
                 });
               # https://github.com/ddssff/listlike/issues/23
               ListLike = hlib.dontCheck prev.ListLike;
               tasty-hedgehog = prev.tasty-hedgehog_1_4_0_0;
-            } // mkLibs final [
+            } // nix-hs-utils.mkLibs inputs final [
               "algebra-simple"
               "bounds"
-            ] // mkEffectLibs final [
+            ] // nix-hs-utils.mkRelLibs monad-effects final [
               "effects-env"
               "effects-exceptions"
               "effects-ioref"
@@ -89,50 +75,27 @@
           };
           hlib = pkgs.haskell.lib;
           mkPkg = returnShellEnv:
-            compiler.developPackage {
-              inherit returnShellEnv;
+            nix-hs-utils.mkHaskellPkg {
+              inherit compiler pkgs returnShellEnv;
               name = "time-conv";
               root = ./.;
-              modifier = drv:
-                pkgs.haskell.lib.addBuildTools drv
-                  (buildTools compiler ++
-                    (if returnShellEnv then devTools compiler else [ ]));
             };
-          mkApp = drv: {
-            type = "app";
-            program = "${drv}/bin/${drv.name}";
-          };
+          hs-dirs = "app exe-internal src test";
         in
         {
           packages.default = mkPkg false;
           devShells.default = mkPkg true;
 
           apps = {
-            format = mkApp (
-              pkgs.writeShellApplication {
-                name = "format";
-                text = builtins.readFile ./tools/format.sh;
-                runtimeInputs = [
-                  compiler.cabal-fmt
-                  compiler.ormolu
-                  pkgs.nixpkgs-fmt
-                ];
-              }
-            );
-            lint = mkApp (
-              pkgs.writeShellApplication {
-                name = "lint";
-                text = builtins.readFile ./tools/lint.sh;
-                runtimeInputs = [ compiler.hlint ];
-              }
-            );
-            lint-refactor = mkApp (
-              pkgs.writeShellApplication {
-                name = "lint-refactor";
-                text = builtins.readFile ./tools/lint-refactor.sh;
-                runtimeInputs = [ compiler.apply-refact compiler.hlint ];
-              }
-            );
+            format = nix-hs-utils.format {
+              inherit compiler hs-dirs pkgs;
+            };
+            lint = nix-hs-utils.lint {
+              inherit compiler hs-dirs pkgs;
+            };
+            lint-refactor = nix-hs-utils.lint-refactor {
+              inherit compiler hs-dirs pkgs;
+            };
           };
         };
       systems = [
