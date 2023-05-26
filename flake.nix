@@ -35,6 +35,7 @@
 
     inputs.algebra-simple.follows = "algebra-simple";
     inputs.bounds.follows = "bounds";
+    inputs.nix-hs-utils.follows = "nix-hs-utils";
   };
   outputs =
     inputs@{ algebra-simple

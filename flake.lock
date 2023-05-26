@@ -100,17 +100,20 @@
         "flake-parts": [
           "flake-parts"
         ],
+        "nix-hs-utils": [
+          "nix-hs-utils"
+        ],
         "nixpkgs": [
           "nixpkgs"
         ],
         "smart-math": "smart-math"
       },
       "locked": {
-        "lastModified": 1680671772,
-        "narHash": "sha256-qP1eKENeAJ7VVxG04BCxSm1ge1hhPDPhjJis1Kv6Oh0=",
+        "lastModified": 1685058766,
+        "narHash": "sha256-nluiznFDa7fnR4QKBjz4xd8EuQsmoKQ1VjNKjWaVRLY=",
         "owner": "tbidne",
         "repo": "monad-effects",
-        "rev": "963a30110feeb290946c2a8e89b18e15b4dc0f1a",
+        "rev": "9bc579b32f7f00ab8fd1db6d78a6a646b0c87f84",
         "type": "github"
       },
       "original": {
