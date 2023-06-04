@@ -7,14 +7,18 @@ module TimeConv.Runner
   )
 where
 
+import Control.Monad (when)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
-import Data.Maybe.Optics (_Just)
+import Data.Maybe.Optics (_Just, _Nothing)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Conversion qualified as Conv
 import Data.Time.Conversion.Types.Date (Date (..))
-import Data.Time.Conversion.Types.Exception (SrcTZNoTimeStringException (..))
+import Data.Time.Conversion.Types.Exception
+  ( DateNoTimeStringException (..),
+    SrcTZNoTimeStringException (..),
+  )
 import Data.Time.Conversion.Types.TZDatabase (TZDatabase, _TZDatabaseText)
 import Data.Time.Conversion.Types.TimeReader (TimeReader (..))
 import Data.Time.Format qualified as Format
@@ -30,6 +34,7 @@ import Effects.System.Terminal (MonadTerminal)
 import Effects.System.Terminal qualified as T
 import Effects.Time (MonadTime)
 import Optics.Core (over', (%), (%?), (^.))
+import Optics.Core.Extras (is)
 import TOML qualified
 import TimeConv.Args (Args, argsToBuilder, parserInfo)
 import TimeConv.Toml (Toml)
@@ -79,9 +84,9 @@ runWithArgs ::
   Args ->
   m a
 runWithArgs handler args = do
-  case (args ^. #srcTZ, args ^. #timeString) of
-    (Just _, Nothing) -> throwM MkSrcTZNoTimeStringException
-    _ -> pure ()
+  when (is (#timeString % _Nothing) args) $ do
+    when (is (#srcTZ % _Just) args) $ throwM MkSrcTZNoTimeStringException
+    when (is (#date % _Just) args) $ throwM MkDateNoTimeStringException
 
   -- Transform Args to TimeReader, DestTZ and FormatOut
   let (mtimeReader, destTZ, formatOut) = args ^. argsToBuilder

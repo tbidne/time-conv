@@ -218,7 +218,7 @@ readTimeString ::
   ) =>
   TimeReader ->
   m ZonedTime
-readTimeString timeReader = do
+readTimeString timeReader =
   case timeReader ^. #srcTZ of
     -- read in local timezone
     Nothing -> do

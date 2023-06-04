@@ -5,6 +5,7 @@ module Data.Time.Conversion.Types.Exception
     LocalTimeZoneException (..),
     LocalSystemTimeException (..),
     SrcTZNoTimeStringException (..),
+    DateNoTimeStringException (..),
   )
 where
 
@@ -103,3 +104,17 @@ data SrcTZNoTimeStringException = MkSrcTZNoTimeStringException
 instance Exception SrcTZNoTimeStringException where
   displayException MkSrcTZNoTimeStringException =
     "The --src-tz option was specified without required time string"
+
+-- | Exception for when --date specified but time string is not.
+--
+-- @since 0.1
+data DateNoTimeStringException = MkDateNoTimeStringException
+  deriving stock
+    ( -- | @since 0.1
+      Show
+    )
+
+-- | @since 0.1
+instance Exception DateNoTimeStringException where
+  displayException MkDateNoTimeStringException =
+    "The --date option was specified without required time string"

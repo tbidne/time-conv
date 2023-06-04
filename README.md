@@ -29,7 +29,6 @@
 * [Building](#building)
   * [Prerequisites](#prerequisites)
   * [Cabal](#cabal)
-  * [Stack](#stack)
   * [Nix](#nix)
 
 # Introduction
@@ -64,7 +63,7 @@
     $ time-conv -s america/new_york -d europe/paris 18:30
     Fri,  2 Jan 1970 00:30:00 CET
 
-    # no -t or date information means we assume the initial unix date, 1 Jan 1970.
+    # no --date information means we assume the initial unix date, 1 Jan 1970.
     ```
 
 The timezone names are based on the tz_database. See https://en.wikipedia.org/wiki/Tz_database for more information.
@@ -93,8 +92,7 @@ Available options:
   --date (today | YYYY-mm-dd)
                            Date in which to read the string. Today uses the
                            current date, as determined by the source. This
-                           argument is ignored unless a time string is
-                           specified.
+                           option requires TIME_STR.
 
   --no-date                Disables --date. Useful for disabling the toml field
                            'today'.
@@ -146,7 +144,7 @@ Thu, 20 Apr 2023 22:25:37 PDT
 
 **Arg:** `--date (today | YYYY-mm-dd)`
 
-**Description:** Date in which to read the string. Today uses the current date, as determined by the source. This argument is ignored unless a time string is specified.
+**Description:** Date in which to read the string. Today uses the current date, as determined by the source. This option requires [Time String](#time-string).
 
 **Examples:**
 

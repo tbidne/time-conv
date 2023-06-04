@@ -252,8 +252,7 @@ parseDate =
     helpTxt =
       mconcat
         [ "Date in which to read the string. Today uses the current date, as ",
-          "determined by the source. This argument is ignored unless ",
-          "a time string is specified."
+          "determined by the source.  This option requires TIME_STR."
         ]
     readDate = OApp.str >>= Date.parseDate
 

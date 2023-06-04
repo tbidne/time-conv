@@ -13,7 +13,8 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Conversion.Types.Date qualified as Date
 import Data.Time.Conversion.Types.Exception
-  ( ParseTZDatabaseException,
+  ( DateNoTimeStringException,
+    ParseTZDatabaseException,
     ParseTimeException,
     SrcTZNoTimeStringException,
   )
@@ -51,7 +52,8 @@ main =
         testNoDateLiteral,
         testNoDateToday,
         tomlTests,
-        testSrcTzNoTimeStr
+        testSrcTzNoTimeStr,
+        testDateNoTimeStr
       ]
 
 formatTests :: TestTree
@@ -228,7 +230,7 @@ testNoTimeString = testCase "No time string gets current time" $ do
 
 testToday :: TestTree
 testToday = testCase "Today arg succeeds" $ do
-  result <- captureTimeConv ["--date", "today"]
+  result <- captureTimeConv ["--date", "today", "16:30"]
   assertBool ("Should be non-empty: " <> T.unpack result) $ (not . T.null) result
 
 testNoDateLiteral :: TestTree
@@ -350,6 +352,16 @@ testSrcTzNoTimeStr = testCase "Src w/o time string fails" $ do
     args =
       [ "-s",
         "Etc/Utc"
+      ]
+
+testDateNoTimeStr :: TestTree
+testDateNoTimeStr = testCase "Date w/o time string fails" $ do
+  assertException @DateNoTimeStringException expected $ captureTimeConv args
+  where
+    expected = "The --date option was specified without required time string"
+    args =
+      [ "--date",
+        "today"
       ]
 
 assertException :: forall e a. (Exception e) => String -> IO a -> Assertion
