@@ -1,3 +1,5 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 -- | Internal library for testing.
 --
 -- @since 0.1
@@ -24,11 +26,12 @@ import Data.Time.Conversion.Types.TimeReader (TimeReader (..))
 import Data.Time.Format qualified as Format
 import Effects.Exception (MonadCatch, MonadThrow, throwM)
 import Effects.FileSystem.FileReader (MonadFileReader, readFileUtf8ThrowM)
-import Effects.FileSystem.Path ((</>))
 import Effects.FileSystem.PathReader
   ( MonadPathReader (doesFileExist),
+    OsPath,
     getXdgConfig,
   )
+import Effects.FileSystem.Utils (osp, (</>))
 import Effects.Optparse (MonadOptparse (execParser))
 import Effects.System.Terminal (MonadTerminal)
 import Effects.System.Terminal qualified as T
@@ -121,7 +124,7 @@ updateFromTomlFile ::
     MonadThrow m
   ) =>
   -- | Path to toml config file.
-  Maybe FilePath ->
+  Maybe OsPath ->
   -- | TimeReader so far (CLI Args)
   Maybe TimeReader ->
   -- | CLI Args' noDate
@@ -133,8 +136,8 @@ updateFromTomlFile ::
 updateFromTomlFile mconfigPath mtimeReader noDate mdestTZ = do
   case mconfigPath of
     Nothing -> do
-      configDir <- getXdgConfig "time-conv"
-      let configPath = configDir </> "config.toml"
+      configDir <- getXdgConfig [osp|time-conv|]
+      let configPath = configDir </> [osp|config.toml|]
       exists <- doesFileExist configPath
       if exists
         then updateFromFile configPath

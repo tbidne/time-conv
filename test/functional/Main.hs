@@ -21,8 +21,8 @@ import Data.Time.Conversion.Types.Exception
 import Data.Time.Format qualified as Format
 import Effects.Exception (MonadCatch, MonadThrow, tryCS)
 import Effects.FileSystem.FileReader (MonadFileReader)
-import Effects.FileSystem.Path ((</>))
 import Effects.FileSystem.PathReader (MonadPathReader)
+import Effects.FileSystem.Utils (combineFilePaths)
 import Effects.IORef (MonadIORef, modifyIORef', newIORef, readIORef)
 import Effects.Optparse (MonadOptparse)
 import Effects.System.Environment (MonadEnv)
@@ -283,7 +283,7 @@ testTomlToday = testCase "Uses toml 'today'" $ do
   where
     args =
       [ "-c",
-        "test" </> "functional" </> "today.toml",
+        "test" `combineFilePaths` "functional" `combineFilePaths` "today.toml",
         "-s",
         "Etc/Utc",
         "--format-out",
@@ -299,7 +299,7 @@ testArgsOverridesTomlToday = testCase "Args overrides toml's 'today'" $ do
   where
     args =
       [ "-c",
-        "test" </> "functional" </> "today.toml",
+        "test" `combineFilePaths` "functional" `combineFilePaths` "today.toml",
         "-s",
         "Etc/Utc",
         "--date",
@@ -318,7 +318,7 @@ testTomlAliases = testCase "Config aliases succeed" $ do
   where
     withDest d =
       [ "-c",
-        "examples" </> "config.toml",
+        "examples" `combineFilePaths` "config.toml",
         "-s",
         "Etc/Utc",
         "-d",
@@ -335,7 +335,7 @@ testTomlNoDate = testCase "Disables toml 'today'" $ do
   where
     args =
       [ "-c",
-        "examples" </> "config.toml",
+        "examples" `combineFilePaths` "config.toml",
         "-s",
         "Etc/Utc",
         "-d",

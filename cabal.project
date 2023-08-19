@@ -10,17 +10,17 @@ package time-conv
 source-repository-package
     type: git
     location: https://github.com/tbidne/algebra-simple.git
-    tag: 22128fdc52ec2e7eef68222e6426511a0281d52b
+    tag: 0e7b02ba5b420d7421c8f652aec5d219d0402395
 
 source-repository-package
     type: git
     location: https://github.com/tbidne/bounds.git
-    tag: f7997b0b14d04bbca0bf589cc6661170c0ba48bc
+    tag: 1d7451a64d38d3998ce647075663fb81fdf34ad4
 
 source-repository-package
     type: git
     location: https://github.com/tbidne/monad-effects.git
-    tag: 9bc579b32f7f00ab8fd1db6d78a6a646b0c87f84
+    tag: 85a5694c59cc130b185101f98aec1ce4c7e80733
     subdir:
       effects-env
       effects-exceptions
@@ -32,7 +32,3 @@ source-repository-package
 
 optimization: 2
 test-show-details: direct
-
-constraints: effects-fs -os_path
-
-allow-newer: hedgehog-1.2:template-haskell

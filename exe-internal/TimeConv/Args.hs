@@ -26,6 +26,7 @@ import Data.Time.Conversion.Types.TimeFormat (TimeFormat (..))
 import Data.Time.Conversion.Types.TimeFormat qualified as TimeFmt
 import Data.Time.Conversion.Types.TimeReader (TimeReader (..))
 import Data.Version (Version (versionBranch))
+import Effects.Optparse (OsPath, osPath)
 import Optics.Core (Getter, (^.))
 import Optics.Core qualified as O
 import Optics.TH (makeFieldLabelsNoPrefix)
@@ -45,7 +46,7 @@ import Paths_time_conv qualified as Paths
 --
 -- @since 0.1
 data Args = MkArgs
-  { config :: !(Maybe FilePath),
+  { config :: !(Maybe OsPath),
     noConfig :: !Bool,
     date :: !(Maybe Date),
     noDate :: !Bool,
@@ -94,8 +95,8 @@ parseArgs =
     <*> parseFormatOut
     <*> parseSrcTZ
     <*> parseTimeStr
-    <**> OApp.helper
-    <**> version
+      <**> OApp.helper
+      <**> version
 
 -- | Maps 'Args' to 'TimeReader'. Details:
 --
@@ -127,11 +128,11 @@ argsToBuilder = O.to to
           formatOut = fromMaybe TimeFmt.rfc822 (args ^. #formatOut)
        in (mtimeReader, args ^. #destTZ, formatOut)
 
-parseConfig :: Parser (Maybe FilePath)
+parseConfig :: Parser (Maybe OsPath)
 parseConfig =
   OApp.optional $
     OApp.option
-      OApp.str
+      osPath
       ( OApp.long "config"
           <> OApp.short 'c'
           <> OApp.metavar "PATH"
