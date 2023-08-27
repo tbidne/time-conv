@@ -26,7 +26,7 @@ import Data.Time.Conversion.Types.TimeFormat (TimeFormat (..))
 import Data.Time.Conversion.Types.TimeFormat qualified as TimeFmt
 import Data.Time.Conversion.Types.TimeReader (TimeReader (..))
 import Data.Version (Version (versionBranch))
-import Effects.Optparse (OsPath, osPath)
+import Effectful.Optparse.Static (OsPath, validOsPath)
 import Optics.Core (Getter, (^.))
 import Optics.Core qualified as O
 import Optics.TH (makeFieldLabelsNoPrefix)
@@ -132,7 +132,7 @@ parseConfig :: Parser (Maybe OsPath)
 parseConfig =
   OApp.optional $
     OApp.option
-      osPath
+      validOsPath
       ( OApp.long "config"
           <> OApp.short 'c'
           <> OApp.metavar "PATH"

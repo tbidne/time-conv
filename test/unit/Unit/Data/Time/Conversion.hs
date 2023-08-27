@@ -2,7 +2,6 @@
 
 module Unit.Data.Time.Conversion (tests) where
 
-import Control.Monad.IO.Class (MonadIO (..))
 import Data.Text qualified as T
 import Data.Time.Conversion qualified as Conversion
 import Data.Time.Conversion.Types.Date (Date (..))
@@ -10,7 +9,13 @@ import Data.Time.Conversion.Types.TZDatabase (TZDatabase (..))
 import Data.Time.Conversion.Types.TimeFormat qualified as TimeFmt
 import Data.Time.Conversion.Types.TimeReader (TimeReader (..))
 import Data.Time.Format qualified as Format
-import Effects.Exception (catchAny)
+import Effectful (Eff, IOE, MonadIO (liftIO), runEff)
+import Effectful.Exception (catchAny)
+import Effectful.FileSystem.FileReader.Static (FileReaderStatic, runFileReaderStaticIO)
+import Effectful.FileSystem.PathReader.Static (PathReaderStatic, runPathReaderStaticIO)
+import Effectful.Optparse.Static (OptparseStatic, runOptparseStaticIO)
+import Effectful.Terminal.Static (TerminalStatic, runTerminalStaticIO)
+import Effectful.Time.Dynamic (TimeDynamic, runTimeDynamicIO)
 import Hedgehog (Property, PropertyName)
 import Hedgehog qualified as H
 import Hedgehog.Internal.Property ((===))
@@ -37,9 +42,9 @@ testDestSrcRoundtrips =
     H.property $ do
       tzdb <- TZDatabaseLabel <$> H.forAll G.tzLabel
 
-      currTime <- liftIO $ Conversion.readConvertTime Nothing Nothing
+      currTime <- runIO $ Conversion.readConvertTime Nothing Nothing
       H.annotateShow currTime
-      currTimeDest <- liftIO $ Conversion.readConvertTime Nothing (Just tzdb)
+      currTimeDest <- runIO $ Conversion.readConvertTime Nothing (Just tzdb)
       H.annotateShow currTimeDest
       let currTimeDestStr = fmt currTimeDest
           timeReader =
@@ -51,7 +56,7 @@ testDestSrcRoundtrips =
               }
 
       currTime' <-
-        liftIO (Conversion.readConvertTime (Just timeReader) Nothing)
+        runIO (Conversion.readConvertTime (Just timeReader) Nothing)
           `catchAny` \ex -> do
             H.annotateShow ex
             H.failure
@@ -69,9 +74,9 @@ testDestSrcDateRoundtrips =
     H.property $ do
       tzdb <- TZDatabaseLabel <$> H.forAll G.tzLabel
 
-      currTime <- liftIO $ Conversion.readConvertTime Nothing Nothing
+      currTime <- runIO $ Conversion.readConvertTime Nothing Nothing
       H.annotateShow currTime
-      currTimeDest <- liftIO $ Conversion.readConvertTime Nothing (Just tzdb)
+      currTimeDest <- runIO $ Conversion.readConvertTime Nothing (Just tzdb)
       H.annotateShow currTime
       let (currDateDestStr, currTimeDestStr) = case T.split (== ' ') (T.pack $ fmt currTimeDest) of
             [y, d] -> (y, d)
@@ -101,7 +106,7 @@ testDestSrcDateRoundtrips =
               }
 
       currTime' <-
-        liftIO (Conversion.readConvertTime (Just timeReader) Nothing)
+        runIO (Conversion.readConvertTime (Just timeReader) Nothing)
           `catchAny` \ex -> do
             H.annotateShow ex
             H.failure
@@ -121,3 +126,24 @@ testPropertyCompat = testPropertyNamed
 testPropertyCompat :: TestName -> PropertyName -> Property -> TestTree
 testPropertyCompat tn _ = testProperty tn
 #endif
+
+runIO ::
+  (MonadIO m) =>
+  Eff
+    [ TimeDynamic,
+      TerminalStatic,
+      PathReaderStatic,
+      OptparseStatic,
+      FileReaderStatic,
+      IOE
+    ]
+    a ->
+  m a
+runIO =
+  liftIO
+    . runEff
+    . runFileReaderStaticIO
+    . runOptparseStaticIO
+    . runPathReaderStaticIO
+    . runTerminalStaticIO
+    . runTimeDynamicIO

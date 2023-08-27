@@ -24,18 +24,18 @@ import Data.Time.Conversion.Types.Exception
 import Data.Time.Conversion.Types.TZDatabase (TZDatabase, _TZDatabaseText)
 import Data.Time.Conversion.Types.TimeReader (TimeReader (..))
 import Data.Time.Format qualified as Format
-import Effects.Exception (MonadCatch, MonadThrow, throwM)
-import Effects.FileSystem.FileReader (MonadFileReader, readFileUtf8ThrowM)
-import Effects.FileSystem.PathReader
-  ( MonadPathReader (doesFileExist),
-    OsPath,
-    getXdgConfig,
-  )
-import Effects.FileSystem.Utils (osp, (</>))
-import Effects.Optparse (MonadOptparse (execParser))
-import Effects.System.Terminal (MonadTerminal)
-import Effects.System.Terminal qualified as T
-import Effects.Time (MonadTime)
+import Effectful (Eff, type (:>))
+import Effectful.Exception (throwM)
+import Effectful.FileSystem.FileReader.Static (FileReaderStatic)
+import Effectful.FileSystem.FileReader.Static qualified as FR
+import Effectful.FileSystem.PathReader.Static (OsPath, PathReaderStatic)
+import Effectful.FileSystem.PathReader.Static qualified as PR
+import Effectful.FileSystem.Utils (osp, (</>))
+import Effectful.Optparse.Static (OptparseStatic)
+import Effectful.Optparse.Static qualified as OA
+import Effectful.Terminal.Static (TerminalStatic)
+import Effectful.Terminal.Static qualified as T
+import Effectful.Time.Dynamic (TimeDynamic)
 import Optics.Core (over', (%), (%?), (^.))
 import Optics.Core.Extras (is)
 import TOML qualified
@@ -46,46 +46,43 @@ import TimeConv.Toml (Toml)
 --
 -- @since 0.1
 runTimeConv ::
-  ( MonadCatch m,
-    MonadFileReader m,
-    MonadOptparse m,
-    MonadPathReader m,
-    MonadTerminal m,
-    MonadTime m
+  ( FileReaderStatic :> es,
+    OptparseStatic :> es,
+    PathReaderStatic :> es,
+    TerminalStatic :> es,
+    TimeDynamic :> es
   ) =>
-  m ()
+  Eff es ()
 runTimeConv = do
-  args <- execParser parserInfo
+  args <- OA.execParser parserInfo
   runWithArgs T.putTextLn args
 
 -- | Runs time-conv and applies the given handler.
 --
 -- @since 0.1
 runTimeConvHandler ::
-  ( MonadCatch m,
-    MonadFileReader m,
-    MonadOptparse m,
-    MonadPathReader m,
-    MonadTime m
+  ( FileReaderStatic :> es,
+    OptparseStatic :> es,
+    PathReaderStatic :> es,
+    TimeDynamic :> es
   ) =>
-  (Text -> m a) ->
-  m a
+  (Text -> Eff es a) ->
+  Eff es a
 runTimeConvHandler handler = do
-  args <- execParser parserInfo
+  args <- OA.execParser parserInfo
   runWithArgs handler args
 
 -- | Runs time-conv and applies the given handler.
 --
 -- @since 0.1
 runWithArgs ::
-  ( MonadCatch m,
-    MonadFileReader m,
-    MonadPathReader m,
-    MonadTime m
+  ( FileReaderStatic :> es,
+    PathReaderStatic :> es,
+    TimeDynamic :> es
   ) =>
-  (Text -> m a) ->
+  (Text -> Eff es a) ->
   Args ->
-  m a
+  Eff es a
 runWithArgs handler args = do
   when (is (#timeString % _Nothing) args) $ do
     when (is (#srcTZ % _Just) args) $ throwM MkSrcTZNoTimeStringException
@@ -119,9 +116,8 @@ runWithArgs handler args = do
     locale = Format.defaultTimeLocale
 
 updateFromTomlFile ::
-  ( MonadFileReader m,
-    MonadPathReader m,
-    MonadThrow m
+  ( FileReaderStatic :> es,
+    PathReaderStatic :> es
   ) =>
   -- | Path to toml config file.
   Maybe OsPath ->
@@ -132,20 +128,20 @@ updateFromTomlFile ::
   -- | Dest TZ
   Maybe TZDatabase ->
   -- | Updated (TimeReader, DestTZ)
-  m (Maybe TimeReader, Maybe TZDatabase)
+  Eff es (Maybe TimeReader, Maybe TZDatabase)
 updateFromTomlFile mconfigPath mtimeReader noDate mdestTZ = do
   case mconfigPath of
     Nothing -> do
-      configDir <- getXdgConfig [osp|time-conv|]
+      configDir <- PR.getXdgConfig [osp|time-conv|]
       let configPath = configDir </> [osp|config.toml|]
-      exists <- doesFileExist configPath
+      exists <- PR.doesFileExist configPath
       if exists
         then updateFromFile configPath
         else pure (mtimeReader, mdestTZ)
     Just configPath -> updateFromFile configPath
   where
     updateFromFile configPath = do
-      contents <- readFileUtf8ThrowM configPath
+      contents <- FR.readFileUtf8ThrowM configPath
       case TOML.decode @Toml contents of
         Left ex -> throwM ex
         Right toml -> pure $ updateFromToml mtimeReader noDate mdestTZ toml

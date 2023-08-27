@@ -20,8 +20,8 @@
     inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  inputs.monad-effects = {
-    url = "github:tbidne/monad-effects";
+  inputs.effectful-effects = {
+    url = "github:tbidne/effectful-effects";
     inputs.flake-parts.follows = "flake-parts";
     inputs.nix-hs-utils.follows = "nix-hs-utils";
     inputs.nixpkgs.follows = "nixpkgs";
@@ -31,7 +31,7 @@
   };
   outputs =
     inputs@{ flake-parts
-    , monad-effects
+    , effectful-effects
     , nix-hs-utils
     , self
     , ...
@@ -49,15 +49,15 @@
             } // nix-hs-utils.mkLibs inputs final [
               "algebra-simple"
               "bounds"
-            ] // nix-hs-utils.mkRelLibs monad-effects final [
-              "effects-env"
-              "effects-exceptions"
-              "effects-fs"
-              "effects-ioref"
-              "effects-optparse"
-              "effects-stm"
-              "effects-terminal"
-              "effects-time"
+            ] // nix-hs-utils.mkRelLibs "${effectful-effects}/lib" final [
+              "env-effectful"
+              "exceptions-effectful"
+              "fs-effectful"
+              "ioref-effectful"
+              "optparse-effectful"
+              "stm-effectful"
+              "terminal-effectful"
+              "time-effectful"
             ];
           };
           hlib = pkgs.haskell.lib;
