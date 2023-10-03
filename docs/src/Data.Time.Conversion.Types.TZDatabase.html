@@ -1,0 +1,139 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="annot"><span class="hs-comment">-- | @since 0.1</span></span><span>
+</span><span id="line-2"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.Time.Conversion.Types.TZDatabase</span><span>
+</span><span id="line-3"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.TZDatabase.html#TZDatabase"><span class="hs-identifier">TZDatabase</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-4"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.TZDatabase.html#_TZDatabaseLabel"><span class="hs-identifier">_TZDatabaseLabel</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-5"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.TZDatabase.html#_TZDatabaseText"><span class="hs-identifier">_TZDatabaseText</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-6"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-7"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-8"></span><span>
+</span><span id="line-9"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.DeepSeq</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">NFData</span></span><span class="hs-special">)</span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Text</span></span><span class="hs-special">)</span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///nix/store/w0km61ypix7mjcsy55fr23aa32icrw09-tz-0.1.3.6-doc/share/doc/tz-0.1.3.6/html/src/Data.Time.Zones.All.html"><span class="hs-identifier">Data.Time.Zones.All</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/psznxz0af4hqnmcdhxil71pbq5sygjp9-tzdata-0.2.20230322.0-doc/share/doc/tzdata-0.2.20230322.0/html/src/Data.Time.Zones.DB.html#TZLabel"><span class="hs-identifier">TZLabel</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">GHC.Generics</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Generic</span></span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///nix/store/2a8kavx35szkma5sz7f1zr4260p8rmrr-optics-core-0.4.1.1-doc/share/doc/optics-core-0.4.1.1/html/src/Optics.Core.html"><span class="hs-identifier">Optics.Core</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/2a8kavx35szkma5sz7f1zr4260p8rmrr-optics-core-0.4.1.1-doc/share/doc/optics-core-0.4.1.1/html/src/Optics.Prism.html#Prism%27"><span class="hs-identifier">Prism'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="file:///nix/store/2a8kavx35szkma5sz7f1zr4260p8rmrr-optics-core-0.4.1.1-doc/share/doc/optics-core-0.4.1.1/html/src/Optics.Prism.html#prism"><span class="hs-identifier">prism</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span class="hs-comment">-- | Options for interpreting a timezone.</span><span>
+</span><span id="line-16"></span><span class="hs-comment">--</span><span>
+</span><span id="line-17"></span><span class="hs-comment">-- ==== __Examples__</span><span>
+</span><span id="line-18"></span><span class="hs-comment">-- &gt;&gt;&gt; TZDatabaseLabel America__New_York</span><span>
+</span><span id="line-19"></span><span class="hs-comment">-- TZDatabaseLabel America__New_York</span><span>
+</span><span id="line-20"></span><span class="hs-comment">--</span><span>
+</span><span id="line-21"></span><span class="hs-comment">-- &gt;&gt;&gt; TZDatabaseText &quot;America/New_York&quot;</span><span>
+</span><span id="line-22"></span><span class="hs-comment">-- TZDatabaseText &quot;America/New_York&quot;</span><span>
+</span><span id="line-23"></span><span class="hs-comment">--</span><span>
+</span><span id="line-24"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-25"></span><span class="hs-keyword">data</span><span> </span><span id="TZDatabase"><span class="annot"><a href="Data.Time.Conversion.Types.TZDatabase.html#TZDatabase"><span class="hs-identifier hs-var">TZDatabase</span></a></span></span><span>
+</span><span id="line-26"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="hs-comment">-- | Uses a 'TZLabel'. This option should be preferred as it enables</span><span>
+</span><span id="line-27"></span><span>    </span><span class="hs-comment">-- total conversions.</span><span>
+</span><span id="line-28"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-29"></span><span>    </span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-30"></span><span>    </span><span id="TZDatabaseLabel"><span class="annot"><a href="Data.Time.Conversion.Types.TZDatabase.html#TZDatabaseLabel"><span class="hs-identifier hs-var">TZDatabaseLabel</span></a></span></span><span> </span><span class="hs-glyph">!</span><span class="annot"><a href="file:///nix/store/psznxz0af4hqnmcdhxil71pbq5sygjp9-tzdata-0.2.20230322.0-doc/share/doc/tzdata-0.2.20230322.0/html/src/Data.Time.Zones.DB.html#TZLabel"><span class="hs-identifier hs-type">TZLabel</span></a></span><span>
+</span><span id="line-31"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="hs-comment">-- | Interprets the 'Text' as a tz database name e.g. America/New_York.</span><span>
+</span><span id="line-32"></span><span>    </span><span class="hs-comment">-- Obviously such conversions cannot be total.</span><span>
+</span><span id="line-33"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-34"></span><span>    </span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-35"></span><span>    </span><span id="TZDatabaseText"><span class="annot"><a href="Data.Time.Conversion.Types.TZDatabase.html#TZDatabaseText"><span class="hs-identifier hs-var">TZDatabaseText</span></a></span></span><span> </span><span class="hs-glyph">!</span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
+</span><span id="line-36"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">stock</span></span><span>
+</span><span id="line-37"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- | @since 0.1</span></span><span>
+</span><span id="line-38"></span><span>      </span><span id="local-6989586621679084706"><span id="local-6989586621679084712"><span class="annot"><span class="annottext">TZDatabase -&gt; TZDatabase -&gt; Bool
+(TZDatabase -&gt; TZDatabase -&gt; Bool)
+-&gt; (TZDatabase -&gt; TZDatabase -&gt; Bool) -&gt; Eq TZDatabase
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: TZDatabase -&gt; TZDatabase -&gt; Bool
+== :: TZDatabase -&gt; TZDatabase -&gt; Bool
+$c/= :: TZDatabase -&gt; TZDatabase -&gt; Bool
+/= :: TZDatabase -&gt; TZDatabase -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-39"></span><span>      </span><span class="annot"><span class="hs-comment">-- | @since 0.1</span></span><span>
+</span><span id="line-40"></span><span>      </span><span id="local-6989586621679084717"><span id="local-6989586621679084719"><span class="annot"><span class="annottext">(forall x. TZDatabase -&gt; Rep TZDatabase x)
+-&gt; (forall x. Rep TZDatabase x -&gt; TZDatabase) -&gt; Generic TZDatabase
+forall x. Rep TZDatabase x -&gt; TZDatabase
+forall x. TZDatabase -&gt; Rep TZDatabase x
+forall a.
+(forall x. a -&gt; Rep a x) -&gt; (forall x. Rep a x -&gt; a) -&gt; Generic a
+$cfrom :: forall x. TZDatabase -&gt; Rep TZDatabase x
+from :: forall x. TZDatabase -&gt; Rep TZDatabase x
+$cto :: forall x. Rep TZDatabase x -&gt; TZDatabase
+to :: forall x. Rep TZDatabase x -&gt; TZDatabase
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Generic</span></span></span></span><span class="hs-special">,</span><span>
+</span><span id="line-41"></span><span>      </span><span class="annot"><span class="hs-comment">-- | @since 0.1</span></span><span>
+</span><span id="line-42"></span><span>      </span><span id="local-6989586621679084723"><span id="local-6989586621679084732"><span id="local-6989586621679084736"><span class="annot"><span class="annottext">Int -&gt; TZDatabase -&gt; ShowS
+[TZDatabase] -&gt; ShowS
+TZDatabase -&gt; String
+(Int -&gt; TZDatabase -&gt; ShowS)
+-&gt; (TZDatabase -&gt; String)
+-&gt; ([TZDatabase] -&gt; ShowS)
+-&gt; Show TZDatabase
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; TZDatabase -&gt; ShowS
+showsPrec :: Int -&gt; TZDatabase -&gt; ShowS
+$cshow :: TZDatabase -&gt; String
+show :: TZDatabase -&gt; String
+$cshowList :: [TZDatabase] -&gt; ShowS
+showList :: [TZDatabase] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span>
+</span><span id="line-43"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-44"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="annot"><span class="hs-keyword">anyclass</span></span><span>
+</span><span id="line-45"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- | @since 0.1</span></span><span>
+</span><span id="line-46"></span><span>      </span><span id="local-6989586621679084740"><span class="annot"><span class="annottext">TZDatabase -&gt; ()
+(TZDatabase -&gt; ()) -&gt; NFData TZDatabase
+forall a. (a -&gt; ()) -&gt; NFData a
+$crnf :: TZDatabase -&gt; ()
+rnf :: TZDatabase -&gt; ()
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var">NFData</span></span></span><span>
+</span><span id="line-47"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-48"></span><span>
+</span><span id="line-49"></span><span class="annot"><span class="hs-comment">-- | @since 0.1</span></span><span>
+</span><span id="line-50"></span><span class="annot"><a href="Data.Time.Conversion.Types.TZDatabase.html#_TZDatabaseLabel"><span class="hs-identifier hs-type">_TZDatabaseLabel</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///nix/store/2a8kavx35szkma5sz7f1zr4260p8rmrr-optics-core-0.4.1.1-doc/share/doc/optics-core-0.4.1.1/html/src/Optics.Prism.html#Prism%27"><span class="hs-identifier hs-type">Prism'</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.TZDatabase.html#TZDatabase"><span class="hs-identifier hs-type">TZDatabase</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/psznxz0af4hqnmcdhxil71pbq5sygjp9-tzdata-0.2.20230322.0-doc/share/doc/tzdata-0.2.20230322.0/html/src/Data.Time.Zones.DB.html#TZLabel"><span class="hs-identifier hs-type">TZLabel</span></a></span><span>
+</span><span id="line-51"></span><span id="_TZDatabaseLabel"><span class="annot"><span class="annottext">_TZDatabaseLabel :: Prism' TZDatabase TZLabel
+</span><a href="Data.Time.Conversion.Types.TZDatabase.html#_TZDatabaseLabel"><span class="hs-identifier hs-var hs-var">_TZDatabaseLabel</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-52"></span><span>  </span><span class="annot"><span class="annottext">(TZLabel -&gt; TZDatabase)
+-&gt; (TZDatabase -&gt; Either TZDatabase TZLabel)
+-&gt; Prism' TZDatabase TZLabel
+forall b t s a. (b -&gt; t) -&gt; (s -&gt; Either t a) -&gt; Prism s t a b
+</span><a href="file:///nix/store/2a8kavx35szkma5sz7f1zr4260p8rmrr-optics-core-0.4.1.1-doc/share/doc/optics-core-0.4.1.1/html/src/Optics.Prism.html#prism"><span class="hs-identifier hs-var">prism</span></a></span><span>
+</span><span id="line-53"></span><span>    </span><span class="annot"><span class="annottext">TZLabel -&gt; TZDatabase
+</span><a href="Data.Time.Conversion.Types.TZDatabase.html#TZDatabaseLabel"><span class="hs-identifier hs-var">TZDatabaseLabel</span></a></span><span>
+</span><span id="line-54"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679084761"><span class="annot"><span class="annottext">TZDatabase
+</span><a href="#local-6989586621679084761"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">TZDatabase
+</span><a href="#local-6989586621679084761"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-55"></span><span>        </span><span class="annot"><a href="Data.Time.Conversion.Types.TZDatabase.html#TZDatabaseLabel"><span class="hs-identifier hs-type">TZDatabaseLabel</span></a></span><span> </span><span id="local-6989586621679084762"><span class="annot"><span class="annottext">TZLabel
+</span><a href="#local-6989586621679084762"><span class="hs-identifier hs-var">lbl</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TZLabel -&gt; Either TZDatabase TZLabel
+forall a b. b -&gt; Either a b
+</span><span class="hs-identifier hs-var">Right</span></span><span> </span><span class="annot"><span class="annottext">TZLabel
+</span><a href="#local-6989586621679084762"><span class="hs-identifier hs-var">lbl</span></a></span><span>
+</span><span id="line-56"></span><span>        </span><span class="annot"><span class="annottext">TZDatabase
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TZDatabase -&gt; Either TZDatabase TZLabel
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="annot"><span class="annottext">TZDatabase
+</span><a href="#local-6989586621679084761"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-57"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-58"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.TZDatabase.html#_TZDatabaseLabel"><span class="hs-pragma hs-type">_TZDatabaseLabel</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-59"></span><span>
+</span><span id="line-60"></span><span class="annot"><span class="hs-comment">-- | @since 0.1</span></span><span>
+</span><span id="line-61"></span><span class="annot"><a href="Data.Time.Conversion.Types.TZDatabase.html#_TZDatabaseText"><span class="hs-identifier hs-type">_TZDatabaseText</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="file:///nix/store/2a8kavx35szkma5sz7f1zr4260p8rmrr-optics-core-0.4.1.1-doc/share/doc/optics-core-0.4.1.1/html/src/Optics.Prism.html#Prism%27"><span class="hs-identifier hs-type">Prism'</span></a></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.TZDatabase.html#TZDatabase"><span class="hs-identifier hs-type">TZDatabase</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
+</span><span id="line-62"></span><span id="_TZDatabaseText"><span class="annot"><span class="annottext">_TZDatabaseText :: Prism' TZDatabase Text
+</span><a href="Data.Time.Conversion.Types.TZDatabase.html#_TZDatabaseText"><span class="hs-identifier hs-var hs-var">_TZDatabaseText</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-63"></span><span>  </span><span class="annot"><span class="annottext">(Text -&gt; TZDatabase)
+-&gt; (TZDatabase -&gt; Either TZDatabase Text) -&gt; Prism' TZDatabase Text
+forall b t s a. (b -&gt; t) -&gt; (s -&gt; Either t a) -&gt; Prism s t a b
+</span><a href="file:///nix/store/2a8kavx35szkma5sz7f1zr4260p8rmrr-optics-core-0.4.1.1-doc/share/doc/optics-core-0.4.1.1/html/src/Optics.Prism.html#prism"><span class="hs-identifier hs-var">prism</span></a></span><span>
+</span><span id="line-64"></span><span>    </span><span class="annot"><span class="annottext">Text -&gt; TZDatabase
+</span><a href="Data.Time.Conversion.Types.TZDatabase.html#TZDatabaseText"><span class="hs-identifier hs-var">TZDatabaseText</span></a></span><span>
+</span><span id="line-65"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679084763"><span class="annot"><span class="annottext">TZDatabase
+</span><a href="#local-6989586621679084763"><span class="hs-identifier hs-var">x</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">TZDatabase
+</span><a href="#local-6989586621679084763"><span class="hs-identifier hs-var">x</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-66"></span><span>        </span><span class="annot"><a href="Data.Time.Conversion.Types.TZDatabase.html#TZDatabaseText"><span class="hs-identifier hs-type">TZDatabaseText</span></a></span><span> </span><span id="local-6989586621679084764"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679084764"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Either TZDatabase Text
+forall a b. b -&gt; Either a b
+</span><span class="hs-identifier hs-var">Right</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679084764"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-67"></span><span>        </span><span class="annot"><span class="annottext">TZDatabase
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TZDatabase -&gt; Either TZDatabase Text
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="annot"><span class="annottext">TZDatabase
+</span><a href="#local-6989586621679084763"><span class="hs-identifier hs-var">x</span></a></span><span>
+</span><span id="line-68"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-69"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.TZDatabase.html#_TZDatabaseText"><span class="hs-pragma hs-type">_TZDatabaseText</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-70"></span></pre></body></html>

@@ -1,0 +1,892 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# OPTIONS_GHC -Wno-missing-import-lists #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-comment">-- | This module provides functions for reading time strings. We also provide</span><span>
+</span><span id="line-4"></span><span class="hs-comment">-- functions for converting between timezones.</span><span>
+</span><span id="line-5"></span><span class="hs-comment">--</span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-7"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Data.Time.Conversion</span><span>
+</span><span id="line-8"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * High-level parsing/conversion</span></span><span>
+</span><span id="line-9"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.html#readConvertTime"><span class="hs-identifier">readConvertTime</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-10"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.html#readTime"><span class="hs-identifier">readTime</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-11"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.html#convertTime"><span class="hs-identifier">convertTime</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Low-level functions</span></span><span>
+</span><span id="line-14"></span><span>
+</span><span id="line-15"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Parsing time strings</span></span><span>
+</span><span id="line-16"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.html#readInLocalTimeZone"><span class="hs-identifier">readInLocalTimeZone</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-17"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.html#readTimeFormatLocal"><span class="hs-identifier">readTimeFormatLocal</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.html#readTimeFormatZoned"><span class="hs-identifier">readTimeFormatZoned</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.html#readTimeFormat"><span class="hs-identifier">readTimeFormat</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Converting ZonedTime</span></span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.html#convertZonedLabel"><span class="hs-identifier">convertZonedLabel</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Types</span></span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.Date.html#Date"><span class="hs-identifier">Date</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-26"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.TimeFormat.html#TimeFormat"><span class="hs-identifier">TimeFormat</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-27"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.TimeReader.html#TimeReader"><span class="hs-identifier">TimeReader</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-28"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.TZDatabase.html#TZDatabase"><span class="hs-identifier">TZDatabase</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-29"></span><span>
+</span><span id="line-30"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Re-exports</span></span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><a href="file:///nix/store/psznxz0af4hqnmcdhxil71pbq5sygjp9-tzdata-0.2.20230322.0-doc/share/doc/tzdata-0.2.20230322.0/html/src/Data.Time.Zones.DB.html#TZLabel"><span class="hs-identifier">TZLabel</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-32"></span><span>    </span><span class="annot"><span class="hs-identifier">ZonedTime</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span>    </span><span class="annot"><span class="hs-comment">-- ** Exceptions</span></span><span>
+</span><span id="line-35"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.Exception.html#ParseTimeException"><span class="hs-identifier">ParseTimeException</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-36"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.Exception.html#ParseTZDatabaseException"><span class="hs-identifier">ParseTZDatabaseException</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-37"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.Exception.html#LocalTimeZoneException"><span class="hs-identifier">LocalTimeZoneException</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-38"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.Exception.html#LocalSystemTimeException"><span class="hs-identifier">LocalSystemTimeException</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-39"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-41"></span><span>
+</span><span id="line-42"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.String</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">IsString</span></span><span class="hs-special">)</span><span>
+</span><span id="line-43"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Text</span></span><span class="hs-special">)</span><span>
+</span><span id="line-44"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">T</span></span><span>
+</span><span id="line-45"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Time.Clock</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">UTCTime</span></span><span class="hs-special">)</span><span>
+</span><span id="line-46"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Internal.html"><span class="hs-identifier">Data.Time.Conversion.Internal</span></a></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Internal</span></span><span>
+</span><span id="line-47"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.Date.html"><span class="hs-identifier">Data.Time.Conversion.Types.Date</span></a></span><span>
+</span><span id="line-48"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.Date.html#Date"><span class="hs-identifier">Date</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Time.Conversion.Types.Date.html#DateLiteral"><span class="hs-identifier">DateLiteral</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.Date.html#DateToday"><span class="hs-identifier">DateToday</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-49"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.Date.Internal.html#unDateString"><span class="hs-identifier">unDateString</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-50"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-51"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.Exception.html"><span class="hs-identifier">Data.Time.Conversion.Types.Exception</span></a></span><span>
+</span><span id="line-52"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.Exception.html#LocalSystemTimeException"><span class="hs-identifier">LocalSystemTimeException</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Time.Conversion.Types.Exception.html#MkLocalSystemTimeException"><span class="hs-identifier">MkLocalSystemTimeException</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-53"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.Exception.html#LocalTimeZoneException"><span class="hs-identifier">LocalTimeZoneException</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Time.Conversion.Types.Exception.html#MkLocalTimeZoneException"><span class="hs-identifier">MkLocalTimeZoneException</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-54"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.Exception.html#ParseTZDatabaseException"><span class="hs-identifier">ParseTZDatabaseException</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Time.Conversion.Types.Exception.html#MkParseTZDatabaseException"><span class="hs-identifier">MkParseTZDatabaseException</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-55"></span><span>    </span><span class="annot"><a href="Data.Time.Conversion.Types.Exception.html#ParseTimeException"><span class="hs-identifier">ParseTimeException</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Time.Conversion.Types.Exception.html#MkParseTimeException"><span class="hs-identifier">MkParseTimeException</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-56"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-57"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.TZDatabase.html"><span class="hs-identifier">Data.Time.Conversion.Types.TZDatabase</span></a></span><span>
+</span><span id="line-58"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.TZDatabase.html#TZDatabase"><span class="hs-identifier">TZDatabase</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Time.Conversion.Types.TZDatabase.html#TZDatabaseLabel"><span class="hs-identifier">TZDatabaseLabel</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.TZDatabase.html#TZDatabaseText"><span class="hs-identifier">TZDatabaseText</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-59"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-60"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.TimeFormat.html"><span class="hs-identifier">Data.Time.Conversion.Types.TimeFormat</span></a></span><span>
+</span><span id="line-61"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.TimeFormat.html#TimeFormat"><span class="hs-identifier">TimeFormat</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Time.Conversion.Types.TimeFormat.html#MkTimeFormat"><span class="hs-identifier">MkTimeFormat</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.TimeFormat.html#unTimeFormat"><span class="hs-identifier">unTimeFormat</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-62"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-63"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.TimeReader.html"><span class="hs-identifier">Data.Time.Conversion.Types.TimeReader</span></a></span><span>
+</span><span id="line-64"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.TimeReader.html#TimeReader"><span class="hs-identifier">TimeReader</span></a></span><span>
+</span><span id="line-65"></span><span>      </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.TimeReader.html#MkTimeReader"><span class="hs-identifier">MkTimeReader</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-66"></span><span>        </span><span class="annot"><a href="Data.Time.Conversion.Types.TimeReader.html#date"><span class="hs-identifier">date</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-67"></span><span>        </span><span class="annot"><a href="Data.Time.Conversion.Types.TimeReader.html#format"><span class="hs-identifier">format</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-68"></span><span>        </span><span class="annot"><a href="Data.Time.Conversion.Types.TimeReader.html#srcTZ"><span class="hs-identifier">srcTZ</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-69"></span><span>        </span><span class="annot"><a href="Data.Time.Conversion.Types.TimeReader.html#timeString"><span class="hs-identifier">timeString</span></a></span><span>
+</span><span id="line-70"></span><span>      </span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-71"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-72"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Time.Format</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">ParseTime</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">TimeLocale</span></span><span class="hs-special">)</span><span>
+</span><span id="line-73"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Time.Format</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Format</span></span><span>
+</span><span id="line-74"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Time.LocalTime</span></span><span>
+</span><span id="line-75"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">LocalTime</span></span><span class="hs-special">,</span><span>
+</span><span id="line-76"></span><span>    </span><span class="annot"><span class="hs-identifier">TimeZone</span></span><span class="hs-special">,</span><span>
+</span><span id="line-77"></span><span>    </span><span class="annot"><span class="hs-identifier">ZonedTime</span></span><span>
+</span><span id="line-78"></span><span>      </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">ZonedTime</span></span><span class="hs-special">,</span><span>
+</span><span id="line-79"></span><span>        </span><span class="annot"><span class="hs-identifier">zonedTimeToLocalTime</span></span><span class="hs-special">,</span><span>
+</span><span id="line-80"></span><span>        </span><span class="annot"><span class="hs-identifier">zonedTimeZone</span></span><span>
+</span><span id="line-81"></span><span>      </span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-82"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-83"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Time.LocalTime</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Local</span></span><span>
+</span><span id="line-84"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///nix/store/w0km61ypix7mjcsy55fr23aa32icrw09-tz-0.1.3.6-doc/share/doc/tz-0.1.3.6/html/src/Data.Time.Zones.html"><span class="hs-identifier">Data.Time.Zones</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/w0km61ypix7mjcsy55fr23aa32icrw09-tz-0.1.3.6-doc/share/doc/tz-0.1.3.6/html/src/Data.Time.Zones.Types.html#TZ"><span class="hs-identifier">TZ</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-85"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///nix/store/w0km61ypix7mjcsy55fr23aa32icrw09-tz-0.1.3.6-doc/share/doc/tz-0.1.3.6/html/src/Data.Time.Zones.html"><span class="hs-identifier">Data.Time.Zones</span></a></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Zones</span></span><span>
+</span><span id="line-86"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///nix/store/w0km61ypix7mjcsy55fr23aa32icrw09-tz-0.1.3.6-doc/share/doc/tz-0.1.3.6/html/src/Data.Time.Zones.All.html"><span class="hs-identifier">Data.Time.Zones.All</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/psznxz0af4hqnmcdhxil71pbq5sygjp9-tzdata-0.2.20230322.0-doc/share/doc/tzdata-0.2.20230322.0/html/src/Data.Time.Zones.DB.html#TZLabel"><span class="hs-identifier">TZLabel</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-87"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///nix/store/w0km61ypix7mjcsy55fr23aa32icrw09-tz-0.1.3.6-doc/share/doc/tz-0.1.3.6/html/src/Data.Time.Zones.All.html"><span class="hs-identifier">Data.Time.Zones.All</span></a></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">All</span></span><span>
+</span><span id="line-88"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-exceptions-0.1-a4f40d5efdf373b50ccdf70734cf14c569e79a147e00aeed7f9dcb856d0cc255/share/doc/html/src/Effects.Exception.html"><span class="hs-identifier">Effects.Exception</span></a></span><span>
+</span><span id="line-89"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier">HasCallStack</span></span><span class="hs-special">,</span><span>
+</span><span id="line-90"></span><span>    </span><span class="annot"><span class="hs-identifier">MonadCatch</span></span><span class="hs-special">,</span><span>
+</span><span id="line-91"></span><span>    </span><span class="annot"><span class="hs-identifier">MonadThrow</span></span><span class="hs-special">,</span><span>
+</span><span id="line-92"></span><span>    </span><span class="annot"><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-exceptions-0.1-a4f40d5efdf373b50ccdf70734cf14c569e79a147e00aeed7f9dcb856d0cc255/share/doc/html/src/Effects.Exception.html#catchAny"><span class="hs-identifier">catchAny</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-93"></span><span>    </span><span class="annot"><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-exceptions-0.1-a4f40d5efdf373b50ccdf70734cf14c569e79a147e00aeed7f9dcb856d0cc255/share/doc/html/src/Effects.Exception.html#throwCS"><span class="hs-identifier">throwCS</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-94"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-95"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-time-0.1-e2e7a10487c5f45ae56e3da6688b1244f3377d9fa4819cb45589d8484b49db5d/share/doc/html/src/Effects.Time.html"><span class="hs-identifier">Effects.Time</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-time-0.1-e2e7a10487c5f45ae56e3da6688b1244f3377d9fa4819cb45589d8484b49db5d/share/doc/html/src/Effects.Time.html#MonadTime"><span class="hs-identifier">MonadTime</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-time-0.1-e2e7a10487c5f45ae56e3da6688b1244f3377d9fa4819cb45589d8484b49db5d/share/doc/html/src/Effects.Time.html#getSystemZonedTime"><span class="hs-identifier">getSystemZonedTime</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-96"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="file:///nix/store/2a8kavx35szkma5sz7f1zr4260p8rmrr-optics-core-0.4.1.1-doc/share/doc/optics-core-0.4.1.1/html/src/Optics.Core.html"><span class="hs-identifier">Optics.Core</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/2a8kavx35szkma5sz7f1zr4260p8rmrr-optics-core-0.4.1.1-doc/share/doc/optics-core-0.4.1.1/html/src/Optics.Operators.html#%5E."><span class="hs-operator">(^.)</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-97"></span><span>
+</span><span id="line-98"></span><span class="hs-comment">-- $setup</span><span>
+</span><span id="line-99"></span><span class="hs-comment">-- &gt;&gt;&gt; import Control.Exception (SomeException)</span><span>
+</span><span id="line-100"></span><span class="hs-comment">-- &gt;&gt;&gt; import Data.Functor (void)</span><span>
+</span><span id="line-101"></span><span class="hs-comment">-- &gt;&gt;&gt; import Data.Time.Conversion.Types.TimeFormat qualified as TimeFmt</span><span>
+</span><span id="line-102"></span><span class="hs-comment">-- &gt;&gt;&gt; import Data.Time.Conversion.Types.TimeReader (defaultTimeReader)</span><span>
+</span><span id="line-103"></span><span class="hs-comment">-- &gt;&gt;&gt; import Effects.Exception (catchCS)</span><span>
+</span><span id="line-104"></span><span class="hs-comment">-- &gt;&gt;&gt; let parseTimeEx = \(e :: ParseTimeException) -&gt; putStrLn &quot;parse time exception&quot;</span><span>
+</span><span id="line-105"></span><span class="hs-comment">-- &gt;&gt;&gt; let parseTzDbEx = \(e :: ParseTZDatabaseException) -&gt; putStrLn &quot;parse tzdb exception&quot;</span><span>
+</span><span id="line-106"></span><span>
+</span><span id="line-107"></span><span class="hs-comment">-- | Reads the given time string based on the source 'TimeReader' and</span><span>
+</span><span id="line-108"></span><span class="hs-comment">-- converts to the destination timezone. This is the composition of</span><span>
+</span><span id="line-109"></span><span class="hs-comment">-- 'readTime' and 'convertTime'. If the source is 'Nothing' then we read</span><span>
+</span><span id="line-110"></span><span class="hs-comment">-- the local system time. Similarly, if the dest is 'Nothing', we convert</span><span>
+</span><span id="line-111"></span><span class="hs-comment">-- to the local system timezone.</span><span>
+</span><span id="line-112"></span><span class="hs-comment">--</span><span>
+</span><span id="line-113"></span><span class="hs-comment">-- __Throws:__</span><span>
+</span><span id="line-114"></span><span class="hs-comment">--</span><span>
+</span><span id="line-115"></span><span class="hs-comment">-- * 'ParseTimeException': Error parsing the time string.</span><span>
+</span><span id="line-116"></span><span class="hs-comment">-- * 'ParseTZDatabaseException': Error parsing the tz database name.</span><span>
+</span><span id="line-117"></span><span class="hs-comment">-- * 'LocalTimeZoneException': Error retrieving local timezone.</span><span>
+</span><span id="line-118"></span><span class="hs-comment">-- * 'LocalSystemTimeException': Error retrieving local system time.</span><span>
+</span><span id="line-119"></span><span class="hs-comment">--</span><span>
+</span><span id="line-120"></span><span class="hs-comment">-- ==== __Examples__</span><span>
+</span><span id="line-121"></span><span class="hs-comment">--</span><span>
+</span><span id="line-122"></span><span class="hs-comment">-- &gt;&gt;&gt; let toUtc = Just $ TZDatabaseLabel Etc__UTC</span><span>
+</span><span id="line-123"></span><span class="hs-comment">-- &gt;&gt;&gt; let reader = defaultTimeReader &quot;17:24&quot;</span><span>
+</span><span id="line-124"></span><span class="hs-comment">--</span><span>
+</span><span id="line-125"></span><span class="hs-comment">-- &gt;&gt;&gt; -- convert from est</span><span>
+</span><span id="line-126"></span><span class="hs-comment">-- &gt;&gt;&gt; let nyReader = reader { srcTZ = Just (TZDatabaseLabel America__New_York) }</span><span>
+</span><span id="line-127"></span><span class="hs-comment">-- &gt;&gt;&gt; readConvertTime (Just (nyReader { timeString = &quot;08:15&quot; })) toUtc</span><span>
+</span><span id="line-128"></span><span class="hs-comment">-- 1970-01-01 13:15:00 UTC</span><span>
+</span><span id="line-129"></span><span class="hs-comment">--</span><span>
+</span><span id="line-130"></span><span class="hs-comment">-- &gt;&gt;&gt; let badTimeString = reader { timeString = &quot;bad&quot; }</span><span>
+</span><span id="line-131"></span><span class="hs-comment">-- &gt;&gt;&gt; (void $ readConvertTime (Just badTimeString) toUtc) `catchCS` parseTimeEx</span><span>
+</span><span id="line-132"></span><span class="hs-comment">-- parse time exception</span><span>
+</span><span id="line-133"></span><span class="hs-comment">--</span><span>
+</span><span id="line-134"></span><span class="hs-comment">-- &gt;&gt;&gt; let badTZDatabase = reader { srcTZ = Just (TZDatabaseText &quot;America/NewYork&quot;)}</span><span>
+</span><span id="line-135"></span><span class="hs-comment">-- &gt;&gt;&gt; (void $ readConvertTime (Just badTZDatabase) toUtc) `catchCS` parseTzDbEx</span><span>
+</span><span id="line-136"></span><span class="hs-comment">-- parse tzdb exception</span><span>
+</span><span id="line-137"></span><span class="hs-comment">--</span><span>
+</span><span id="line-138"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-139"></span><span id="local-6989586621679085457"><span class="annot"><a href="Data.Time.Conversion.html#readConvertTime"><span class="hs-identifier hs-type">readConvertTime</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-140"></span><span>  </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadCatch</span></span><span> </span><span class="annot"><a href="#local-6989586621679085457"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-time-0.1-e2e7a10487c5f45ae56e3da6688b1244f3377d9fa4819cb45589d8484b49db5d/share/doc/html/src/Effects.Time.html#MonadTime"><span class="hs-identifier hs-type">MonadTime</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679085457"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-141"></span><span>  </span><span class="annot"><span class="hs-comment">-- | Source time.</span></span><span>
+</span><span id="line-142"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.TimeReader.html#TimeReader"><span class="hs-identifier hs-type">TimeReader</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-143"></span><span>  </span><span class="annot"><span class="hs-comment">-- | Dest timezone.</span></span><span>
+</span><span id="line-144"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.TZDatabase.html#TZDatabase"><span class="hs-identifier hs-type">TZDatabase</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-145"></span><span>  </span><span class="annot"><span class="hs-comment">-- | Converted time.</span></span><span>
+</span><span id="line-146"></span><span>  </span><span class="annot"><a href="#local-6989586621679085457"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">ZonedTime</span></span></span><span>
+</span><span id="line-147"></span><span id="readConvertTime"><span class="annot"><span class="annottext">readConvertTime :: forall (m :: * -&gt; *).
+(HasCallStack, MonadCatch m, MonadTime m) =&gt;
+Maybe TimeReader -&gt; Maybe TZDatabase -&gt; m ZonedTime
+</span><a href="Data.Time.Conversion.html#readConvertTime"><span class="hs-identifier hs-var hs-var">readConvertTime</span></a></span></span><span> </span><span id="local-6989586621679085630"><span class="annot"><span class="annottext">Maybe TimeReader
+</span><a href="#local-6989586621679085630"><span class="hs-identifier hs-var">mtimeReader</span></a></span></span><span> </span><span id="local-6989586621679085631"><span class="annot"><span class="annottext">Maybe TZDatabase
+</span><a href="#local-6989586621679085631"><span class="hs-identifier hs-var">destTZ</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-148"></span><span>  </span><span class="annot"><span class="annottext">Maybe TimeReader -&gt; m ZonedTime
+forall (m :: * -&gt; *).
+(HasCallStack, MonadCatch m, MonadTime m) =&gt;
+Maybe TimeReader -&gt; m ZonedTime
+</span><a href="Data.Time.Conversion.html#readTime"><span class="hs-identifier hs-var">readTime</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe TimeReader
+</span><a href="#local-6989586621679085630"><span class="hs-identifier hs-var">mtimeReader</span></a></span><span> </span><span class="annot"><span class="annottext">m ZonedTime -&gt; (ZonedTime -&gt; m ZonedTime) -&gt; m ZonedTime
+forall a b. m a -&gt; (a -&gt; m b) -&gt; m b
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
+</span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ZonedTime -&gt; Maybe TZDatabase -&gt; m ZonedTime
+forall (m :: * -&gt; *).
+(HasCallStack, MonadCatch m, MonadTime m) =&gt;
+ZonedTime -&gt; Maybe TZDatabase -&gt; m ZonedTime
+</span><a href="Data.Time.Conversion.html#convertTime"><span class="hs-operator hs-var">`convertTime`</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe TZDatabase
+</span><a href="#local-6989586621679085631"><span class="hs-identifier hs-var">destTZ</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-149"></span><span>
+</span><span id="line-150"></span><span class="hs-comment">-- | Reads a time based on the 'TimeReader'. If given 'Nothing' we read the</span><span>
+</span><span id="line-151"></span><span class="hs-comment">-- local system time instead.</span><span>
+</span><span id="line-152"></span><span class="hs-comment">--</span><span>
+</span><span id="line-153"></span><span class="hs-comment">-- __Throws:__</span><span>
+</span><span id="line-154"></span><span class="hs-comment">--</span><span>
+</span><span id="line-155"></span><span class="hs-comment">-- * 'ParseTimeException': Error parsing the time string.</span><span>
+</span><span id="line-156"></span><span class="hs-comment">-- * 'ParseTZDatabaseException': Error parsing the tz database name.</span><span>
+</span><span id="line-157"></span><span class="hs-comment">-- * 'LocalTimeZoneException': Error retrieving local timezone.</span><span>
+</span><span id="line-158"></span><span class="hs-comment">-- * 'LocalSystemTimeException': Error retrieving local system time.</span><span>
+</span><span id="line-159"></span><span class="hs-comment">--</span><span>
+</span><span id="line-160"></span><span class="hs-comment">-- ==== __Examples__</span><span>
+</span><span id="line-161"></span><span class="hs-comment">-- &gt;&gt;&gt; let reader = defaultTimeReader &quot;17:24&quot;</span><span>
+</span><span id="line-162"></span><span class="hs-comment">--</span><span>
+</span><span id="line-163"></span><span class="hs-comment">-- &gt;&gt;&gt; -- convert from est</span><span>
+</span><span id="line-164"></span><span class="hs-comment">-- &gt;&gt;&gt; readTime (Just (reader { srcTZ = Just (TZDatabaseLabel America__New_York) }))</span><span>
+</span><span id="line-165"></span><span class="hs-comment">-- 1970-01-01 17:24:00 EST</span><span>
+</span><span id="line-166"></span><span class="hs-comment">--</span><span>
+</span><span id="line-167"></span><span class="hs-comment">-- &gt;&gt;&gt; let nyReader = reader { srcTZ = Just (TZDatabaseLabel America__New_York) }</span><span>
+</span><span id="line-168"></span><span class="hs-comment">-- &gt;&gt;&gt; readTime (Just (nyReader { timeString = &quot;08:15&quot; }))</span><span>
+</span><span id="line-169"></span><span class="hs-comment">-- 1970-01-01 08:15:00 EST</span><span>
+</span><span id="line-170"></span><span class="hs-comment">--</span><span>
+</span><span id="line-171"></span><span class="hs-comment">-- &gt;&gt;&gt; let badTimeString = reader { timeString = &quot;bad&quot; }</span><span>
+</span><span id="line-172"></span><span class="hs-comment">-- &gt;&gt;&gt; (void $ readTime (Just badTimeString)) `catchCS` parseTimeEx</span><span>
+</span><span id="line-173"></span><span class="hs-comment">-- parse time exception</span><span>
+</span><span id="line-174"></span><span class="hs-comment">--</span><span>
+</span><span id="line-175"></span><span class="hs-comment">-- &gt;&gt;&gt; let badTZDatabase = reader { srcTZ = Just (TZDatabaseText &quot;America/NewYork&quot;)}</span><span>
+</span><span id="line-176"></span><span class="hs-comment">-- &gt;&gt;&gt; (void $ readTime (Just badTZDatabase)) `catchCS` parseTzDbEx</span><span>
+</span><span id="line-177"></span><span class="hs-comment">-- parse tzdb exception</span><span>
+</span><span id="line-178"></span><span class="hs-comment">--</span><span>
+</span><span id="line-179"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-180"></span><span id="local-6989586621679085464"><span class="annot"><a href="Data.Time.Conversion.html#readTime"><span class="hs-identifier hs-type">readTime</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-181"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span class="hs-special">,</span><span>
+</span><span id="line-182"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">MonadCatch</span></span><span> </span><span class="annot"><a href="#local-6989586621679085464"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-183"></span><span>    </span><span class="annot"><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-time-0.1-e2e7a10487c5f45ae56e3da6688b1244f3377d9fa4819cb45589d8484b49db5d/share/doc/html/src/Effects.Time.html#MonadTime"><span class="hs-identifier hs-type">MonadTime</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679085464"><span class="hs-identifier hs-type">m</span></a></span><span>
+</span><span id="line-184"></span><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-185"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.TimeReader.html#TimeReader"><span class="hs-identifier hs-type">TimeReader</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-186"></span><span>  </span><span class="annot"><a href="#local-6989586621679085464"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">ZonedTime</span></span></span><span>
+</span><span id="line-187"></span><span id="readTime"><span class="annot"><span class="annottext">readTime :: forall (m :: * -&gt; *).
+(HasCallStack, MonadCatch m, MonadTime m) =&gt;
+Maybe TimeReader -&gt; m ZonedTime
+</span><a href="Data.Time.Conversion.html#readTime"><span class="hs-identifier hs-var hs-var">readTime</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679085654"><span class="annot"><span class="annottext">TimeReader
+</span><a href="#local-6989586621679085654"><span class="hs-identifier hs-var">timeReader</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TimeReader -&gt; m ZonedTime
+forall (m :: * -&gt; *).
+(HasCallStack, MonadCatch m, MonadTime m) =&gt;
+TimeReader -&gt; m ZonedTime
+</span><a href="Data.Time.Conversion.html#readTimeString"><span class="hs-identifier hs-var">readTimeString</span></a></span><span> </span><span class="annot"><span class="annottext">TimeReader
+</span><a href="#local-6989586621679085654"><span class="hs-identifier hs-var">timeReader</span></a></span><span>
+</span><span id="line-188"></span><span class="annot"><a href="Data.Time.Conversion.html#readTime"><span class="hs-identifier hs-var">readTime</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe TimeReader
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-189"></span><span>  </span><span class="annot"><span class="annottext">m ZonedTime
+forall (m :: * -&gt; *). (MonadTime m, HasCallStack) =&gt; m ZonedTime
+</span><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-time-0.1-e2e7a10487c5f45ae56e3da6688b1244f3377d9fa4819cb45589d8484b49db5d/share/doc/html/src/Effects.Time.html#getSystemZonedTime"><span class="hs-identifier hs-var">getSystemZonedTime</span></a></span><span> </span><span class="annot"><span class="annottext">m ZonedTime -&gt; (SomeException -&gt; m ZonedTime) -&gt; m ZonedTime
+forall (m :: * -&gt; *) a.
+(HasCallStack, MonadCatch m) =&gt;
+m a -&gt; (SomeException -&gt; m a) -&gt; m a
+</span><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-exceptions-0.1-a4f40d5efdf373b50ccdf70734cf14c569e79a147e00aeed7f9dcb856d0cc255/share/doc/html/src/Effects.Exception.html#catchAny"><span class="hs-operator hs-var">`catchAny`</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LocalSystemTimeException -&gt; m ZonedTime
+forall (m :: * -&gt; *) e a.
+(Exception e, HasCallStack, MonadThrow m) =&gt;
+e -&gt; m a
+</span><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-exceptions-0.1-a4f40d5efdf373b50ccdf70734cf14c569e79a147e00aeed7f9dcb856d0cc255/share/doc/html/src/Effects.Exception.html#throwCS"><span class="hs-identifier hs-var">throwCS</span></a></span><span> </span><span class="annot"><span class="annottext">(LocalSystemTimeException -&gt; m ZonedTime)
+-&gt; (SomeException -&gt; LocalSystemTimeException)
+-&gt; SomeException
+-&gt; m ZonedTime
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">SomeException -&gt; LocalSystemTimeException
+forall e. Exception e =&gt; e -&gt; LocalSystemTimeException
+</span><a href="Data.Time.Conversion.Types.Exception.html#MkLocalSystemTimeException"><span class="hs-identifier hs-var">MkLocalSystemTimeException</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-190"></span><span>
+</span><span id="line-191"></span><span class="hs-comment">-- | Converts the given time to the destination timezone. If no destination</span><span>
+</span><span id="line-192"></span><span class="hs-comment">-- timezone is given then we convert to the local system timezone.</span><span>
+</span><span id="line-193"></span><span class="hs-comment">--</span><span>
+</span><span id="line-194"></span><span class="hs-comment">-- __Throws:__</span><span>
+</span><span id="line-195"></span><span class="hs-comment">--</span><span>
+</span><span id="line-196"></span><span class="hs-comment">-- * 'ParseTZDatabaseException': Error parsing the tz database name.</span><span>
+</span><span id="line-197"></span><span class="hs-comment">-- * 'LocalTimeZoneException': Error retrieving local timezone.</span><span>
+</span><span id="line-198"></span><span class="hs-comment">--</span><span>
+</span><span id="line-199"></span><span class="hs-comment">-- ==== __Examples__</span><span>
+</span><span id="line-200"></span><span class="hs-comment">--</span><span>
+</span><span id="line-201"></span><span class="hs-comment">-- &gt;&gt;&gt; import Data.Time.Clock (UTCTime (..))</span><span>
+</span><span id="line-202"></span><span class="hs-comment">-- &gt;&gt;&gt; import Data.Time.LocalTime (utc, utcToZonedTime)</span><span>
+</span><span id="line-203"></span><span class="hs-comment">-- &gt;&gt;&gt; let zoned = utcToZonedTime utc (UTCTime (toEnum 50_000) 0)</span><span>
+</span><span id="line-204"></span><span class="hs-comment">-- &gt;&gt;&gt; zoned</span><span>
+</span><span id="line-205"></span><span class="hs-comment">-- 1995-10-10 00:00:00 UTC</span><span>
+</span><span id="line-206"></span><span class="hs-comment">--</span><span>
+</span><span id="line-207"></span><span class="hs-comment">-- &gt;&gt;&gt; let toNy = Just $ TZDatabaseText &quot;America/New_York&quot;</span><span>
+</span><span id="line-208"></span><span class="hs-comment">-- &gt;&gt;&gt; convertTime zoned toNy</span><span>
+</span><span id="line-209"></span><span class="hs-comment">-- 1995-10-09 20:00:00 EDT</span><span>
+</span><span id="line-210"></span><span class="hs-comment">--</span><span>
+</span><span id="line-211"></span><span class="hs-comment">-- &gt;&gt;&gt; (void $ convertTime zoned (Just $ TZDatabaseText &quot;America/NewYork&quot;)) `catchCS` parseTzDbEx</span><span>
+</span><span id="line-212"></span><span class="hs-comment">-- parse tzdb exception</span><span>
+</span><span id="line-213"></span><span class="hs-comment">--</span><span>
+</span><span id="line-214"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-215"></span><span id="local-6989586621679085468"><span class="annot"><a href="Data.Time.Conversion.html#convertTime"><span class="hs-identifier hs-type">convertTime</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-216"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span class="hs-special">,</span><span>
+</span><span id="line-217"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">MonadCatch</span></span><span> </span><span class="annot"><a href="#local-6989586621679085468"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-218"></span><span>    </span><span class="annot"><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-time-0.1-e2e7a10487c5f45ae56e3da6688b1244f3377d9fa4819cb45589d8484b49db5d/share/doc/html/src/Effects.Time.html#MonadTime"><span class="hs-identifier hs-type">MonadTime</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679085468"><span class="hs-identifier hs-type">m</span></a></span><span>
+</span><span id="line-219"></span><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-220"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">ZonedTime</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-221"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.TZDatabase.html#TZDatabase"><span class="hs-identifier hs-type">TZDatabase</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-222"></span><span>  </span><span class="annot"><a href="#local-6989586621679085468"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">ZonedTime</span></span></span><span>
+</span><span id="line-223"></span><span id="convertTime"><span class="annot"><span class="annottext">convertTime :: forall (m :: * -&gt; *).
+(HasCallStack, MonadCatch m, MonadTime m) =&gt;
+ZonedTime -&gt; Maybe TZDatabase -&gt; m ZonedTime
+</span><a href="Data.Time.Conversion.html#convertTime"><span class="hs-identifier hs-var hs-var">convertTime</span></a></span></span><span> </span><span id="local-6989586621679085684"><span class="annot"><span class="annottext">ZonedTime
+</span><a href="#local-6989586621679085684"><span class="hs-identifier hs-var">inTime</span></a></span></span><span> </span><span class="annot"><span class="annottext">Maybe TZDatabase
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-224"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679085685"><span class="annot"><span class="annottext">inTimeUtc :: UTCTime
+</span><a href="#local-6989586621679085685"><span class="hs-identifier hs-var hs-var">inTimeUtc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ZonedTime -&gt; UTCTime
+</span><span class="hs-identifier hs-var">Local.zonedTimeToUTC</span></span><span> </span><span class="annot"><span class="annottext">ZonedTime
+</span><a href="#local-6989586621679085684"><span class="hs-identifier hs-var">inTime</span></a></span><span>
+</span><span id="line-225"></span><span>  </span><span id="local-6989586621679085687"><span class="annot"><span class="annottext">TimeZone
+</span><a href="#local-6989586621679085687"><span class="hs-identifier hs-var">currTZ</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-226"></span><span>    </span><span class="annot"><span class="annottext">m TimeZone
+forall (m :: * -&gt; *). (HasCallStack, MonadTime m) =&gt; m TimeZone
+</span><a href="Data.Time.Conversion.html#getCurrentTimeZone"><span class="hs-identifier hs-var">getCurrentTimeZone</span></a></span><span>
+</span><span id="line-227"></span><span>      </span><span class="annot"><span class="annottext">m TimeZone -&gt; (SomeException -&gt; m TimeZone) -&gt; m TimeZone
+forall (m :: * -&gt; *) a.
+(HasCallStack, MonadCatch m) =&gt;
+m a -&gt; (SomeException -&gt; m a) -&gt; m a
+</span><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-exceptions-0.1-a4f40d5efdf373b50ccdf70734cf14c569e79a147e00aeed7f9dcb856d0cc255/share/doc/html/src/Effects.Exception.html#catchAny"><span class="hs-operator hs-var">`catchAny`</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LocalTimeZoneException -&gt; m TimeZone
+forall (m :: * -&gt; *) e a.
+(Exception e, HasCallStack, MonadThrow m) =&gt;
+e -&gt; m a
+</span><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-exceptions-0.1-a4f40d5efdf373b50ccdf70734cf14c569e79a147e00aeed7f9dcb856d0cc255/share/doc/html/src/Effects.Exception.html#throwCS"><span class="hs-identifier hs-var">throwCS</span></a></span><span> </span><span class="annot"><span class="annottext">(LocalTimeZoneException -&gt; m TimeZone)
+-&gt; (SomeException -&gt; LocalTimeZoneException)
+-&gt; SomeException
+-&gt; m TimeZone
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">SomeException -&gt; LocalTimeZoneException
+forall e. Exception e =&gt; e -&gt; LocalTimeZoneException
+</span><a href="Data.Time.Conversion.Types.Exception.html#MkLocalTimeZoneException"><span class="hs-identifier hs-var">MkLocalTimeZoneException</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-228"></span><span>  </span><span class="annot"><span class="annottext">ZonedTime -&gt; m ZonedTime
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(ZonedTime -&gt; m ZonedTime) -&gt; ZonedTime -&gt; m ZonedTime
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">TimeZone -&gt; UTCTime -&gt; ZonedTime
+</span><span class="hs-identifier hs-var">Local.utcToZonedTime</span></span><span> </span><span class="annot"><span class="annottext">TimeZone
+</span><a href="#local-6989586621679085687"><span class="hs-identifier hs-var">currTZ</span></a></span><span> </span><span class="annot"><span class="annottext">UTCTime
+</span><a href="#local-6989586621679085685"><span class="hs-identifier hs-var">inTimeUtc</span></a></span><span>
+</span><span id="line-229"></span><span class="annot"><a href="Data.Time.Conversion.html#convertTime"><span class="hs-identifier hs-var">convertTime</span></a></span><span> </span><span id="local-6989586621679085690"><span class="annot"><span class="annottext">ZonedTime
+</span><a href="#local-6989586621679085690"><span class="hs-identifier hs-var">inTime</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679085691"><span class="annot"><span class="annottext">TZDatabase
+</span><a href="#local-6989586621679085691"><span class="hs-identifier hs-var">tzdb</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ZonedTime -&gt; TZLabel -&gt; ZonedTime
+</span><a href="Data.Time.Conversion.html#convertZonedLabel"><span class="hs-identifier hs-var">convertZonedLabel</span></a></span><span> </span><span class="annot"><span class="annottext">ZonedTime
+</span><a href="#local-6989586621679085690"><span class="hs-identifier hs-var">inTime</span></a></span><span> </span><span class="annot"><span class="annottext">(TZLabel -&gt; ZonedTime) -&gt; m TZLabel -&gt; m ZonedTime
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">TZDatabase -&gt; m TZLabel
+forall (m :: * -&gt; *).
+(HasCallStack, MonadThrow m) =&gt;
+TZDatabase -&gt; m TZLabel
+</span><a href="Data.Time.Conversion.html#tzDatabaseToTZLabel"><span class="hs-identifier hs-var">tzDatabaseToTZLabel</span></a></span><span> </span><span class="annot"><span class="annottext">TZDatabase
+</span><a href="#local-6989586621679085691"><span class="hs-identifier hs-var">tzdb</span></a></span><span>
+</span><span id="line-230"></span><span>
+</span><span id="line-231"></span><span id="local-6989586621679085475"><span class="annot"><a href="Data.Time.Conversion.html#readTimeString"><span class="hs-identifier hs-type">readTimeString</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-232"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span class="hs-special">,</span><span>
+</span><span id="line-233"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">MonadCatch</span></span><span> </span><span class="annot"><a href="#local-6989586621679085475"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-234"></span><span>    </span><span class="annot"><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-time-0.1-e2e7a10487c5f45ae56e3da6688b1244f3377d9fa4819cb45589d8484b49db5d/share/doc/html/src/Effects.Time.html#MonadTime"><span class="hs-identifier hs-type">MonadTime</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679085475"><span class="hs-identifier hs-type">m</span></a></span><span>
+</span><span id="line-235"></span><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-236"></span><span>  </span><span class="annot"><a href="Data.Time.Conversion.Types.TimeReader.html#TimeReader"><span class="hs-identifier hs-type">TimeReader</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-237"></span><span>  </span><span class="annot"><a href="#local-6989586621679085475"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">ZonedTime</span></span></span><span>
+</span><span id="line-238"></span><span id="readTimeString"><span class="annot"><span class="annottext">readTimeString :: forall (m :: * -&gt; *).
+(HasCallStack, MonadCatch m, MonadTime m) =&gt;
+TimeReader -&gt; m ZonedTime
+</span><a href="Data.Time.Conversion.html#readTimeString"><span class="hs-identifier hs-var hs-var">readTimeString</span></a></span></span><span> </span><span id="local-6989586621679085750"><span class="annot"><span class="annottext">TimeReader
+</span><a href="#local-6989586621679085750"><span class="hs-identifier hs-var">timeReader</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-239"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">TimeReader
+</span><a href="#local-6989586621679085750"><span class="hs-identifier hs-var">timeReader</span></a></span><span> </span><span class="annot"><span class="annottext">TimeReader
+-&gt; Optic' A_Lens NoIx TimeReader (Maybe TZDatabase)
+-&gt; Maybe TZDatabase
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><a href="file:///nix/store/2a8kavx35szkma5sz7f1zr4260p8rmrr-optics-core-0.4.1.1-doc/share/doc/optics-core-0.4.1.1/html/src/Optics.Operators.html#%5E."><span class="hs-operator hs-var">^.</span></a></span><span> </span><span class="annot"><span class="annottext">Optic' A_Lens NoIx TimeReader (Maybe TZDatabase)
+</span><span class="">#srcTZ</span></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-240"></span><span>    </span><span class="hs-comment">-- read in local timezone</span><span>
+</span><span id="line-241"></span><span>    </span><span class="annot"><span class="annottext">Maybe TZDatabase
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-242"></span><span>      </span><span class="hs-comment">-- add system date if specified</span><span>
+</span><span id="line-243"></span><span>      </span><span class="hs-special">(</span><span id="local-6989586621679085751"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679085751"><span class="hs-identifier hs-var">timeStrDate</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679085752"><span class="annot"><span class="annottext">TimeFormat
+</span><a href="#local-6989586621679085752"><span class="hs-identifier hs-var">formatDate</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Maybe TZLabel -&gt; m (Text, TimeFormat)
+forall (m :: * -&gt; *).
+(HasCallStack, MonadCatch m, MonadTime m) =&gt;
+Maybe TZLabel -&gt; m (Text, TimeFormat)
+</span><a href="#local-6989586621679085753"><span class="hs-identifier hs-var">maybeAddDate</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe TZLabel
+forall a. Maybe a
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-244"></span><span>      </span><span class="annot"><span class="annottext">TimeFormat -&gt; Text -&gt; m ZonedTime
+forall (m :: * -&gt; *).
+(HasCallStack, MonadCatch m, MonadTime m) =&gt;
+TimeFormat -&gt; Text -&gt; m ZonedTime
+</span><a href="Data.Time.Conversion.html#readInLocalTimeZone"><span class="hs-identifier hs-var">readInLocalTimeZone</span></a></span><span> </span><span class="annot"><span class="annottext">TimeFormat
+</span><a href="#local-6989586621679085752"><span class="hs-identifier hs-var">formatDate</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679085751"><span class="hs-identifier hs-var">timeStrDate</span></a></span><span>
+</span><span id="line-245"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679085754"><span class="annot"><span class="annottext">TZDatabase
+</span><a href="#local-6989586621679085754"><span class="hs-identifier hs-var">tzdb</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-246"></span><span>      </span><span id="local-6989586621679085755"><span class="annot"><span class="annottext">TZLabel
+</span><a href="#local-6989586621679085755"><span class="hs-identifier hs-var">lbl</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">TZDatabase -&gt; m TZLabel
+forall (m :: * -&gt; *).
+(HasCallStack, MonadThrow m) =&gt;
+TZDatabase -&gt; m TZLabel
+</span><a href="Data.Time.Conversion.html#tzDatabaseToTZLabel"><span class="hs-identifier hs-var">tzDatabaseToTZLabel</span></a></span><span> </span><span class="annot"><span class="annottext">TZDatabase
+</span><a href="#local-6989586621679085754"><span class="hs-identifier hs-var">tzdb</span></a></span><span>
+</span><span id="line-247"></span><span>      </span><span class="hs-comment">-- add src date if specified</span><span>
+</span><span id="line-248"></span><span>      </span><span class="hs-special">(</span><span id="local-6989586621679085756"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679085756"><span class="hs-identifier hs-var">timeStrDate</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679085757"><span class="annot"><span class="annottext">TimeFormat
+</span><a href="#local-6989586621679085757"><span class="hs-identifier hs-var">formatDate</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Maybe TZLabel -&gt; m (Text, TimeFormat)
+forall (m :: * -&gt; *).
+(HasCallStack, MonadCatch m, MonadTime m) =&gt;
+Maybe TZLabel -&gt; m (Text, TimeFormat)
+</span><a href="#local-6989586621679085753"><span class="hs-identifier hs-var">maybeAddDate</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TZLabel -&gt; Maybe TZLabel
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">TZLabel
+</span><a href="#local-6989586621679085755"><span class="hs-identifier hs-var">lbl</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-249"></span><span>
+</span><span id="line-250"></span><span>      </span><span class="hs-comment">-- Read string as a LocalTime, no TZ info. This allow us to correctly</span><span>
+</span><span id="line-251"></span><span>      </span><span class="hs-comment">-- get the source's timezone, taking the desired date into account.</span><span>
+</span><span id="line-252"></span><span>      </span><span id="local-6989586621679085758"><span class="annot"><span class="annottext">LocalTime
+</span><a href="#local-6989586621679085758"><span class="hs-identifier hs-var">localTime</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-253"></span><span>        </span><span class="annot"><span class="annottext">m LocalTime
+-&gt; (LocalTime -&gt; m LocalTime) -&gt; Maybe LocalTime -&gt; m LocalTime
+forall b a. b -&gt; (a -&gt; b) -&gt; Maybe a -&gt; b
+</span><span class="hs-identifier hs-var">maybe</span></span><span>
+</span><span id="line-254"></span><span>          </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TimeFormat -&gt; Text -&gt; m LocalTime
+forall (m :: * -&gt; *) void.
+(HasCallStack, MonadThrow m) =&gt;
+TimeFormat -&gt; Text -&gt; m void
+</span><a href="#local-6989586621679085760"><span class="hs-identifier hs-var">throwParseEx</span></a></span><span> </span><span class="annot"><span class="annottext">TimeFormat
+</span><a href="#local-6989586621679085757"><span class="hs-identifier hs-var">formatDate</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679085756"><span class="hs-identifier hs-var">timeStrDate</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-255"></span><span>          </span><span class="annot"><span class="annottext">LocalTime -&gt; m LocalTime
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span>
+</span><span id="line-256"></span><span>          </span><span class="hs-special">(</span><span class="annot"><span class="annottext">TimeLocale -&gt; TimeFormat -&gt; Text -&gt; Maybe LocalTime
+</span><a href="Data.Time.Conversion.html#readTimeFormatLocal"><span class="hs-identifier hs-var">readTimeFormatLocal</span></a></span><span> </span><span class="annot"><span class="annottext">TimeLocale
+</span><span class="hs-identifier hs-var">Format.defaultTimeLocale</span></span><span> </span><span class="annot"><span class="annottext">TimeFormat
+</span><a href="#local-6989586621679085757"><span class="hs-identifier hs-var">formatDate</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679085756"><span class="hs-identifier hs-var">timeStrDate</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-257"></span><span>
+</span><span id="line-258"></span><span>      </span><span class="annot"><span class="annottext">ZonedTime -&gt; m ZonedTime
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(ZonedTime -&gt; m ZonedTime) -&gt; ZonedTime -&gt; m ZonedTime
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">LocalTime -&gt; TZLabel -&gt; ZonedTime
+</span><a href="Data.Time.Conversion.html#convertLocalLabel"><span class="hs-identifier hs-var">convertLocalLabel</span></a></span><span> </span><span class="annot"><span class="annottext">LocalTime
+</span><a href="#local-6989586621679085758"><span class="hs-identifier hs-var">localTime</span></a></span><span> </span><span class="annot"><span class="annottext">TZLabel
+</span><a href="#local-6989586621679085755"><span class="hs-identifier hs-var">lbl</span></a></span><span>
+</span><span id="line-259"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-260"></span><span>    </span><span id="local-6989586621679085763"><span class="annot"><span class="annottext">format :: TimeFormat
+</span><a href="#local-6989586621679085763"><span class="hs-identifier hs-var hs-var">format</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TimeReader
+</span><a href="#local-6989586621679085750"><span class="hs-identifier hs-var">timeReader</span></a></span><span> </span><span class="annot"><span class="annottext">TimeReader
+-&gt; Optic' A_Lens NoIx TimeReader TimeFormat -&gt; TimeFormat
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><a href="file:///nix/store/2a8kavx35szkma5sz7f1zr4260p8rmrr-optics-core-0.4.1.1-doc/share/doc/optics-core-0.4.1.1/html/src/Optics.Operators.html#%5E."><span class="hs-operator hs-var">^.</span></a></span><span> </span><span class="annot"><span class="annottext">Optic' A_Lens NoIx TimeReader TimeFormat
+</span><span class="">#format</span></span><span>
+</span><span id="line-261"></span><span>    </span><span id="local-6989586621679085764"><span class="annot"><span class="annottext">timeStr :: Text
+</span><a href="#local-6989586621679085764"><span class="hs-identifier hs-var hs-var">timeStr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TimeReader
+</span><a href="#local-6989586621679085750"><span class="hs-identifier hs-var">timeReader</span></a></span><span> </span><span class="annot"><span class="annottext">TimeReader -&gt; Optic' A_Lens NoIx TimeReader Text -&gt; Text
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><a href="file:///nix/store/2a8kavx35szkma5sz7f1zr4260p8rmrr-optics-core-0.4.1.1-doc/share/doc/optics-core-0.4.1.1/html/src/Optics.Operators.html#%5E."><span class="hs-operator hs-var">^.</span></a></span><span> </span><span class="annot"><span class="annottext">Optic' A_Lens NoIx TimeReader Text
+</span><span class="">#timeString</span></span><span>
+</span><span id="line-262"></span><span>
+</span><span id="line-263"></span><span>    </span><span id="local-6989586621679085540"><span id="local-6989586621679085541"><span class="annot"><a href="#local-6989586621679085760"><span class="hs-identifier hs-type">throwParseEx</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadThrow</span></span><span> </span><span class="annot"><a href="#local-6989586621679085540"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.TimeFormat.html#TimeFormat"><span class="hs-identifier hs-type">TimeFormat</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679085540"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679085541"><span class="hs-identifier hs-type">void</span></a></span></span></span><span>
+</span><span id="line-264"></span><span>    </span><span id="local-6989586621679085760"><span class="annot"><span class="annottext">throwParseEx :: forall (m :: * -&gt; *) void.
+(HasCallStack, MonadThrow m) =&gt;
+TimeFormat -&gt; Text -&gt; m void
+</span><a href="#local-6989586621679085760"><span class="hs-identifier hs-var hs-var">throwParseEx</span></a></span></span><span> </span><span id="local-6989586621679085772"><span class="annot"><span class="annottext">TimeFormat
+</span><a href="#local-6989586621679085772"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ParseTimeException -&gt; m void
+forall (m :: * -&gt; *) e a.
+(Exception e, HasCallStack, MonadThrow m) =&gt;
+e -&gt; m a
+</span><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-exceptions-0.1-a4f40d5efdf373b50ccdf70734cf14c569e79a147e00aeed7f9dcb856d0cc255/share/doc/html/src/Effects.Exception.html#throwCS"><span class="hs-identifier hs-var">throwCS</span></a></span><span> </span><span class="annot"><span class="annottext">(ParseTimeException -&gt; m void)
+-&gt; (Text -&gt; ParseTimeException) -&gt; Text -&gt; m void
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">TimeFormat -&gt; Text -&gt; ParseTimeException
+</span><a href="Data.Time.Conversion.Types.Exception.html#MkParseTimeException"><span class="hs-identifier hs-var">MkParseTimeException</span></a></span><span> </span><span class="annot"><span class="annottext">TimeFormat
+</span><a href="#local-6989586621679085772"><span class="hs-identifier hs-var">f</span></a></span><span>
+</span><span id="line-265"></span><span>
+</span><span id="line-266"></span><span>    </span><span id="local-6989586621679085536"><span class="annot"><a href="#local-6989586621679085753"><span class="hs-identifier hs-type">maybeAddDate</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-267"></span><span>      </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span class="hs-special">,</span><span>
+</span><span id="line-268"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">MonadCatch</span></span><span> </span><span class="annot"><a href="#local-6989586621679085536"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-269"></span><span>        </span><span class="annot"><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-time-0.1-e2e7a10487c5f45ae56e3da6688b1244f3377d9fa4819cb45589d8484b49db5d/share/doc/html/src/Effects.Time.html#MonadTime"><span class="hs-identifier hs-type">MonadTime</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679085536"><span class="hs-identifier hs-type">m</span></a></span><span>
+</span><span id="line-270"></span><span>      </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-271"></span><span>      </span><span class="hs-comment">-- Maybe source timezone</span><span>
+</span><span id="line-272"></span><span>      </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="file:///nix/store/psznxz0af4hqnmcdhxil71pbq5sygjp9-tzdata-0.2.20230322.0-doc/share/doc/tzdata-0.2.20230322.0/html/src/Data.Time.Zones.DB.html#TZLabel"><span class="hs-identifier hs-type">TZLabel</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-273"></span><span>      </span><span class="annot"><a href="#local-6989586621679085536"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.TimeFormat.html#TimeFormat"><span class="hs-identifier hs-type">TimeFormat</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-274"></span><span>    </span><span id="local-6989586621679085753"><span class="annot"><span class="annottext">maybeAddDate :: forall (m :: * -&gt; *).
+(HasCallStack, MonadCatch m, MonadTime m) =&gt;
+Maybe TZLabel -&gt; m (Text, TimeFormat)
+</span><a href="#local-6989586621679085753"><span class="hs-identifier hs-var hs-var">maybeAddDate</span></a></span></span><span> </span><span id="local-6989586621679085808"><span class="annot"><span class="annottext">Maybe TZLabel
+</span><a href="#local-6989586621679085808"><span class="hs-identifier hs-var">mlabel</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">TimeReader
+</span><a href="#local-6989586621679085750"><span class="hs-identifier hs-var">timeReader</span></a></span><span> </span><span class="annot"><span class="annottext">TimeReader
+-&gt; Optic' A_Lens NoIx TimeReader (Maybe Date) -&gt; Maybe Date
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><a href="file:///nix/store/2a8kavx35szkma5sz7f1zr4260p8rmrr-optics-core-0.4.1.1-doc/share/doc/optics-core-0.4.1.1/html/src/Optics.Operators.html#%5E."><span class="hs-operator hs-var">^.</span></a></span><span> </span><span class="annot"><span class="annottext">Optic' A_Lens NoIx TimeReader (Maybe Date)
+</span><span class="">#date</span></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-275"></span><span>      </span><span class="annot"><span class="annottext">Maybe Date
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Text, TimeFormat) -&gt; m (Text, TimeFormat)
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679085764"><span class="hs-identifier hs-var">timeStr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">TimeFormat
+</span><a href="#local-6989586621679085763"><span class="hs-identifier hs-var">format</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-276"></span><span>      </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Time.Conversion.Types.Date.html#DateLiteral"><span class="hs-identifier hs-type">DateLiteral</span></a></span><span> </span><span id="local-6989586621679085809"><span class="annot"><span class="annottext">DateString
+</span><a href="#local-6989586621679085809"><span class="hs-identifier hs-var">dateStr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-277"></span><span>        </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679085810"><span class="annot"><span class="annottext">str :: Text
+</span><a href="#local-6989586621679085810"><span class="hs-identifier hs-var hs-var">str</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">DateString -&gt; Text
+</span><a href="Data.Time.Conversion.Types.Date.Internal.html#unDateString"><span class="hs-identifier hs-var">unDateString</span></a></span><span> </span><span class="annot"><span class="annottext">DateString
+</span><a href="#local-6989586621679085809"><span class="hs-identifier hs-var">dateStr</span></a></span><span>
+</span><span id="line-278"></span><span>        </span><span class="annot"><span class="annottext">(Text, TimeFormat) -&gt; m (Text, TimeFormat)
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679085810"><span class="hs-identifier hs-var">str</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. (Semigroup a, IsString a) =&gt; a -&gt; a -&gt; a
+</span><a href="Data.Time.Conversion.html#%2B-%2B"><span class="hs-operator hs-var">+-+</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679085764"><span class="hs-identifier hs-var">timeStr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">TimeFormat
+forall s. IsString s =&gt; s
+</span><a href="Data.Time.Conversion.html#dateString"><span class="hs-identifier hs-var">dateString</span></a></span><span> </span><span class="annot"><span class="annottext">TimeFormat -&gt; TimeFormat -&gt; TimeFormat
+forall a. (Semigroup a, IsString a) =&gt; a -&gt; a -&gt; a
+</span><a href="Data.Time.Conversion.html#%2B-%2B"><span class="hs-operator hs-var">+-+</span></a></span><span> </span><span class="annot"><span class="annottext">TimeFormat
+</span><a href="#local-6989586621679085763"><span class="hs-identifier hs-var">format</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-279"></span><span>      </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="annot"><span class="annottext">Date
+</span><a href="Data.Time.Conversion.Types.Date.html#DateToday"><span class="hs-identifier hs-var">DateToday</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-280"></span><span>        </span><span class="hs-comment">-- get the current date in the source timezone</span><span>
+</span><span id="line-281"></span><span>        </span><span id="local-6989586621679085813"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679085813"><span class="hs-identifier hs-var">currDateStr</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Maybe TZLabel -&gt; m String
+forall (m :: * -&gt; *).
+(HasCallStack, MonadCatch m, MonadTime m) =&gt;
+Maybe TZLabel -&gt; m String
+</span><a href="Data.Time.Conversion.html#currentDate"><span class="hs-identifier hs-var">currentDate</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe TZLabel
+</span><a href="#local-6989586621679085808"><span class="hs-identifier hs-var">mlabel</span></a></span><span>
+</span><span id="line-282"></span><span>        </span><span class="annot"><span class="annottext">(Text, TimeFormat) -&gt; m (Text, TimeFormat)
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; Text
+</span><span class="hs-identifier hs-var">T.pack</span></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679085813"><span class="hs-identifier hs-var">currDateStr</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. (Semigroup a, IsString a) =&gt; a -&gt; a -&gt; a
+</span><a href="Data.Time.Conversion.html#%2B-%2B"><span class="hs-operator hs-var">+-+</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679085764"><span class="hs-identifier hs-var">timeStr</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">TimeFormat
+forall s. IsString s =&gt; s
+</span><a href="Data.Time.Conversion.html#dateString"><span class="hs-identifier hs-var">dateString</span></a></span><span> </span><span class="annot"><span class="annottext">TimeFormat -&gt; TimeFormat -&gt; TimeFormat
+forall a. (Semigroup a, IsString a) =&gt; a -&gt; a -&gt; a
+</span><a href="Data.Time.Conversion.html#%2B-%2B"><span class="hs-operator hs-var">+-+</span></a></span><span> </span><span class="annot"><span class="annottext">TimeFormat
+</span><a href="#local-6989586621679085763"><span class="hs-identifier hs-var">format</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-283"></span><span>
+</span><span id="line-284"></span><span id="local-6989586621679085554"><span class="annot"><a href="Data.Time.Conversion.html#currentDate"><span class="hs-identifier hs-type">currentDate</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-285"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span class="hs-special">,</span><span>
+</span><span id="line-286"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">MonadCatch</span></span><span> </span><span class="annot"><a href="#local-6989586621679085554"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-287"></span><span>    </span><span class="annot"><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-time-0.1-e2e7a10487c5f45ae56e3da6688b1244f3377d9fa4819cb45589d8484b49db5d/share/doc/html/src/Effects.Time.html#MonadTime"><span class="hs-identifier hs-type">MonadTime</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679085554"><span class="hs-identifier hs-type">m</span></a></span><span>
+</span><span id="line-288"></span><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-289"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="file:///nix/store/psznxz0af4hqnmcdhxil71pbq5sygjp9-tzdata-0.2.20230322.0-doc/share/doc/tzdata-0.2.20230322.0/html/src/Data.Time.Zones.DB.html#TZLabel"><span class="hs-identifier hs-type">TZLabel</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-290"></span><span>  </span><span class="annot"><a href="#local-6989586621679085554"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span></span><span>
+</span><span id="line-291"></span><span id="currentDate"><span class="annot"><span class="annottext">currentDate :: forall (m :: * -&gt; *).
+(HasCallStack, MonadCatch m, MonadTime m) =&gt;
+Maybe TZLabel -&gt; m String
+</span><a href="Data.Time.Conversion.html#currentDate"><span class="hs-identifier hs-var hs-var">currentDate</span></a></span></span><span> </span><span id="local-6989586621679085840"><span class="annot"><span class="annottext">Maybe TZLabel
+</span><a href="#local-6989586621679085840"><span class="hs-identifier hs-var">mlabel</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-292"></span><span>  </span><span id="local-6989586621679085841"><span class="annot"><span class="annottext">ZonedTime
+</span><a href="#local-6989586621679085841"><span class="hs-identifier hs-var">currTime</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-293"></span><span>    </span><span class="annot"><span class="annottext">m ZonedTime
+forall (m :: * -&gt; *). (MonadTime m, HasCallStack) =&gt; m ZonedTime
+</span><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-time-0.1-e2e7a10487c5f45ae56e3da6688b1244f3377d9fa4819cb45589d8484b49db5d/share/doc/html/src/Effects.Time.html#getSystemZonedTime"><span class="hs-identifier hs-var">getSystemZonedTime</span></a></span><span>
+</span><span id="line-294"></span><span>      </span><span class="annot"><span class="annottext">m ZonedTime -&gt; (SomeException -&gt; m ZonedTime) -&gt; m ZonedTime
+forall (m :: * -&gt; *) a.
+(HasCallStack, MonadCatch m) =&gt;
+m a -&gt; (SomeException -&gt; m a) -&gt; m a
+</span><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-exceptions-0.1-a4f40d5efdf373b50ccdf70734cf14c569e79a147e00aeed7f9dcb856d0cc255/share/doc/html/src/Effects.Exception.html#catchAny"><span class="hs-operator hs-var">`catchAny`</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LocalSystemTimeException -&gt; m ZonedTime
+forall (m :: * -&gt; *) e a.
+(Exception e, HasCallStack, MonadThrow m) =&gt;
+e -&gt; m a
+</span><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-exceptions-0.1-a4f40d5efdf373b50ccdf70734cf14c569e79a147e00aeed7f9dcb856d0cc255/share/doc/html/src/Effects.Exception.html#throwCS"><span class="hs-identifier hs-var">throwCS</span></a></span><span> </span><span class="annot"><span class="annottext">(LocalSystemTimeException -&gt; m ZonedTime)
+-&gt; (SomeException -&gt; LocalSystemTimeException)
+-&gt; SomeException
+-&gt; m ZonedTime
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">SomeException -&gt; LocalSystemTimeException
+forall e. Exception e =&gt; e -&gt; LocalSystemTimeException
+</span><a href="Data.Time.Conversion.Types.Exception.html#MkLocalSystemTimeException"><span class="hs-identifier hs-var">MkLocalSystemTimeException</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-295"></span><span>
+</span><span id="line-296"></span><span>  </span><span class="hs-comment">-- Convert into the given label if present. Otherwise keep in system</span><span>
+</span><span id="line-297"></span><span>  </span><span class="hs-comment">-- timezone.</span><span>
+</span><span id="line-298"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679085842"><span class="annot"><span class="annottext">currTime' :: ZonedTime
+</span><a href="#local-6989586621679085842"><span class="hs-identifier hs-var hs-var">currTime'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ZonedTime -&gt; (TZLabel -&gt; ZonedTime) -&gt; Maybe TZLabel -&gt; ZonedTime
+forall b a. b -&gt; (a -&gt; b) -&gt; Maybe a -&gt; b
+</span><span class="hs-identifier hs-var">maybe</span></span><span> </span><span class="annot"><span class="annottext">ZonedTime
+</span><a href="#local-6989586621679085841"><span class="hs-identifier hs-var">currTime</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">ZonedTime -&gt; TZLabel -&gt; ZonedTime
+</span><a href="Data.Time.Conversion.html#convertZonedLabel"><span class="hs-identifier hs-var">convertZonedLabel</span></a></span><span> </span><span class="annot"><span class="annottext">ZonedTime
+</span><a href="#local-6989586621679085841"><span class="hs-identifier hs-var">currTime</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Maybe TZLabel
+</span><a href="#local-6989586621679085840"><span class="hs-identifier hs-var">mlabel</span></a></span><span>
+</span><span id="line-299"></span><span>
+</span><span id="line-300"></span><span>  </span><span class="annot"><span class="annottext">String -&gt; m String
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(String -&gt; m String) -&gt; String -&gt; m String
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">TimeLocale -&gt; String -&gt; ZonedTime -&gt; String
+forall t. FormatTime t =&gt; TimeLocale -&gt; String -&gt; t -&gt; String
+</span><span class="hs-identifier hs-var">Format.formatTime</span></span><span> </span><span class="annot"><span class="annottext">TimeLocale
+</span><span class="hs-identifier hs-var">Format.defaultTimeLocale</span></span><span> </span><span class="annot"><span class="annottext">String
+forall s. IsString s =&gt; s
+</span><a href="Data.Time.Conversion.html#dateString"><span class="hs-identifier hs-var">dateString</span></a></span><span> </span><span class="annot"><span class="annottext">ZonedTime
+</span><a href="#local-6989586621679085842"><span class="hs-identifier hs-var">currTime'</span></a></span><span>
+</span><span id="line-301"></span><span>
+</span><span id="line-302"></span><span id="local-6989586621679085553"><span class="annot"><a href="Data.Time.Conversion.html#dateString"><span class="hs-identifier hs-type">dateString</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">IsString</span></span><span> </span><span class="annot"><a href="#local-6989586621679085553"><span class="hs-identifier hs-type">s</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679085553"><span class="hs-identifier hs-type">s</span></a></span></span><span>
+</span><span id="line-303"></span><span id="dateString"><span class="annot"><span class="annottext">dateString :: forall s. IsString s =&gt; s
+</span><a href="Data.Time.Conversion.html#dateString"><span class="hs-identifier hs-var hs-var">dateString</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">s
+</span><span class="hs-string">&quot;%Y-%m-%d&quot;</span></span><span>
+</span><span id="line-304"></span><span>
+</span><span id="line-305"></span><span id="local-6989586621679085846"><span class="annot"><a href="Data.Time.Conversion.html#tzString"><span class="hs-identifier hs-type">tzString</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">IsString</span></span><span> </span><span class="annot"><a href="#local-6989586621679085846"><span class="hs-identifier hs-type">s</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679085846"><span class="hs-identifier hs-type">s</span></a></span></span><span>
+</span><span id="line-306"></span><span id="tzString"><span class="annot"><span class="annottext">tzString :: forall s. IsString s =&gt; s
+</span><a href="Data.Time.Conversion.html#tzString"><span class="hs-identifier hs-var hs-var">tzString</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">s
+</span><span class="hs-string">&quot;%z&quot;</span></span><span>
+</span><span id="line-307"></span><span>
+</span><span id="line-308"></span><span class="hs-comment">-- | @readInLocalTimeZone locale format timeStr@ attempts to parse the</span><span>
+</span><span id="line-309"></span><span class="hs-comment">-- @timeStr@ given the expected @format@. We parse into the current</span><span>
+</span><span id="line-310"></span><span class="hs-comment">-- system timezone, so:</span><span>
+</span><span id="line-311"></span><span class="hs-comment">--</span><span>
+</span><span id="line-312"></span><span class="hs-comment">-- * @format@ should __not__ mention &quot;%Z&quot;</span><span>
+</span><span id="line-313"></span><span class="hs-comment">-- * @timeStr@ should __not__ contain timezone information.</span><span>
+</span><span id="line-314"></span><span class="hs-comment">--</span><span>
+</span><span id="line-315"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-316"></span><span class="hs-comment">-- &#955;. readInLocalTimeZone &quot;%H&quot; &quot;17&quot;</span><span>
+</span><span id="line-317"></span><span class="hs-comment">-- Just 1970-01-01 17:00:00 NZST</span><span>
+</span><span id="line-318"></span><span class="hs-comment">-- @</span><span>
+</span><span id="line-319"></span><span class="hs-comment">--</span><span>
+</span><span id="line-320"></span><span class="hs-comment">-- __Throws:__</span><span>
+</span><span id="line-321"></span><span class="hs-comment">--</span><span>
+</span><span id="line-322"></span><span class="hs-comment">-- * 'ParseTimeException': Error parsing the time string.</span><span>
+</span><span id="line-323"></span><span class="hs-comment">-- * 'LocalTimeZoneException': Error retrieving local timezone.</span><span>
+</span><span id="line-324"></span><span class="hs-comment">--</span><span>
+</span><span id="line-325"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-326"></span><span id="local-6989586621679085537"><span class="annot"><a href="Data.Time.Conversion.html#readInLocalTimeZone"><span class="hs-identifier hs-type">readInLocalTimeZone</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-327"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span class="hs-special">,</span><span>
+</span><span id="line-328"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">MonadCatch</span></span><span> </span><span class="annot"><a href="#local-6989586621679085537"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-329"></span><span>    </span><span class="annot"><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-time-0.1-e2e7a10487c5f45ae56e3da6688b1244f3377d9fa4819cb45589d8484b49db5d/share/doc/html/src/Effects.Time.html#MonadTime"><span class="hs-identifier hs-type">MonadTime</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679085537"><span class="hs-identifier hs-type">m</span></a></span><span>
+</span><span id="line-330"></span><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-331"></span><span>  </span><span class="annot"><a href="Data.Time.Conversion.Types.TimeFormat.html#TimeFormat"><span class="hs-identifier hs-type">TimeFormat</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-332"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-333"></span><span>  </span><span class="annot"><a href="#local-6989586621679085537"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">ZonedTime</span></span></span><span>
+</span><span id="line-334"></span><span id="readInLocalTimeZone"><span class="annot"><span class="annottext">readInLocalTimeZone :: forall (m :: * -&gt; *).
+(HasCallStack, MonadCatch m, MonadTime m) =&gt;
+TimeFormat -&gt; Text -&gt; m ZonedTime
+</span><a href="Data.Time.Conversion.html#readInLocalTimeZone"><span class="hs-identifier hs-var hs-var">readInLocalTimeZone</span></a></span></span><span> </span><span id="local-6989586621679085878"><span class="annot"><span class="annottext">TimeFormat
+</span><a href="#local-6989586621679085878"><span class="hs-identifier hs-var">format</span></a></span></span><span> </span><span id="local-6989586621679085879"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679085879"><span class="hs-identifier hs-var">timeStr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-335"></span><span>  </span><span id="local-6989586621679085880"><span class="annot"><span class="annottext">TimeZone
+</span><a href="#local-6989586621679085880"><span class="hs-identifier hs-var">localTz</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
+</span><span id="line-336"></span><span>    </span><span class="annot"><span class="annottext">m TimeZone
+forall (m :: * -&gt; *). (HasCallStack, MonadTime m) =&gt; m TimeZone
+</span><a href="Data.Time.Conversion.html#getCurrentTimeZone"><span class="hs-identifier hs-var">getCurrentTimeZone</span></a></span><span>
+</span><span id="line-337"></span><span>      </span><span class="annot"><span class="annottext">m TimeZone -&gt; (SomeException -&gt; m TimeZone) -&gt; m TimeZone
+forall (m :: * -&gt; *) a.
+(HasCallStack, MonadCatch m) =&gt;
+m a -&gt; (SomeException -&gt; m a) -&gt; m a
+</span><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-exceptions-0.1-a4f40d5efdf373b50ccdf70734cf14c569e79a147e00aeed7f9dcb856d0cc255/share/doc/html/src/Effects.Exception.html#catchAny"><span class="hs-operator hs-var">`catchAny`</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LocalTimeZoneException -&gt; m TimeZone
+forall (m :: * -&gt; *) e a.
+(Exception e, HasCallStack, MonadThrow m) =&gt;
+e -&gt; m a
+</span><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-exceptions-0.1-a4f40d5efdf373b50ccdf70734cf14c569e79a147e00aeed7f9dcb856d0cc255/share/doc/html/src/Effects.Exception.html#throwCS"><span class="hs-identifier hs-var">throwCS</span></a></span><span> </span><span class="annot"><span class="annottext">(LocalTimeZoneException -&gt; m TimeZone)
+-&gt; (SomeException -&gt; LocalTimeZoneException)
+-&gt; SomeException
+-&gt; m TimeZone
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">SomeException -&gt; LocalTimeZoneException
+forall e. Exception e =&gt; e -&gt; LocalTimeZoneException
+</span><a href="Data.Time.Conversion.Types.Exception.html#MkLocalTimeZoneException"><span class="hs-identifier hs-var">MkLocalTimeZoneException</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-338"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679085881"><span class="annot"><span class="annottext">tzStr :: Text
+</span><a href="#local-6989586621679085881"><span class="hs-identifier hs-var hs-var">tzStr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; Text
+</span><span class="hs-identifier hs-var">T.pack</span></span><span> </span><span class="annot"><span class="annottext">(String -&gt; Text) -&gt; String -&gt; Text
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">TimeZone -&gt; String
+</span><span class="hs-identifier hs-var">Local.timeZoneOffsetString</span></span><span> </span><span class="annot"><span class="annottext">TimeZone
+</span><a href="#local-6989586621679085880"><span class="hs-identifier hs-var">localTz</span></a></span><span>
+</span><span id="line-339"></span><span>
+</span><span id="line-340"></span><span>      </span><span class="hs-comment">-- Add the local tz string to the time string, and the tz flag to the format</span><span>
+</span><span id="line-341"></span><span>      </span><span id="local-6989586621679085883"><span class="annot"><span class="annottext">timeStr' :: Text
+</span><a href="#local-6989586621679085883"><span class="hs-identifier hs-var hs-var">timeStr'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679085879"><span class="hs-identifier hs-var">timeStr</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
+forall a. (Semigroup a, IsString a) =&gt; a -&gt; a -&gt; a
+</span><a href="Data.Time.Conversion.html#%2B-%2B"><span class="hs-operator hs-var">+-+</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679085881"><span class="hs-identifier hs-var">tzStr</span></a></span><span>
+</span><span id="line-342"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">TimeLocale -&gt; TimeFormat -&gt; Text -&gt; Maybe ZonedTime
+</span><a href="Data.Time.Conversion.html#readTimeFormatZoned"><span class="hs-identifier hs-var">readTimeFormatZoned</span></a></span><span> </span><span class="annot"><span class="annottext">TimeLocale
+</span><span class="hs-identifier hs-var">Format.defaultTimeLocale</span></span><span> </span><span class="annot"><span class="annottext">TimeFormat
+</span><a href="#local-6989586621679085884"><span class="hs-identifier hs-var">format'</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679085883"><span class="hs-identifier hs-var">timeStr'</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-343"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679085885"><span class="annot"><span class="annottext">ZonedTime
+</span><a href="#local-6989586621679085885"><span class="hs-identifier hs-var">zt</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ZonedTime -&gt; m ZonedTime
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">ZonedTime
+</span><a href="#local-6989586621679085885"><span class="hs-identifier hs-var">zt</span></a></span><span>
+</span><span id="line-344"></span><span>    </span><span class="annot"><span class="annottext">Maybe ZonedTime
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ParseTimeException -&gt; m ZonedTime
+forall (m :: * -&gt; *) e a.
+(Exception e, HasCallStack, MonadThrow m) =&gt;
+e -&gt; m a
+</span><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-exceptions-0.1-a4f40d5efdf373b50ccdf70734cf14c569e79a147e00aeed7f9dcb856d0cc255/share/doc/html/src/Effects.Exception.html#throwCS"><span class="hs-identifier hs-var">throwCS</span></a></span><span> </span><span class="annot"><span class="annottext">(ParseTimeException -&gt; m ZonedTime)
+-&gt; ParseTimeException -&gt; m ZonedTime
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">TimeFormat -&gt; Text -&gt; ParseTimeException
+</span><a href="Data.Time.Conversion.Types.Exception.html#MkParseTimeException"><span class="hs-identifier hs-var">MkParseTimeException</span></a></span><span> </span><span class="annot"><span class="annottext">TimeFormat
+</span><a href="#local-6989586621679085884"><span class="hs-identifier hs-var">format'</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679085883"><span class="hs-identifier hs-var">timeStr'</span></a></span><span>
+</span><span id="line-345"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-346"></span><span>    </span><span id="local-6989586621679085884"><span class="annot"><span class="annottext">format' :: TimeFormat
+</span><a href="#local-6989586621679085884"><span class="hs-identifier hs-var hs-var">format'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TimeFormat
+</span><a href="#local-6989586621679085878"><span class="hs-identifier hs-var">format</span></a></span><span> </span><span class="annot"><span class="annottext">TimeFormat -&gt; TimeFormat -&gt; TimeFormat
+forall a. (Semigroup a, IsString a) =&gt; a -&gt; a -&gt; a
+</span><a href="Data.Time.Conversion.html#%2B-%2B"><span class="hs-operator hs-var">+-+</span></a></span><span> </span><span class="annot"><span class="annottext">TimeFormat
+forall s. IsString s =&gt; s
+</span><a href="Data.Time.Conversion.html#tzString"><span class="hs-identifier hs-var">tzString</span></a></span><span>
+</span><span id="line-347"></span><span>
+</span><span id="line-348"></span><span class="hs-comment">-- | 'readTimeFormat' specialized to 'ZonedTime'.</span><span>
+</span><span id="line-349"></span><span class="hs-comment">--</span><span>
+</span><span id="line-350"></span><span class="hs-comment">-- ==== __Examples__</span><span>
+</span><span id="line-351"></span><span class="hs-comment">-- &gt;&gt;&gt; readTimeFormatZoned Format.defaultTimeLocale TimeFmt.hm &quot;17:24&quot;</span><span>
+</span><span id="line-352"></span><span class="hs-comment">-- Just 1970-01-01 17:24:00 +0000</span><span>
+</span><span id="line-353"></span><span class="hs-comment">--</span><span>
+</span><span id="line-354"></span><span class="hs-comment">-- &gt;&gt;&gt; readTimeFormatZoned Format.defaultTimeLocale TimeFmt.hm12h &quot;07:24 pm&quot;</span><span>
+</span><span id="line-355"></span><span class="hs-comment">-- Just 1970-01-01 19:24:00 +0000</span><span>
+</span><span id="line-356"></span><span class="hs-comment">--</span><span>
+</span><span id="line-357"></span><span class="hs-comment">-- &gt;&gt;&gt; readTimeFormatZoned Format.defaultTimeLocale TimeFmt.hmTZ &quot;07:24 +5000&quot;</span><span>
+</span><span id="line-358"></span><span class="hs-comment">-- Just 1970-01-01 07:24:00 +5000</span><span>
+</span><span id="line-359"></span><span class="hs-comment">--</span><span>
+</span><span id="line-360"></span><span class="hs-comment">-- &gt;&gt;&gt; readTimeFormatZoned Format.defaultTimeLocale TimeFmt.hmTZ12h &quot;07:24 pm -5000&quot;</span><span>
+</span><span id="line-361"></span><span class="hs-comment">-- Just 1970-01-01 19:24:00 -5000</span><span>
+</span><span id="line-362"></span><span class="hs-comment">--</span><span>
+</span><span id="line-363"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-364"></span><span class="annot"><a href="Data.Time.Conversion.html#readTimeFormatZoned"><span class="hs-identifier hs-type">readTimeFormatZoned</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">TimeLocale</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.TimeFormat.html#TimeFormat"><span class="hs-identifier hs-type">TimeFormat</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">ZonedTime</span></span><span>
+</span><span id="line-365"></span><span id="readTimeFormatZoned"><span class="annot"><span class="annottext">readTimeFormatZoned :: TimeLocale -&gt; TimeFormat -&gt; Text -&gt; Maybe ZonedTime
+</span><a href="Data.Time.Conversion.html#readTimeFormatZoned"><span class="hs-identifier hs-var hs-var">readTimeFormatZoned</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TimeLocale -&gt; TimeFormat -&gt; Text -&gt; Maybe ZonedTime
+forall t.
+ParseTime t =&gt;
+TimeLocale -&gt; TimeFormat -&gt; Text -&gt; Maybe t
+</span><a href="Data.Time.Conversion.html#readTimeFormat"><span class="hs-identifier hs-var">readTimeFormat</span></a></span><span>
+</span><span id="line-366"></span><span>
+</span><span id="line-367"></span><span class="hs-comment">-- | 'readTimeFormat' specialized to 'LocalTime'.</span><span>
+</span><span id="line-368"></span><span class="hs-comment">--</span><span>
+</span><span id="line-369"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-370"></span><span class="annot"><a href="Data.Time.Conversion.html#readTimeFormatLocal"><span class="hs-identifier hs-type">readTimeFormatLocal</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">TimeLocale</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.TimeFormat.html#TimeFormat"><span class="hs-identifier hs-type">TimeFormat</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">LocalTime</span></span><span>
+</span><span id="line-371"></span><span id="readTimeFormatLocal"><span class="annot"><span class="annottext">readTimeFormatLocal :: TimeLocale -&gt; TimeFormat -&gt; Text -&gt; Maybe LocalTime
+</span><a href="Data.Time.Conversion.html#readTimeFormatLocal"><span class="hs-identifier hs-var hs-var">readTimeFormatLocal</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TimeLocale -&gt; TimeFormat -&gt; Text -&gt; Maybe LocalTime
+forall t.
+ParseTime t =&gt;
+TimeLocale -&gt; TimeFormat -&gt; Text -&gt; Maybe t
+</span><a href="Data.Time.Conversion.html#readTimeFormat"><span class="hs-identifier hs-var">readTimeFormat</span></a></span><span>
+</span><span id="line-372"></span><span>
+</span><span id="line-373"></span><span class="hs-comment">-- | @readTimeFormat locale format timeStr@ attempts to parse the @timeStr@ given</span><span>
+</span><span id="line-374"></span><span class="hs-comment">-- the expected @format@. No timezone is assumed, so if it is left off then</span><span>
+</span><span id="line-375"></span><span class="hs-comment">-- the result is UTC.</span><span>
+</span><span id="line-376"></span><span class="hs-comment">--</span><span>
+</span><span id="line-377"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-378"></span><span id="local-6989586621679085562"><span class="annot"><a href="Data.Time.Conversion.html#readTimeFormat"><span class="hs-identifier hs-type">readTimeFormat</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ParseTime</span></span><span> </span><span class="annot"><a href="#local-6989586621679085562"><span class="hs-identifier hs-type">t</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">TimeLocale</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.TimeFormat.html#TimeFormat"><span class="hs-identifier hs-type">TimeFormat</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="#local-6989586621679085562"><span class="hs-identifier hs-type">t</span></a></span></span><span>
+</span><span id="line-379"></span><span id="readTimeFormat"><span class="annot"><span class="annottext">readTimeFormat :: forall t.
+ParseTime t =&gt;
+TimeLocale -&gt; TimeFormat -&gt; Text -&gt; Maybe t
+</span><a href="Data.Time.Conversion.html#readTimeFormat"><span class="hs-identifier hs-var hs-var">readTimeFormat</span></a></span></span><span> </span><span id="local-6989586621679085899"><span class="annot"><span class="annottext">TimeLocale
+</span><a href="#local-6989586621679085899"><span class="hs-identifier hs-var">locale</span></a></span></span><span> </span><span id="local-6989586621679085900"><span class="annot"><span class="annottext">TimeFormat
+</span><a href="#local-6989586621679085900"><span class="hs-identifier hs-var">format</span></a></span></span><span> </span><span id="local-6989586621679085901"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679085901"><span class="hs-identifier hs-var">timeStr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; TimeLocale -&gt; String -&gt; String -&gt; Maybe t
+forall (m :: * -&gt; *) t.
+(MonadFail m, ParseTime t) =&gt;
+Bool -&gt; TimeLocale -&gt; String -&gt; String -&gt; m t
+</span><span class="hs-identifier hs-var">Format.parseTimeM</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">True</span></span><span> </span><span class="annot"><span class="annottext">TimeLocale
+</span><a href="#local-6989586621679085899"><span class="hs-identifier hs-var">locale</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679085903"><span class="hs-identifier hs-var">format'</span></a></span><span> </span><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679085904"><span class="hs-identifier hs-var">timeStr'</span></a></span><span>
+</span><span id="line-380"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-381"></span><span>    </span><span id="local-6989586621679085903"><span class="annot"><span class="annottext">format' :: String
+</span><a href="#local-6989586621679085903"><span class="hs-identifier hs-var hs-var">format'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; String
+</span><span class="hs-identifier hs-var">T.unpack</span></span><span> </span><span class="annot"><span class="annottext">(Text -&gt; String) -&gt; Text -&gt; String
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">TimeFormat
+</span><a href="#local-6989586621679085900"><span class="hs-identifier hs-var">format</span></a></span><span> </span><span class="annot"><span class="annottext">TimeFormat -&gt; Optic' An_Iso NoIx TimeFormat Text -&gt; Text
+forall k s (is :: IxList) a.
+Is k A_Getter =&gt;
+s -&gt; Optic' k is s a -&gt; a
+</span><a href="file:///nix/store/2a8kavx35szkma5sz7f1zr4260p8rmrr-optics-core-0.4.1.1-doc/share/doc/optics-core-0.4.1.1/html/src/Optics.Operators.html#%5E."><span class="hs-operator hs-var">^.</span></a></span><span> </span><span class="annot"><span class="annottext">Optic' An_Iso NoIx TimeFormat Text
+</span><span class="">#unTimeFormat</span></span><span>
+</span><span id="line-382"></span><span>    </span><span id="local-6989586621679085904"><span class="annot"><span class="annottext">timeStr' :: String
+</span><a href="#local-6989586621679085904"><span class="hs-identifier hs-var hs-var">timeStr'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; String
+</span><span class="hs-identifier hs-var">T.unpack</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679085901"><span class="hs-identifier hs-var">timeStr</span></a></span><span>
+</span><span id="line-383"></span><span>
+</span><span id="line-384"></span><span class="hs-comment">-- | Converts a zoned time to the given timezone.</span><span>
+</span><span id="line-385"></span><span class="hs-comment">--</span><span>
+</span><span id="line-386"></span><span class="hs-comment">-- ==== __Examples__</span><span>
+</span><span id="line-387"></span><span class="hs-comment">-- &gt;&gt;&gt; let (Just sixPmUtc) = readTimeFormat Format.defaultTimeLocale TimeFmt.hm &quot;18:00&quot;</span><span>
+</span><span id="line-388"></span><span class="hs-comment">-- &gt;&gt;&gt; convertZonedLabel sixPmUtc America__New_York</span><span>
+</span><span id="line-389"></span><span class="hs-comment">-- 1970-01-01 13:00:00 EST</span><span>
+</span><span id="line-390"></span><span class="hs-comment">--</span><span>
+</span><span id="line-391"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-392"></span><span class="annot"><a href="Data.Time.Conversion.html#convertZonedLabel"><span class="hs-identifier hs-type">convertZonedLabel</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">ZonedTime</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///nix/store/psznxz0af4hqnmcdhxil71pbq5sygjp9-tzdata-0.2.20230322.0-doc/share/doc/tzdata-0.2.20230322.0/html/src/Data.Time.Zones.DB.html#TZLabel"><span class="hs-identifier hs-type">TZLabel</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">ZonedTime</span></span><span>
+</span><span id="line-393"></span><span id="convertZonedLabel"><span class="annot"><span class="annottext">convertZonedLabel :: ZonedTime -&gt; TZLabel -&gt; ZonedTime
+</span><a href="Data.Time.Conversion.html#convertZonedLabel"><span class="hs-identifier hs-var hs-var">convertZonedLabel</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(TZ -&gt; ZonedTime -&gt; UTCTime) -&gt; ZonedTime -&gt; TZLabel -&gt; ZonedTime
+forall a. (TZ -&gt; a -&gt; UTCTime) -&gt; a -&gt; TZLabel -&gt; ZonedTime
+</span><a href="Data.Time.Conversion.html#convertLabel"><span class="hs-identifier hs-var">convertLabel</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(ZonedTime -&gt; UTCTime) -&gt; TZ -&gt; ZonedTime -&gt; UTCTime
+forall a b. a -&gt; b -&gt; a
+</span><span class="hs-identifier hs-var">const</span></span><span> </span><span class="annot"><span class="annottext">ZonedTime -&gt; UTCTime
+</span><span class="hs-identifier hs-var">Local.zonedTimeToUTC</span></span><span class="hs-special">)</span><span>
+</span><span id="line-394"></span><span>
+</span><span id="line-395"></span><span class="hs-comment">-- | Converts a local time to the given timezone.</span><span>
+</span><span id="line-396"></span><span class="hs-comment">--</span><span>
+</span><span id="line-397"></span><span class="hs-comment">-- ==== __Examples__</span><span>
+</span><span id="line-398"></span><span class="hs-comment">-- &gt;&gt;&gt; let (Just sixPmUtc) = readTimeFormat Format.defaultTimeLocale TimeFmt.hm &quot;18:00&quot;</span><span>
+</span><span id="line-399"></span><span class="hs-comment">-- &gt;&gt;&gt; convertLocalLabel sixPmUtc America__New_York</span><span>
+</span><span id="line-400"></span><span class="hs-comment">-- 1970-01-01 18:00:00 EST</span><span>
+</span><span id="line-401"></span><span class="hs-comment">--</span><span>
+</span><span id="line-402"></span><span class="hs-comment">-- @since 0.1</span><span>
+</span><span id="line-403"></span><span class="annot"><a href="Data.Time.Conversion.html#convertLocalLabel"><span class="hs-identifier hs-type">convertLocalLabel</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">LocalTime</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///nix/store/psznxz0af4hqnmcdhxil71pbq5sygjp9-tzdata-0.2.20230322.0-doc/share/doc/tzdata-0.2.20230322.0/html/src/Data.Time.Zones.DB.html#TZLabel"><span class="hs-identifier hs-type">TZLabel</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">ZonedTime</span></span><span>
+</span><span id="line-404"></span><span id="convertLocalLabel"><span class="annot"><span class="annottext">convertLocalLabel :: LocalTime -&gt; TZLabel -&gt; ZonedTime
+</span><a href="Data.Time.Conversion.html#convertLocalLabel"><span class="hs-identifier hs-var hs-var">convertLocalLabel</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(TZ -&gt; LocalTime -&gt; UTCTime) -&gt; LocalTime -&gt; TZLabel -&gt; ZonedTime
+forall a. (TZ -&gt; a -&gt; UTCTime) -&gt; a -&gt; TZLabel -&gt; ZonedTime
+</span><a href="Data.Time.Conversion.html#convertLabel"><span class="hs-identifier hs-var">convertLabel</span></a></span><span> </span><span class="annot"><span class="annottext">TZ -&gt; LocalTime -&gt; UTCTime
+</span><a href="file:///nix/store/w0km61ypix7mjcsy55fr23aa32icrw09-tz-0.1.3.6-doc/share/doc/tz-0.1.3.6/html/src/Data.Time.Zones.html#localTimeToUTCTZ"><span class="hs-identifier hs-var">Zones.localTimeToUTCTZ</span></a></span><span>
+</span><span id="line-405"></span><span>
+</span><span id="line-406"></span><span id="local-6989586621679085571"><span class="annot"><a href="Data.Time.Conversion.html#convertLabel"><span class="hs-identifier hs-type">convertLabel</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="file:///nix/store/w0km61ypix7mjcsy55fr23aa32icrw09-tz-0.1.3.6-doc/share/doc/tz-0.1.3.6/html/src/Data.Time.Zones.Types.html#TZ"><span class="hs-identifier hs-type">TZ</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679085571"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">UTCTime</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679085571"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///nix/store/psznxz0af4hqnmcdhxil71pbq5sygjp9-tzdata-0.2.20230322.0-doc/share/doc/tzdata-0.2.20230322.0/html/src/Data.Time.Zones.DB.html#TZLabel"><span class="hs-identifier hs-type">TZLabel</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">ZonedTime</span></span></span><span>
+</span><span id="line-407"></span><span id="convertLabel"><span class="annot"><span class="annottext">convertLabel :: forall a. (TZ -&gt; a -&gt; UTCTime) -&gt; a -&gt; TZLabel -&gt; ZonedTime
+</span><a href="Data.Time.Conversion.html#convertLabel"><span class="hs-identifier hs-var hs-var">convertLabel</span></a></span></span><span> </span><span id="local-6989586621679085909"><span class="annot"><span class="annottext">TZ -&gt; a -&gt; UTCTime
+</span><a href="#local-6989586621679085909"><span class="hs-identifier hs-var">toUtcTime</span></a></span></span><span> </span><span id="local-6989586621679085910"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679085910"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679085911"><span class="annot"><span class="annottext">TZLabel
+</span><a href="#local-6989586621679085911"><span class="hs-identifier hs-var">tzLabel</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TimeZone -&gt; UTCTime -&gt; ZonedTime
+</span><span class="hs-identifier hs-var">Local.utcToZonedTime</span></span><span> </span><span class="annot"><span class="annottext">TimeZone
+</span><a href="#local-6989586621679085912"><span class="hs-identifier hs-var">timeZone</span></a></span><span> </span><span class="annot"><span class="annottext">UTCTime
+</span><a href="#local-6989586621679085913"><span class="hs-identifier hs-var">utcTime</span></a></span><span>
+</span><span id="line-408"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-409"></span><span>    </span><span class="hs-comment">-- This is a TZ i.e. the preliminary timezone corresponding to our</span><span>
+</span><span id="line-410"></span><span>    </span><span class="hs-comment">-- label e.g. America/New_York -&gt; TZ. This type is a stepping stone</span><span>
+</span><span id="line-411"></span><span>    </span><span class="hs-comment">-- to the actual ZonedTime we want.</span><span>
+</span><span id="line-412"></span><span>    </span><span id="local-6989586621679085914"><span class="annot"><span class="annottext">tz :: TZ
+</span><a href="#local-6989586621679085914"><span class="hs-identifier hs-var hs-var">tz</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TZLabel -&gt; TZ
+</span><a href="file:///nix/store/w0km61ypix7mjcsy55fr23aa32icrw09-tz-0.1.3.6-doc/share/doc/tz-0.1.3.6/html/src/Data.Time.Zones.All.html#tzByLabel"><span class="hs-identifier hs-var">All.tzByLabel</span></a></span><span> </span><span class="annot"><span class="annottext">TZLabel
+</span><a href="#local-6989586621679085911"><span class="hs-identifier hs-var">tzLabel</span></a></span><span>
+</span><span id="line-413"></span><span>    </span><span class="hs-comment">-- Convert to UTC. Localtime will use the tz param to derive TimeZone</span><span>
+</span><span id="line-414"></span><span>    </span><span class="hs-comment">-- information. ZonedTime will ignore it as it already carries TimeZone</span><span>
+</span><span id="line-415"></span><span>    </span><span class="hs-comment">-- info.</span><span>
+</span><span id="line-416"></span><span>    </span><span id="local-6989586621679085913"><span class="annot"><span class="annottext">utcTime :: UTCTime
+</span><a href="#local-6989586621679085913"><span class="hs-identifier hs-var hs-var">utcTime</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TZ -&gt; a -&gt; UTCTime
+</span><a href="#local-6989586621679085909"><span class="hs-identifier hs-var">toUtcTime</span></a></span><span> </span><span class="annot"><span class="annottext">TZ
+</span><a href="#local-6989586621679085914"><span class="hs-identifier hs-var">tz</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679085910"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-417"></span><span>    </span><span class="hs-comment">-- Get the final TimeZone from TZ and the UTC time. We need</span><span>
+</span><span id="line-418"></span><span>    </span><span class="hs-comment">-- the time as the TimeZone can vary with the actual time e.g.</span><span>
+</span><span id="line-419"></span><span>    </span><span class="hs-comment">-- America/New_York -&gt; EST / EDT.</span><span>
+</span><span id="line-420"></span><span>    </span><span id="local-6989586621679085912"><span class="annot"><span class="annottext">timeZone :: TimeZone
+</span><a href="#local-6989586621679085912"><span class="hs-identifier hs-var hs-var">timeZone</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TZ -&gt; UTCTime -&gt; TimeZone
+</span><a href="file:///nix/store/w0km61ypix7mjcsy55fr23aa32icrw09-tz-0.1.3.6-doc/share/doc/tz-0.1.3.6/html/src/Data.Time.Zones.html#timeZoneForUTCTime"><span class="hs-identifier hs-var">Zones.timeZoneForUTCTime</span></a></span><span> </span><span class="annot"><span class="annottext">TZ
+</span><a href="#local-6989586621679085914"><span class="hs-identifier hs-var">tz</span></a></span><span> </span><span class="annot"><span class="annottext">UTCTime
+</span><a href="#local-6989586621679085913"><span class="hs-identifier hs-var">utcTime</span></a></span><span>
+</span><span id="line-421"></span><span>
+</span><span id="line-422"></span><span id="local-6989586621679085500"><span class="annot"><a href="Data.Time.Conversion.html#tzDatabaseToTZLabel"><span class="hs-identifier hs-type">tzDatabaseToTZLabel</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">MonadThrow</span></span><span> </span><span class="annot"><a href="#local-6989586621679085500"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Data.Time.Conversion.Types.TZDatabase.html#TZDatabase"><span class="hs-identifier hs-type">TZDatabase</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679085500"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="file:///nix/store/psznxz0af4hqnmcdhxil71pbq5sygjp9-tzdata-0.2.20230322.0-doc/share/doc/tzdata-0.2.20230322.0/html/src/Data.Time.Zones.DB.html#TZLabel"><span class="hs-identifier hs-type">TZLabel</span></a></span></span><span>
+</span><span id="line-423"></span><span id="tzDatabaseToTZLabel"><span class="annot"><span class="annottext">tzDatabaseToTZLabel :: forall (m :: * -&gt; *).
+(HasCallStack, MonadThrow m) =&gt;
+TZDatabase -&gt; m TZLabel
+</span><a href="Data.Time.Conversion.html#tzDatabaseToTZLabel"><span class="hs-identifier hs-var hs-var">tzDatabaseToTZLabel</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Time.Conversion.Types.TZDatabase.html#TZDatabaseLabel"><span class="hs-identifier hs-type">TZDatabaseLabel</span></a></span><span> </span><span id="local-6989586621679085929"><span class="annot"><span class="annottext">TZLabel
+</span><a href="#local-6989586621679085929"><span class="hs-identifier hs-var">lbl</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">TZLabel -&gt; m TZLabel
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">TZLabel
+</span><a href="#local-6989586621679085929"><span class="hs-identifier hs-var">lbl</span></a></span><span>
+</span><span id="line-424"></span><span class="annot"><a href="Data.Time.Conversion.html#tzDatabaseToTZLabel"><span class="hs-identifier hs-var">tzDatabaseToTZLabel</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Data.Time.Conversion.Types.TZDatabase.html#TZDatabaseText"><span class="hs-identifier hs-type">TZDatabaseText</span></a></span><span> </span><span id="local-6989586621679085930"><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679085930"><span class="hs-identifier hs-var">txt</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-425"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Maybe TZLabel
+</span><a href="Data.Time.Conversion.Internal.html#tzNameToTZLabel"><span class="hs-identifier hs-var">Internal.tzNameToTZLabel</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679085930"><span class="hs-identifier hs-var">txt</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-426"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679085932"><span class="annot"><span class="annottext">TZLabel
+</span><a href="#local-6989586621679085932"><span class="hs-identifier hs-var">lbl</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">TZLabel -&gt; m TZLabel
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">TZLabel
+</span><a href="#local-6989586621679085932"><span class="hs-identifier hs-var">lbl</span></a></span><span>
+</span><span id="line-427"></span><span>    </span><span class="annot"><span class="annottext">Maybe TZLabel
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ParseTZDatabaseException -&gt; m TZLabel
+forall (m :: * -&gt; *) e a.
+(Exception e, HasCallStack, MonadThrow m) =&gt;
+e -&gt; m a
+</span><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-exceptions-0.1-a4f40d5efdf373b50ccdf70734cf14c569e79a147e00aeed7f9dcb856d0cc255/share/doc/html/src/Effects.Exception.html#throwCS"><span class="hs-identifier hs-var">throwCS</span></a></span><span> </span><span class="annot"><span class="annottext">(ParseTZDatabaseException -&gt; m TZLabel)
+-&gt; ParseTZDatabaseException -&gt; m TZLabel
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; ParseTZDatabaseException
+</span><a href="Data.Time.Conversion.Types.Exception.html#MkParseTZDatabaseException"><span class="hs-identifier hs-var">MkParseTZDatabaseException</span></a></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679085930"><span class="hs-identifier hs-var">txt</span></a></span><span>
+</span><span id="line-428"></span><span>
+</span><span id="line-429"></span><span class="hs-comment">-- concat with a space</span><span>
+</span><span id="line-430"></span><span id="local-6989586621679085552"><span class="annot"><a href="Data.Time.Conversion.html#%2B-%2B"><span class="hs-operator hs-type">(+-+)</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="#local-6989586621679085552"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IsString</span></span><span> </span><span class="annot"><a href="#local-6989586621679085552"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679085552"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679085552"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679085552"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-431"></span><span id="local-6989586621679085938"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679085938"><span class="hs-identifier hs-var">xs</span></a></span></span><span> </span><span id="%2B-%2B"><span class="annot"><span class="annottext">+-+ :: forall a. (Semigroup a, IsString a) =&gt; a -&gt; a -&gt; a
+</span><a href="Data.Time.Conversion.html#%2B-%2B"><span class="hs-operator hs-var hs-var">+-+</span></a></span></span><span> </span><span id="local-6989586621679085939"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679085939"><span class="hs-identifier hs-var">ys</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679085938"><span class="hs-identifier hs-var">xs</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><span class="hs-string">&quot; &quot;</span></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; a
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679085939"><span class="hs-identifier hs-var">ys</span></a></span><span>
+</span><span id="line-432"></span><span>
+</span><span id="line-433"></span><span class="hs-keyword">infixr</span><span> </span><span class="hs-number">5</span><span> </span><span class="annot"><a href="Data.Time.Conversion.html#%2B-%2B"><span class="hs-operator hs-type">+-+</span></a></span><span>
+</span><span id="line-434"></span><span>
+</span><span id="line-435"></span><span id="local-6989586621679085490"><span class="annot"><a href="Data.Time.Conversion.html#getCurrentTimeZone"><span class="hs-identifier hs-type">getCurrentTimeZone</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">HasCallStack</span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-time-0.1-e2e7a10487c5f45ae56e3da6688b1244f3377d9fa4819cb45589d8484b49db5d/share/doc/html/src/Effects.Time.html#MonadTime"><span class="hs-identifier hs-type">MonadTime</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679085490"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679085490"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><span class="hs-identifier hs-type">TimeZone</span></span></span><span>
+</span><span id="line-436"></span><span id="getCurrentTimeZone"><span class="annot"><span class="annottext">getCurrentTimeZone :: forall (m :: * -&gt; *). (HasCallStack, MonadTime m) =&gt; m TimeZone
+</span><a href="Data.Time.Conversion.html#getCurrentTimeZone"><span class="hs-identifier hs-var hs-var">getCurrentTimeZone</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-437"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">ZonedTime</span></span><span> </span><span class="annot"><span class="annottext">LocalTime
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679085949"><span class="annot"><span class="annottext">TimeZone
+</span><a href="#local-6989586621679085949"><span class="hs-identifier hs-var">tz</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">m ZonedTime
+forall (m :: * -&gt; *). (MonadTime m, HasCallStack) =&gt; m ZonedTime
+</span><a href="file:///home/tommy/.local/state/cabal/store/ghc-9.6.2/effects-time-0.1-e2e7a10487c5f45ae56e3da6688b1244f3377d9fa4819cb45589d8484b49db5d/share/doc/html/src/Effects.Time.html#getSystemZonedTime"><span class="hs-identifier hs-var">getSystemZonedTime</span></a></span><span>
+</span><span id="line-438"></span><span>  </span><span class="annot"><span class="annottext">TimeZone -&gt; m TimeZone
+forall a. a -&gt; m a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">TimeZone
+</span><a href="#local-6989586621679085949"><span class="hs-identifier hs-var">tz</span></a></span><span>
+</span><span id="line-439"></span></pre></body></html>
