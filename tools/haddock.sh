@@ -10,4 +10,4 @@ mkdir -p docs/
 # shellcheck disable=SC2038
 find docs/ -type f | xargs -I % sh -c "rm -r %"
 
-cp -r dist-newstyle/build/x86_64-linux/ghc-9.4.4/time-conv-0.1/doc/html/time-conv/* docs/
+cp -r dist-newstyle/build/x86_64-linux/ghc-*/time-conv-0.1/opt/doc/html/time-conv/* docs/
