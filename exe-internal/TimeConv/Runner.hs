@@ -16,13 +16,13 @@ import Data.Maybe.Optics (_Just, _Nothing)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Conversion qualified as Conv
-import Data.Time.Conversion.Types.Date (Date (..))
+import Data.Time.Conversion.Types.Date (Date (DateToday))
 import Data.Time.Conversion.Types.Exception
-  ( DateNoTimeStringException (..),
-    SrcTZNoTimeStringException (..),
+  ( DateNoTimeStringException (MkDateNoTimeStringException),
+    SrcTZNoTimeStringException (MkSrcTZNoTimeStringException),
   )
 import Data.Time.Conversion.Types.TZDatabase (TZDatabase, _TZDatabaseText)
-import Data.Time.Conversion.Types.TimeReader (TimeReader (..))
+import Data.Time.Conversion.Types.TimeReader (TimeReader)
 import Data.Time.Format qualified as Format
 import Effects.Exception (MonadCatch, MonadThrow, throwM)
 import Effects.FileSystem.FileReader (MonadFileReader, readFileUtf8ThrowM)

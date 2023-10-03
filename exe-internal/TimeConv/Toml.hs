@@ -8,9 +8,9 @@ where
 
 import Data.Map.Strict (Map)
 import Data.Text (Text)
-import Optics.Core
+import Optics.Core (A_Lens, LabelOptic (labelOptic), lensVL)
 import TOML
-  ( DecodeTOML (..),
+  ( DecodeTOML (tomlDecoder),
     Decoder,
     getFieldOptWith,
   )

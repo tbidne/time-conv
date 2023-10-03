@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-missing-import-lists #-}
+
 -- | This module provides functions for reading time strings. We also provide
 -- functions for converting between timezones.
 --
@@ -42,17 +44,32 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Clock (UTCTime)
 import Data.Time.Conversion.Internal qualified as Internal
-import Data.Time.Conversion.Types.Date (Date (..), unDateString)
-import Data.Time.Conversion.Types.Exception
-  ( LocalSystemTimeException (..),
-    LocalTimeZoneException (..),
-    ParseTZDatabaseException (..),
-    ParseTimeException (..),
+import Data.Time.Conversion.Types.Date
+  ( Date (DateLiteral, DateToday),
+    unDateString,
   )
-import Data.Time.Conversion.Types.TZDatabase (TZDatabase (..))
-import Data.Time.Conversion.Types.TimeFormat (TimeFormat (..))
-import Data.Time.Conversion.Types.TimeReader (TimeReader (..))
-import Data.Time.Format (ParseTime, TimeLocale (..))
+import Data.Time.Conversion.Types.Exception
+  ( LocalSystemTimeException (MkLocalSystemTimeException),
+    LocalTimeZoneException (MkLocalTimeZoneException),
+    ParseTZDatabaseException (MkParseTZDatabaseException),
+    ParseTimeException (MkParseTimeException),
+  )
+import Data.Time.Conversion.Types.TZDatabase
+  ( TZDatabase (TZDatabaseLabel, TZDatabaseText),
+  )
+import Data.Time.Conversion.Types.TimeFormat
+  ( TimeFormat (MkTimeFormat, unTimeFormat),
+  )
+import Data.Time.Conversion.Types.TimeReader
+  ( TimeReader
+      ( MkTimeReader,
+        date,
+        format,
+        srcTZ,
+        timeString
+      ),
+  )
+import Data.Time.Format (ParseTime, TimeLocale)
 import Data.Time.Format qualified as Format
 import Data.Time.LocalTime
   ( LocalTime,
@@ -75,7 +92,7 @@ import Effects.Exception
     catchAny,
     throwCS,
   )
-import Effects.Time (MonadTime (..))
+import Effects.Time (MonadTime (getSystemZonedTime))
 import Optics.Core ((^.))
 
 -- $setup
@@ -251,6 +268,7 @@ readTimeString timeReader =
         MonadCatch m,
         MonadTime m
       ) =>
+      -- Maybe source timezone
       Maybe TZLabel ->
       m (Text, TimeFormat)
     maybeAddDate mlabel = case timeReader ^. #date of
@@ -259,7 +277,7 @@ readTimeString timeReader =
         let str = unDateString dateStr
         pure (str +-+ timeStr, dateString +-+ format)
       Just DateToday -> do
-        -- get the current date in the system timezone
+        -- get the current date in the source timezone
         currDateStr <- currentDate mlabel
         pure (T.pack currDateStr +-+ timeStr, dateString +-+ format)
 

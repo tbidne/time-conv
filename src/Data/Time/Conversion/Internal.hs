@@ -1,4 +1,4 @@
--- | Internal module. This module does not necessarily follow PVP.
+-- | Internal module.
 --
 -- @since 0.1
 module Data.Time.Conversion.Internal
@@ -16,7 +16,7 @@ import Data.Text qualified as T
 import Data.Text.Encoding qualified as TEnc
 import Data.Text.Encoding.Error (OnDecodeError)
 import Data.Text.Encoding.Error qualified as TError
-import Data.Time.Zones.All (TZLabel (..))
+import Data.Time.Zones.All (TZLabel)
 import Data.Time.Zones.All qualified as All
 
 -- | Looks up a tz database label by name. Case-insensitive.

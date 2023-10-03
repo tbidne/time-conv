@@ -7,12 +7,11 @@ module Data.Time.Conversion.Types.TimeReader
   )
 where
 
-import Control.DeepSeq (NFData (..), deepseq)
-import Data.Default (Default (..))
+import Control.DeepSeq (NFData (rnf), deepseq)
 import Data.Text (Text)
 import Data.Time.Conversion.Types.Date (Date)
 import Data.Time.Conversion.Types.TZDatabase (TZDatabase)
-import Data.Time.Conversion.Types.TimeFormat (TimeFormat)
+import Data.Time.Conversion.Types.TimeFormat (TimeFormat, defaultTimeFormat)
 import GHC.Generics (Generic)
 import Optics.Core (A_Lens, LabelOptic (labelOptic), lensVL)
 
@@ -101,4 +100,4 @@ instance
 --
 -- @since 0.1
 defaultTimeReader :: Text -> TimeReader
-defaultTimeReader = MkTimeReader def Nothing Nothing
+defaultTimeReader = MkTimeReader defaultTimeFormat Nothing Nothing

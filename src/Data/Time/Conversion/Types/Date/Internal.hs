@@ -16,7 +16,7 @@ module Data.Time.Conversion.Types.Date.Internal
   )
 where
 
-import Control.DeepSeq (NFData (..))
+import Control.DeepSeq (NFData)
 import Control.Monad ((>=>))
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -26,7 +26,7 @@ import Optics.Core
   ( A_Getter,
     A_ReversedPrism,
     LabelOptic (labelOptic),
-    ReversibleOptic (..),
+    ReversibleOptic (re),
     prism,
     to,
   )

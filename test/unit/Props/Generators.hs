@@ -13,7 +13,7 @@ import Data.Text.Encoding qualified as TEnc
 import Data.Text.Lazy qualified as TL
 import Data.Text.Lazy.Builder (Builder)
 import Data.Text.Lazy.Builder qualified as TLBuilder
-import Data.Time.Zones.All (TZLabel (..))
+import Data.Time.Zones.All (TZLabel)
 import Data.Time.Zones.All qualified as All
 import Hedgehog (Gen)
 import Hedgehog.Gen qualified as HG

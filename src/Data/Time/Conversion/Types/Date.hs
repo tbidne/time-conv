@@ -22,9 +22,9 @@ module Data.Time.Conversion.Types.Date
   )
 where
 
-import Control.DeepSeq (NFData (..))
+import Control.DeepSeq (NFData)
 import Data.Text (Text)
-import Data.Time.Conversion.Types.Date.Internal (DateString (..))
+import Data.Time.Conversion.Types.Date.Internal (DateString)
 import Data.Time.Conversion.Types.Date.Internal qualified as Internal
 import GHC.Generics (Generic)
 import Optics.Core (Prism', prism)

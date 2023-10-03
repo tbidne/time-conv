@@ -6,7 +6,7 @@ module Main (main) where
 import Control.Exception (displayException)
 import Effects.Exception (catchCS, throwM)
 import GHC.Conc.Sync (setUncaughtExceptionHandler)
-import System.Exit (ExitCode (..))
+import System.Exit (ExitCode (ExitFailure, ExitSuccess))
 import TimeConv.Runner (runTimeConv)
 
 -- | Executable entry-point.

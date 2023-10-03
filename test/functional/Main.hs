@@ -5,9 +5,9 @@
 -- @since 0.1
 module Main (main) where
 
-import Control.Exception (Exception (..))
+import Control.Exception (Exception (displayException))
 import Control.Monad.IO.Class (MonadIO, liftIO)
-import Control.Monad.Trans.Class (MonadTrans (..))
+import Control.Monad.Trans.Class (MonadTrans (lift))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT), ask)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -27,7 +27,7 @@ import Effects.IORef (MonadIORef, modifyIORef', newIORef, readIORef)
 import Effects.Optparse (MonadOptparse)
 import Effects.System.Environment (MonadEnv)
 import Effects.System.Environment qualified as SysEnv
-import Effects.Time (MonadTime (..))
+import Effects.Time (MonadTime (getMonotonicTime, getSystemZonedTime))
 import Optics.Core ((^.))
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty qualified as Tasty

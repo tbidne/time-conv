@@ -6,9 +6,9 @@ module Data.Time.Conversion.Types.TZDatabase
   )
 where
 
-import Control.DeepSeq (NFData (..))
+import Control.DeepSeq (NFData)
 import Data.Text (Text)
-import Data.Time.Zones.All (TZLabel (..))
+import Data.Time.Zones.All (TZLabel)
 import GHC.Generics (Generic)
 import Optics.Core (Prism', prism)
 

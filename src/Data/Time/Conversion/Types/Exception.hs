@@ -9,8 +9,8 @@ module Data.Time.Conversion.Types.Exception
   )
 where
 
-import Control.DeepSeq (NFData (..))
-import Control.Exception (Exception (..))
+import Control.DeepSeq (NFData)
+import Control.Exception (Exception (displayException))
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Conversion.Types.TimeFormat (TimeFormat)

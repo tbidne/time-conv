@@ -3,6 +3,7 @@
 -- | @since 0.1
 module Data.Time.Conversion.Types.TimeFormat
   ( TimeFormat (..),
+    defaultTimeFormat,
     hm,
     hm12h,
     hmTZ,
@@ -11,18 +12,16 @@ module Data.Time.Conversion.Types.TimeFormat
   )
 where
 
-import Control.DeepSeq (NFData (..))
-import Data.Default (Default (..))
-import Data.String (IsString (..))
+import Control.DeepSeq (NFData)
+import Data.String (IsString)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import Optics.Core (An_Iso, LabelOptic (labelOptic), iso)
 
--- | Time formatting string. The 'Monoid' instance behaves like 'Text',
--- whereas 'Default' is an alias for 'hm'.
+-- | Time formatting string. The 'Monoid' instance behaves like 'Text'.
 --
 -- ==== __Examples__
--- >>> def :: TimeFormat
+-- >>> defaultTimeFormat
 -- MkTimeFormat {unTimeFormat = "%H:%M"}
 --
 -- >>> mempty :: TimeFormat
@@ -65,10 +64,8 @@ instance
   {-# INLINE labelOptic #-}
 
 -- | Alias for 'hm'.
---
--- @since 0.1
-instance Default TimeFormat where
-  def = hm
+defaultTimeFormat :: TimeFormat
+defaultTimeFormat = hm
 
 -- | Format for 24-hour @hours:minutes@.
 --

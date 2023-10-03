@@ -22,14 +22,11 @@ jobs:
           - "9.2.8"
           - "9.4.6"
           - "9.6.2"
-        platform:
-          - os: "macos-latest"
-            set-env: "export"
-          - os: "ubuntu-latest"
-            set-env: "export"
-          - os: "windows-latest"
-            set-env: "set"
-    runs-on: ${{ matrix.platform.os }}
+        os:
+          - "macos-latest"
+          - "ubuntu-latest"
+          - "windows-latest"
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
 

@@ -12,19 +12,26 @@ module TimeConv.Args
   )
 where
 
-import Data.Default (Default (..))
 import Data.Functor ((<&>))
 import Data.List qualified as L
 import Data.Maybe (fromMaybe)
 import Data.String (IsString (fromString))
 import Data.Text (Text)
 import Data.Text qualified as T
-import Data.Time.Conversion.Types.Date (Date (..))
+import Data.Time.Conversion.Types.Date (Date)
 import Data.Time.Conversion.Types.Date qualified as Date
-import Data.Time.Conversion.Types.TZDatabase (TZDatabase (..))
-import Data.Time.Conversion.Types.TimeFormat (TimeFormat (..))
+import Data.Time.Conversion.Types.TZDatabase (TZDatabase (TZDatabaseText))
+import Data.Time.Conversion.Types.TimeFormat (TimeFormat)
 import Data.Time.Conversion.Types.TimeFormat qualified as TimeFmt
-import Data.Time.Conversion.Types.TimeReader (TimeReader (..))
+import Data.Time.Conversion.Types.TimeReader
+  ( TimeReader
+      ( MkTimeReader,
+        date,
+        format,
+        srcTZ,
+        timeString
+      ),
+  )
 import Data.Version (Version (versionBranch))
 import Effects.Optparse (OsPath, osPath)
 import Optics.Core (Getter, (^.))
@@ -32,14 +39,23 @@ import Optics.Core qualified as O
 import Optics.TH (makeFieldLabelsNoPrefix)
 import Options.Applicative
   ( Parser,
-    ParserInfo (..),
+    ParserInfo
+      ( ParserInfo,
+        infoFailureCode,
+        infoFooter,
+        infoFullDesc,
+        infoHeader,
+        infoParser,
+        infoPolicy,
+        infoProgDesc
+      ),
     (<**>),
   )
 import Options.Applicative qualified as OApp
-import Options.Applicative.Help (Chunk (..))
+import Options.Applicative.Help (Chunk (Chunk))
 import Options.Applicative.Help.Chunk qualified as Chunk
 import Options.Applicative.Help.Pretty qualified as Pretty
-import Options.Applicative.Types (ArgPolicy (..), ReadM)
+import Options.Applicative.Types (ArgPolicy (Intersperse), ReadM)
 import Paths_time_conv qualified as Paths
 
 -- | CLI args.
@@ -182,7 +198,7 @@ parseFormatIn :: Parser TimeFormat
 parseFormatIn =
   OApp.option
     (fromString <$> OApp.str)
-    ( OApp.value def
+    ( OApp.value TimeFmt.defaultTimeFormat
         <> OApp.long "format-in"
         <> OApp.short 'f'
         <> OApp.metavar "FMT_STR"
@@ -197,7 +213,7 @@ parseFormatIn =
           defFormatStr,
           " i.e. 24-hr hour:minute. See 'man date' for basic examples."
         ]
-    defFormatStr = T.unpack $ def @TimeFormat ^. #unTimeFormat
+    defFormatStr = T.unpack $ TimeFmt.defaultTimeFormat ^. #unTimeFormat
 
 parseFormatOut :: Parser (Maybe TimeFormat)
 parseFormatOut =
