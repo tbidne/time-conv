@@ -10,6 +10,7 @@ module TimeConv.Runner
 where
 
 import Control.Monad (when)
+import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Maybe.Optics (_Just, _Nothing)
@@ -177,15 +178,17 @@ updateFromToml mtimeReader noDate mdestTZ toml =
    in (mTimeReaderAliasesDate, mdestTZAliases)
   where
     -- update timeReader's srcTZ and destTZ w/ aliases
+    updateAliases :: Map Text Text -> (Maybe TimeReader, Maybe TZDatabase)
     updateAliases aliases =
-      let fromAliases' = fromAliases aliases
-          mdestTZ' = over' (_Just % _TZDatabaseText) fromAliases' mdestTZ
+      let lookupAlias = fromAliases aliases
+          mdestTZ' = over' (_Just % _TZDatabaseText) lookupAlias mdestTZ
           mtimeReader' =
-            over' (_Just % #srcTZ %? _TZDatabaseText) fromAliases' mtimeReader
+            over' (_Just % #srcTZ %? _TZDatabaseText) lookupAlias mtimeReader
        in (mtimeReader', mdestTZ')
 
-    -- sets reader's date to today only if it is unspecified and set in
-    -- toml
+    -- sets reader.date to today only if reader.date is unspecified (Nothing)
+    -- and toml.today is set
+    setIfNothingAndTomlToday :: Maybe Date -> Maybe Date
     setIfNothingAndTomlToday Nothing = case toml ^. #today of
       Just True -> Just DateToday
       _ -> Nothing
