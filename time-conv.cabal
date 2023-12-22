@@ -121,6 +121,7 @@ executable time-conv
   build-depends:
     , base
     , effects-exceptions
+    , time-conv
     , time-conv-exe-internal
 
   hs-source-dirs:   app
