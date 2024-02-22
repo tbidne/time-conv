@@ -27,7 +27,6 @@
   * [Source Timezone](#source-timezone)
   * [Time String](#time-string)
 * [Building](#building)
-  * [Prerequisites](#prerequisites)
   * [Cabal](#cabal)
   * [Nix](#nix)
 
@@ -283,7 +282,12 @@ If you have never built a haskell program before, [Cabal](#cabal) is probably th
 
 * [`ghcup`](https://www.haskell.org/ghcup/)
 
-Using `ghcup`, install `cabal 2.4+` and the latest `ghc`.
+Using `ghcup`, install `cabal 2.4+` and one of:
+
+- `ghc 9.2`
+- `ghc 9.4`
+- `ghc 9.6`
+- `ghc 9.8`
 
 ### Build Time-Conv
 
