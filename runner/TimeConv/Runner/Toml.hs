@@ -1,7 +1,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 -- | @since 0.1
-module TimeConv.Toml
+module TimeConv.Runner.Toml
   ( Toml (..),
   )
 where

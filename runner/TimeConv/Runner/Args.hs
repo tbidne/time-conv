@@ -5,7 +5,7 @@
 -- | CLI args for TimeConv.
 --
 -- @since 0.1
-module TimeConv.Args
+module TimeConv.Runner.Args
   ( Args (..),
     argsToBuilder,
     parserInfo,

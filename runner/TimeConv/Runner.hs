@@ -40,8 +40,8 @@ import Effects.Time (MonadTime)
 import Optics.Core (over', (%), (%?), (^.))
 import Optics.Core.Extras (is)
 import TOML qualified
-import TimeConv.Args (Args, argsToBuilder, parserInfo)
-import TimeConv.Toml (Toml)
+import TimeConv.Runner.Args (Args, argsToBuilder, parserInfo)
+import TimeConv.Runner.Toml (Toml)
 
 -- | 'runTimeConvHandler' that prints the result.
 --

@@ -85,14 +85,14 @@ library
   hs-source-dirs:   src
   default-language: Haskell2010
 
-library time-conv-exe-internal
+library time-conv-runner
   import:           common-lang
   other-modules:    Paths_time_conv
   autogen-modules:  Paths_time_conv
   exposed-modules:
-    TimeConv.Args
     TimeConv.Runner
-    TimeConv.Toml
+    TimeConv.Runner.Args
+    TimeConv.Runner.Toml
 
   build-depends:
     , base
@@ -110,7 +110,7 @@ library time-conv-exe-internal
     , time-conv
     , toml-reader           >=0.2.0.0  && <0.3
 
-  hs-source-dirs:   exe-internal
+  hs-source-dirs:   runner
   default-language: Haskell2010
 
 executable time-conv
@@ -120,7 +120,7 @@ executable time-conv
     , base
     , effects-exceptions
     , time-conv
-    , time-conv-exe-internal
+    , time-conv-runner
 
   hs-source-dirs:   app
   ghc-options:      -threaded -with-rtsopts=-N
@@ -161,10 +161,10 @@ test-suite functional
   main-is:          Main.hs
   build-depends:
     , base
-    , effects-env             ^>=0.1
+    , effects-env         ^>=0.1
     , effects-exceptions
     , effects-fs
-    , effects-ioref           ^>=0.1
+    , effects-ioref       ^>=0.1
     , effects-optparse
     , effects-time
     , optics-core
@@ -173,8 +173,8 @@ test-suite functional
     , text
     , time
     , time-conv
-    , time-conv-exe-internal
-    , transformers            >=0.5.6.2 && <0.7
+    , time-conv-runner
+    , transformers        >=0.5.6.2 && <0.7
 
   hs-source-dirs:   test/functional
   default-language: Haskell2010
