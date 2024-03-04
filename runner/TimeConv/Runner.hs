@@ -5,7 +5,6 @@
 -- @since 0.1
 module TimeConv.Runner
   ( runTimeConv,
-    runTimeConvHandler,
   )
 where
 
@@ -43,7 +42,7 @@ import TOML qualified
 import TimeConv.Runner.Args (Args, argsToBuilder, parserInfo)
 import TimeConv.Runner.Toml (Toml)
 
--- | 'runTimeConvHandler' that prints the result.
+-- | Runs time-conv with CLI args.
 --
 -- @since 0.1
 runTimeConv ::
@@ -57,37 +56,21 @@ runTimeConv ::
   m ()
 runTimeConv = do
   args <- execParser parserInfo
-  runWithArgs T.putTextLn args
+  runWithArgs args
 
--- | Runs time-conv and applies the given handler.
---
--- @since 0.1
-runTimeConvHandler ::
-  ( MonadCatch m,
-    MonadFileReader m,
-    MonadOptparse m,
-    MonadPathReader m,
-    MonadTime m
-  ) =>
-  (Text -> m a) ->
-  m a
-runTimeConvHandler handler = do
-  args <- execParser parserInfo
-  runWithArgs handler args
-
--- | Runs time-conv and applies the given handler.
+-- | Runs time-conv with given args.
 --
 -- @since 0.1
 runWithArgs ::
   ( MonadCatch m,
     MonadFileReader m,
     MonadPathReader m,
+    MonadTerminal m,
     MonadTime m
   ) =>
-  (Text -> m a) ->
   Args ->
-  m a
-runWithArgs handler args = do
+  m ()
+runWithArgs args = do
   when (is (#timeString % _Nothing) args) $ do
     when (is (#srcTZ % _Just) args) $ throwM MkSrcTZNoTimeStringException
     when (is (#date % _Just) args) $ throwM MkDateNoTimeStringException
@@ -113,7 +96,7 @@ runWithArgs handler args = do
     readAndHandle tr d fmt = do
       time <- Conv.readConvertTime tr d
       let result = T.pack $ Format.formatTime locale fmt time
-      handler result
+      T.putTextLn result
     -- NOTE: It seems that the locale's timezone info is not used when
     -- formatting the output, so we do not have to worry about including
     -- extra tz info here.

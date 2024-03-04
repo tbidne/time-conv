@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# OPTIONS_GHC -Wno-missing-methods #-}
 
 -- | Functional test suite
 --
@@ -7,8 +8,7 @@ module Main (main) where
 
 import Control.Exception (Exception (displayException))
 import Control.Monad.IO.Class (MonadIO, liftIO)
-import Control.Monad.Trans.Class (MonadTrans (lift))
-import Control.Monad.Trans.Reader (ReaderT (runReaderT), ask)
+import Control.Monad.Reader (MonadReader, ReaderT (runReaderT), ask)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Conversion.Types.Date qualified as Date
@@ -23,16 +23,17 @@ import Effects.Exception (MonadCatch, MonadThrow, tryCS)
 import Effects.FileSystem.FileReader (MonadFileReader)
 import Effects.FileSystem.PathReader (MonadPathReader)
 import Effects.FileSystem.Utils (combineFilePaths)
-import Effects.IORef (MonadIORef, modifyIORef', newIORef, readIORef)
+import Effects.IORef (IORef, MonadIORef, modifyIORef', newIORef, readIORef)
 import Effects.Optparse (MonadOptparse)
 import Effects.System.Environment (MonadEnv)
 import Effects.System.Environment qualified as SysEnv
+import Effects.System.Terminal (MonadTerminal (putStrLn))
 import Effects.Time (MonadTime (getMonotonicTime, getSystemZonedTime))
 import Optics.Core ((^.))
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty qualified as Tasty
 import Test.Tasty.HUnit (Assertion, assertBool, assertFailure, testCase, (@=?))
-import TimeConv.Runner (runTimeConvHandler)
+import TimeConv.Runner (runTimeConv)
 
 -- | Runs functional tests.
 --
@@ -377,7 +378,7 @@ assertException expected io = do
 captureTimeConv :: [String] -> IO Text
 captureTimeConv = captureTimeConvNoConfigM
 
-newtype MockTimeM m a = MkMockTimeM (m a)
+newtype MockTimeIO a = MkMockTimeM (ReaderT String IO a)
   deriving
     ( Applicative,
       Functor,
@@ -391,12 +392,8 @@ newtype MockTimeM m a = MkMockTimeM (m a)
       MonadPathReader,
       MonadThrow
     )
-    via m
-
-instance MonadTrans MockTimeM where
-  lift = MkMockTimeM
-
-type MockTimeIO = MockTimeM (ReaderT String IO)
+    via (ReaderT String IO)
+  deriving (MonadReader String) via (ReaderT String IO)
 
 runMockTimeIO :: MockTimeIO a -> String -> IO a
 runMockTimeIO (MkMockTimeM rdr) = runReaderT rdr
@@ -406,7 +403,7 @@ usingMockTimeIO = flip runMockTimeIO
 
 instance MonadTime MockTimeIO where
   getSystemZonedTime = do
-    str <- lift ask
+    str <- ask
     liftIO $
       Format.parseTimeM
         True
@@ -445,11 +442,7 @@ captureTimeConvM ::
   ) =>
   [String] ->
   m Text
-captureTimeConvM argList = do
-  output <- newIORef ""
-  let handler txt = modifyIORef' output (txt <>)
-  SysEnv.withArgs argList (runTimeConvHandler handler)
-  readIORef output
+captureTimeConvM argList = SysEnv.withArgs argList $ runTermT runTimeConv
 
 -- when we want to ensure that nothing depends on local time.
 pureTZ :: [String]
@@ -467,3 +460,32 @@ startsWith (_ : _) [] = False
 startsWith (x : xs) (y : ys)
   | x == y = startsWith xs ys
   | otherwise = False
+
+-- Adds a MonadTerminal instance that reads putStrLn into an IORef. Intended
+-- to be added "on top" of some Monad that implements the rest of TimeConv's
+-- dependencies e.g. IO or MockTimeIO.
+newtype TermT m a = MkTermT (ReaderT (IORef Text) m a)
+  deriving
+    ( Applicative,
+      Functor,
+      Monad,
+      MonadCatch,
+      MonadEnv,
+      MonadFileReader,
+      MonadIORef,
+      MonadOptparse,
+      MonadPathReader,
+      MonadThrow,
+      MonadTime
+    )
+    via (ReaderT (IORef Text) m)
+  deriving (MonadReader (IORef Text)) via (ReaderT (IORef Text) m)
+
+instance (MonadIORef m) => MonadTerminal (TermT m) where
+  putStrLn s = ask >>= \ref -> modifyIORef' ref (T.pack s <>)
+
+runTermT :: (MonadIORef m) => TermT m a -> m Text
+runTermT (MkTermT m) = do
+  outputRef <- newIORef ""
+  _ <- runReaderT m outputRef
+  readIORef outputRef
