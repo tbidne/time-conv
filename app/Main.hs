@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 -- | Main module.
 --
 -- @since 0.1
@@ -16,12 +18,14 @@ import Effects.Exception (ExceptionProxy (MkExceptionProxy))
 import Effects.Exception qualified as Ex
 import TimeConv.Runner (runTimeConv)
 
+{- ORMOLU_DISABLE -}
+
 -- | Executable entry-point.
 --
 -- @since 0.1
 main :: IO ()
 main = do
-  Ex.setUncaughtExceptionDisplayCSNoMatch
+  setFn
     proxies
     putStrLn
 
@@ -35,3 +39,11 @@ main = do
         MkExceptionProxy $ Proxy @ParseTZDatabaseException,
         MkExceptionProxy $ Proxy @SrcTZNoTimeStringException
       ]
+    setFn =
+#if MIN_VERSION_base(4, 20, 0)
+      Ex.setUncaughtExceptionDisplayInnerMatch
+#else
+      Ex.setUncaughtExceptionDisplayCSNoMatch
+#endif
+
+{- ORMOLU_ENABLE -}

@@ -3,7 +3,9 @@ name:               time-conv
 version:            0.1
 license:            MIT
 license-file:       LICENSE
-tested-with:        GHC ==9.2.8 || ==9.4.8 || ==9.6.5 || ==9.8.2
+tested-with:
+  GHC ==9.2.8 || ==9.4.8 || ==9.6.5 || ==9.8.2 || ==9.10.1
+
 copyright:          2022-2024 Thomas Bidne
 author:             Thomas Bidne
 maintainer:         tbidne@protonmail.com
@@ -72,14 +74,14 @@ library
     Data.Time.Conversion.Types.TZDatabase
 
   build-depends:
-    , base                >=4.14.0.0 && <4.20
+    , base                >=4.14.0.0 && <4.21
     , containers          >=0.6.3.1  && <0.8
     , deepseq             >=1.4.4.0  && <1.6
     , effects-exceptions  ^>=0.1
     , effects-time        ^>=0.1
     , optics-core         ^>=0.4
     , text                >=1.2.3.2  && <2.2
-    , time                >=1.9.3    && <1.14
+    , time                >=1.9.3    && <1.15
     , tz                  ^>=0.1.3.3
 
   hs-source-dirs:   src
