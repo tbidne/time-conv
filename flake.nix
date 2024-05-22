@@ -30,45 +30,49 @@
     inputs.bounds.follows = "bounds";
   };
   outputs =
-    inputs@{ flake-parts
-    , monad-effects
-    , nix-hs-utils
-    , self
-    , ...
+    inputs@{
+      flake-parts,
+      monad-effects,
+      nix-hs-utils,
+      self,
+      ...
     }:
     flake-parts.lib.mkFlake { inherit inputs; } {
-      perSystem = { pkgs, ... }:
+      perSystem =
+        { pkgs, ... }:
         let
-          ghc-version = "ghc963";
+          ghc-version = "ghc982";
           compiler = pkgs.haskell.packages."${ghc-version}".override {
-            overrides = final: prev: {
-              hedgehog = prev.hedgehog_1_4;
-              hlint = prev.hlint_3_6_1;
-              ormolu = prev.ormolu_0_7_2_0;
-              tasty-hedgehog = prev.tasty-hedgehog_1_4_0_2;
-            } // nix-hs-utils.mkLibs inputs final [
-              "algebra-simple"
-              "bounds"
-            ] // nix-hs-utils.mkRelLibs "${monad-effects}/lib" final [
-              "effects-env"
-              "effects-exceptions"
-              "effects-fs"
-              "effects-ioref"
-              "effects-optparse"
-              "effects-stm"
-              "effects-terminal"
-              "effects-time"
-              "effects-unix-compat"
-            ];
+            overrides =
+              final: prev:
+              { }
+              // nix-hs-utils.mkLibs inputs final [
+                "algebra-simple"
+                "bounds"
+              ]
+              // nix-hs-utils.mkRelLibs "${monad-effects}/lib" final [
+                "effects-env"
+                "effects-exceptions"
+                "effects-fs"
+                "effects-ioref"
+                "effects-optparse"
+                "effects-stm"
+                "effects-terminal"
+                "effects-time"
+                "effects-unix-compat"
+              ];
           };
           hlib = pkgs.haskell.lib;
-          mkPkg = returnShellEnv:
+          mkPkg =
+            returnShellEnv:
             nix-hs-utils.mkHaskellPkg {
               inherit compiler pkgs returnShellEnv;
               name = "time-conv";
               root = ./.;
             };
-          compilerPkgs = { inherit compiler pkgs; };
+          compilerPkgs = {
+            inherit compiler pkgs;
+          };
         in
         {
           packages.default = mkPkg false;
