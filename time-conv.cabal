@@ -56,6 +56,7 @@ common common-lang
     ScopedTypeVariables
     StandaloneDeriving
     StandaloneKindSignatures
+    StrictData
     TupleSections
     TypeApplications
     TypeFamilyDependencies

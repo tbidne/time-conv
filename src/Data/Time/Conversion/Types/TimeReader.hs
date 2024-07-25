@@ -24,22 +24,22 @@ data TimeReader = MkTimeReader
     -- not include date information. Use 'date' instead.
     --
     -- @since 0.1
-    format :: !TimeFormat,
+    format :: TimeFormat,
     -- | Timezone in which to read the string. 'Nothing' corresponds to
     -- local timezone.
     --
     -- @since 0.1
-    srcTZ :: !(Maybe TZDatabase),
+    srcTZ :: Maybe TZDatabase,
     -- | Date corresponding to the 'timeString'. If 'Nothing', uses the
     -- unix epoch.
     --
     -- @since 0.1
-    date :: !(Maybe Date),
+    date :: Maybe Date,
     -- | The time string to parse. This should __not__ include a timezone
     -- e.g. EST. Use 'srcTZ' instead.
     --
     -- @since 0.1
-    timeString :: !Text
+    timeString :: Text
   }
   deriving stock
     ( -- | @since 0.1

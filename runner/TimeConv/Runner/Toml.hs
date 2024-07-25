@@ -18,9 +18,9 @@ import TOML
 -- | @since 0.1
 data Toml = MkToml
   { -- | @since 0.1
-    today :: !(Maybe Bool),
+    today :: Maybe Bool,
     -- | @since 0.1
-    aliases :: !(Maybe (Map Text Text))
+    aliases :: Maybe (Map Text Text)
   }
   deriving stock (Eq, Show)
 

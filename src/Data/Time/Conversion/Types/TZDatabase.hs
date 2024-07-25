@@ -27,12 +27,12 @@ data TZDatabase
     -- total conversions.
     --
     -- @since 0.1
-    TZDatabaseLabel !TZLabel
+    TZDatabaseLabel TZLabel
   | -- | Interprets the 'Text' as a tz database name e.g. America/New_York.
     -- Obviously such conversions cannot be total.
     --
     -- @since 0.1
-    TZDatabaseText !Text
+    TZDatabaseText Text
   deriving stock
     ( -- | @since 0.1
       Eq,

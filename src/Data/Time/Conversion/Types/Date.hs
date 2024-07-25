@@ -40,7 +40,7 @@ data Date
   | -- | Manual date string.
     --
     -- @since 0.1
-    DateLiteral !DateString
+    DateLiteral DateString
   deriving stock
     ( -- | @since 0.1
       Eq,

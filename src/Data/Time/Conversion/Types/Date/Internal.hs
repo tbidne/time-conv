@@ -44,7 +44,7 @@ import Text.Read qualified as TR
 -- Left "bad"
 --
 -- @since 0.1
-data DateString = UnsafeDateString !Word16 !Word8 !Word8
+data DateString = UnsafeDateString Word16 Word8 Word8
   deriving stock
     ( -- | @since 0.1
       Eq,
