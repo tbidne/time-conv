@@ -9,7 +9,6 @@ module TimeConv.Runner
 where
 
 import Control.Monad (when)
-import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Maybe.Optics (_Just, _Nothing)
@@ -36,7 +35,19 @@ import Effects.Optparse (MonadOptparse (execParser))
 import Effects.System.Terminal (MonadTerminal)
 import Effects.System.Terminal qualified as T
 import Effects.Time (MonadTime)
-import Optics.Core (over', (%), (%?), (^.))
+import Optics.Core
+  ( A_Setter,
+    Is,
+    Optic',
+    Prism,
+    Prism',
+    over',
+    prism,
+    set',
+    (%),
+    (%?),
+    (^.),
+  )
 import Optics.Core.Extras (is)
 import TOML qualified
 import TimeConv.Runner.Args (Args, argsToBuilder, parserInfo)
@@ -145,37 +156,87 @@ updateFromToml ::
   Toml ->
   -- | Updated TimeReader and Dest TZ.
   (Maybe TimeReader, Maybe TZDatabase)
-updateFromToml mtimeReader noDate mdestTZ toml =
-  let -- update timeReader's srcTZ and destTZ w/ aliases
-      (mtimeReaderAliases, mdestTZAliases) =
-        maybe
-          (mtimeReader, mdestTZ)
-          updateAliases
-          (toml ^. #aliases)
-
-      -- update timeReader's date w/ toml.today and noDate
-      mTimeReaderAliasesDate =
-        if noDate
-          then mtimeReaderAliases
-          else over' (_Just % #date) setIfNothingAndTomlToday mtimeReaderAliases
-   in (mTimeReaderAliasesDate, mdestTZAliases)
+updateFromToml mTimeReader noDate mDestTZ toml = (mFinalTimeReader, mFinalDest)
   where
-    -- update timeReader's srcTZ and destTZ w/ aliases
-    updateAliases :: Map Text Text -> (Maybe TimeReader, Maybe TZDatabase)
-    updateAliases aliases =
-      let lookupAlias = fromAliases aliases
-          mdestTZ' = over' (_Just % _TZDatabaseText) lookupAlias mdestTZ
-          mtimeReader' =
-            over' (_Just % #srcTZ %? _TZDatabaseText) lookupAlias mtimeReader
-       in (mtimeReader', mdestTZ')
+    mFinalTimeReader :: Maybe TimeReader
+    mFinalTimeReader = do
+      timeReader <- mTimeReader
 
-    -- sets reader.date to today only if reader.date is unspecified (Nothing)
-    -- and toml.today is set
-    setIfNothingAndTomlToday :: Maybe Date -> Maybe Date
-    setIfNothingAndTomlToday Nothing = case toml ^. #today of
-      Just True -> Just DateToday
-      _ -> Nothing
-    setIfNothingAndTomlToday x = x
+      let -- 1. Update src via aliases
+          timeReaderAliases =
+            updateAliases
+              (#srcTZ %? _TZDatabaseText)
+              timeReader
 
-    fromAliases :: Map.Map Text Text -> Text -> Text
-    fromAliases aliasesMap txt = fromMaybe txt (Map.lookup txt aliasesMap)
+          -- 2. CLI date (date string or literal 'today') can be overridden
+          --    in exactly one scenario:
+          --
+          --    1. noDate is False (--no-date unspecified).
+          --    2. CLI --date unspecified.
+          --    3. toml.today = true
+          --
+          -- maybeUpdateDate checks conditions 1 and 3.
+          maybeUpdateDate :: Bool
+          maybeUpdateDate = not noDate && is (#today %? _True) toml
+
+          -- AffineTraversal here checks condition 2.
+          timeReaderAliasesDate =
+            if maybeUpdateDate
+              then
+                set'
+                  (#date % _UnlawfulNothing)
+                  DateToday
+                  timeReaderAliases
+              else
+                timeReaderAliases
+
+      Just timeReaderAliasesDate
+
+    mFinalDest :: Maybe TZDatabase
+    -- 1. Update via aliases
+    mFinalDest = updateAliases _TZDatabaseText <$> mDestTZ
+
+    -- if aliases exist, update relevant fields (timeReader's srcTZ and destTZ)
+    updateAliases :: (Is k A_Setter) => Optic' k is s Text -> s -> s
+    updateAliases k = over' k aliasOrDefault
+
+    -- returns 'Map.lookup txt aliases' if aliases and the key both exist.
+    aliasOrDefault :: Text -> Text
+    aliasOrDefault txt = fromMaybe txt $ do
+      aliasesMap <- toml ^. #aliases
+      Map.lookup txt aliasesMap
+
+-- | Matches Nothing but overrides with Just.
+--
+-- __WARNING:__ This is __unlawful__ since e.g. the law
+--
+-- @
+--   preview l (review l b) ≡ Just b
+-- @
+--
+-- does not hold here. To wit,
+--
+-- @
+--   preview _UnlawfulNothing (review _UnlawfulNothing ()) ≡ Just ()
+--   preview _UnlawfulNothing (Just ()) ≡ Just ()
+--   Nothing ≢ Just ()
+-- @
+--
+-- But this is exactly the behavior we want here, swapping constructors.
+_UnlawfulNothing :: Prism (Maybe a) (Maybe a) () a
+_UnlawfulNothing =
+  prism
+    Just
+    ( \case
+        Nothing -> Right ()
+        other -> Left other
+    )
+
+_True :: Prism' Bool ()
+_True =
+  prism
+    (const True)
+    ( \case
+        True -> Right ()
+        other -> Left other
+    )
