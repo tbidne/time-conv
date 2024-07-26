@@ -51,7 +51,7 @@ import Options.Applicative
       ),
     (<**>),
   )
-import Options.Applicative qualified as OApp
+import Options.Applicative qualified as OA
 import Options.Applicative.Help (Chunk (Chunk))
 import Options.Applicative.Help.Chunk qualified as Chunk
 import Options.Applicative.Help.Pretty qualified as Pretty
@@ -111,7 +111,7 @@ parseArgs =
     <*> parseFormatOut
     <*> parseSrcTZ
     <*> parseTimeStr
-      <**> OApp.helper
+      <**> OA.helper
       <**> version
 
 -- | Maps 'Args' to 'TimeReader'. Details:
@@ -146,14 +146,15 @@ argsToBuilder = O.to to
 
 parseConfig :: Parser (Maybe OsPath)
 parseConfig =
-  OApp.optional $
-    OApp.option
+  OA.optional
+    $ OA.option
       osPath
-      ( OApp.long "config"
-          <> OApp.short 'c'
-          <> OApp.metavar "PATH"
-          <> mkHelp helpTxt
-      )
+    $ mconcat
+      [ OA.long "config",
+        OA.short 'c',
+        OA.metavar "PATH",
+        mkHelp helpTxt
+      ]
   where
     helpTxt =
       mconcat
@@ -163,10 +164,10 @@ parseConfig =
 
 parseNoConfig :: Parser Bool
 parseNoConfig =
-  OApp.switch
+  OA.switch
     ( mconcat
-        [ OApp.long "no-config",
-          OApp.hidden,
+        [ OA.long "no-config",
+          OA.hidden,
           mkHelp helpTxt
         ]
     )
@@ -175,14 +176,15 @@ parseNoConfig =
 
 parseDestTZ :: Parser (Maybe TZDatabase)
 parseDestTZ =
-  OApp.option
+  OA.option
     readTZDatabase
-    ( OApp.value Nothing
-        <> OApp.long "dest-tz"
-        <> OApp.short 'd'
-        <> OApp.metavar "TZ_DB"
-        <> mkHelp helpTxt
-    )
+    $ mconcat
+      [ OA.value Nothing,
+        OA.long "dest-tz",
+        OA.short 'd',
+        OA.metavar "TZ_DB",
+        mkHelp helpTxt
+      ]
   where
     helpTxt =
       mconcat
@@ -192,18 +194,19 @@ parseDestTZ =
         ]
 
 readTZDatabase :: ReadM (Maybe TZDatabase)
-readTZDatabase = Just . TZDatabaseText <$> OApp.str
+readTZDatabase = Just . TZDatabaseText <$> OA.str
 
 parseFormatIn :: Parser TimeFormat
 parseFormatIn =
-  OApp.option
-    (fromString <$> OApp.str)
-    ( OApp.value TimeFmt.defaultTimeFormat
-        <> OApp.long "format-in"
-        <> OApp.short 'f'
-        <> OApp.metavar "FMT_STR"
-        <> mkHelp helpTxt
-    )
+  OA.option
+    (fromString <$> OA.str)
+    $ mconcat
+      [ OA.value TimeFmt.defaultTimeFormat,
+        OA.long "format-in",
+        OA.short 'f',
+        OA.metavar "FMT_STR",
+        mkHelp helpTxt
+      ]
   where
     helpTxt =
       mconcat
@@ -217,14 +220,15 @@ parseFormatIn =
 
 parseFormatOut :: Parser (Maybe TimeFormat)
 parseFormatOut =
-  OApp.optional $
-    OApp.option
+  OA.optional
+    $ OA.option
       readFormat
-      ( OApp.long "format-out"
-          <> OApp.short 'o'
-          <> OApp.metavar "(rfc822 | FMT_STR)"
-          <> mkHelp helpTxt
-      )
+    $ mconcat
+      [ OA.long "format-out",
+        OA.short 'o',
+        OA.metavar "(rfc822 | FMT_STR)",
+        mkHelp helpTxt
+      ]
   where
     helpTxt =
       mconcat
@@ -234,20 +238,21 @@ parseFormatOut =
 
 readFormat :: ReadM TimeFormat
 readFormat =
-  OApp.str <&> \case
+  OA.str <&> \case
     "rfc822" -> TimeFmt.rfc822
     other -> fromString other
 
 parseSrcTZ :: Parser (Maybe TZDatabase)
 parseSrcTZ =
-  OApp.option
+  OA.option
     readTZDatabase
-    ( OApp.value Nothing
-        <> OApp.long "src-tz"
-        <> OApp.short 's'
-        <> OApp.metavar "TZ_DB"
-        <> mkHelp helpTxt
-    )
+    $ mconcat
+      [ OA.value Nothing,
+        OA.long "src-tz",
+        OA.short 's',
+        OA.metavar "TZ_DB",
+        mkHelp helpTxt
+      ]
   where
     helpTxt =
       mconcat
@@ -258,11 +263,11 @@ parseSrcTZ =
 
 parseDate :: Parser (Maybe Date)
 parseDate =
-  OApp.optional $
-    OApp.option readDate $
+  OA.optional $
+    OA.option readDate $
       mconcat
-        [ OApp.long "date",
-          OApp.metavar "(today | YYYY-mm-dd)",
+        [ OA.long "date",
+          OA.metavar "(today | YYYY-mm-dd)",
           mkHelp helpTxt
         ]
   where
@@ -271,38 +276,38 @@ parseDate =
         [ "Date in which to read the string. Today uses the current date, as ",
           "determined by the source.  This option requires TIME_STR."
         ]
-    readDate = OApp.str >>= Date.parseDate
+    readDate = OA.str >>= Date.parseDate
 
 parseNoDate :: Parser Bool
 parseNoDate =
-  OApp.switch $
+  OA.switch $
     mconcat
-      [ OApp.long "no-date",
-        OApp.hidden,
+      [ OA.long "no-date",
+        OA.hidden,
         mkHelp "Disables --date. Useful for disabling the toml field 'today'."
       ]
 
 parseTimeStr :: Parser (Maybe Text)
 parseTimeStr =
-  OApp.optional $
+  OA.optional $
     T.pack
-      <$> OApp.argument
-        OApp.str
-        (OApp.metavar "TIME_STR" <> mkHelp helpTxt)
+      <$> OA.argument
+        OA.str
+        (OA.metavar "TIME_STR" <> mkHelp helpTxt)
   where
     helpTxt =
       "Time string to parse. If none is given then we parse the"
         <> " local system time. To format the output, use --format-out."
 
 version :: Parser (a -> a)
-version = OApp.infoOption versNum (OApp.long "version" <> OApp.short 'v')
+version = OA.infoOption versNum (OA.long "version" <> OA.short 'v')
 
 versNum :: String
 versNum = "Version: " <> L.intercalate "." (show <$> versionBranch Paths.version)
 
-mkHelp :: String -> OApp.Mod f a
+mkHelp :: String -> OA.Mod f a
 mkHelp =
-  OApp.helpDoc
+  OA.helpDoc
     . fmap (<> Pretty.hardline)
     . Chunk.unChunk
     . Chunk.paragraph
