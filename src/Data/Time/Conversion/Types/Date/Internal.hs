@@ -17,7 +17,6 @@ module Data.Time.Conversion.Types.Date.Internal
 where
 
 import Control.DeepSeq (NFData)
-import Control.Monad ((>=>))
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Word (Word16, Word8)
@@ -162,13 +161,12 @@ parseDay :: Text -> Maybe Word8
 parseDay = readDecimal @Word8 2 1 31
 
 readDecimal :: (Ord a, Read a) => Int -> a -> a -> Text -> Maybe a
-readDecimal len l u =
-  (\t -> if T.length t == len then Just t else Nothing)
-    >=> TR.readMaybe . T.unpack
-    >=> \n ->
-      if n >= l && n <= u
-        then Just n
-        else Nothing
+readDecimal len l u t = do
+  tLen <- if T.length t == len then Just t else Nothing
+  n <- TR.readMaybe (T.unpack tLen)
+  if n >= l && n <= u
+    then Just n
+    else Nothing
 
 nonEmpty :: Text -> Bool
 nonEmpty = not . T.null . T.strip

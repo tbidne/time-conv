@@ -77,9 +77,9 @@ _DateToday :: Prism' Date ()
 _DateToday =
   prism
     (const DateToday)
-    ( \x -> case x of
+    ( \case
         DateToday -> Right ()
-        _ -> Left x
+        other -> Left other
     )
 {-# INLINE _DateToday #-}
 
@@ -88,8 +88,8 @@ _DateLiteral :: Prism' Date DateString
 _DateLiteral =
   prism
     DateLiteral
-    ( \x -> case x of
+    ( \case
         DateLiteral s -> Right s
-        _ -> Left x
+        other -> Left other
     )
 {-# INLINE _DateLiteral #-}

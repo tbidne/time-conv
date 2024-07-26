@@ -51,9 +51,9 @@ _TZDatabaseLabel :: Prism' TZDatabase TZLabel
 _TZDatabaseLabel =
   prism
     TZDatabaseLabel
-    ( \x -> case x of
+    ( \case
         TZDatabaseLabel lbl -> Right lbl
-        _ -> Left x
+        other -> Left other
     )
 {-# INLINE _TZDatabaseLabel #-}
 
@@ -62,8 +62,8 @@ _TZDatabaseText :: Prism' TZDatabase Text
 _TZDatabaseText =
   prism
     TZDatabaseText
-    ( \x -> case x of
+    ( \case
         TZDatabaseText t -> Right t
-        _ -> Left x
+        other -> Left other
     )
 {-# INLINE _TZDatabaseText #-}
