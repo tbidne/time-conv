@@ -2,6 +2,7 @@
 
 module Unit.Data.Time.Conversion (tests) where
 
+import Control.Exception.Utils (catchSync)
 import Control.Monad (unless)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.Text qualified as T
@@ -22,7 +23,6 @@ import Data.Time.Conversion.Types.TimeReader
 import Data.Time.Format qualified as Format
 import Data.Time.LocalTime (ZonedTime (ZonedTime))
 import Data.Time.LocalTime qualified as Time
-import Effects.Exception (catchAny)
 import Hedgehog (Property, PropertyName)
 import Hedgehog qualified as H
 import Hedgehog.Internal.Property ((===))
@@ -64,7 +64,7 @@ testDestSrcRoundtrips =
 
       currTime' <-
         liftIO (Conversion.readConvertTime (Just timeReader) Nothing)
-          `catchAny` \ex -> do
+          `catchSync` \ex -> do
             H.annotateShow ex
             H.failure
       H.annotateShow currTime'
@@ -117,7 +117,7 @@ testDestSrcDateRoundtrips =
 
       currTime' <-
         liftIO (Conversion.readConvertTime (Just timeReader) Nothing)
-          `catchAny` \ex -> do
+          `catchSync` \ex -> do
             H.annotateShow ex
             H.failure
 

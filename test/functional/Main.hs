@@ -7,6 +7,7 @@
 module Main (main) where
 
 import Control.Exception (Exception (displayException))
+import Control.Monad.Catch (MonadCatch, MonadThrow, try)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.Reader (MonadReader, ReaderT (runReaderT), ask)
 import Data.Text (Text)
@@ -19,16 +20,15 @@ import Data.Time.Conversion.Types.Exception
     SrcTZNoTimeStringException,
   )
 import Data.Time.Format qualified as Format
-import Effects.Exception (MonadCatch, MonadThrow, tryCS)
 import Effects.FileSystem.FileReader (MonadFileReader)
 import Effects.FileSystem.PathReader (MonadPathReader)
-import Effects.FileSystem.Utils (combineFilePaths)
 import Effects.IORef (IORef, MonadIORef, modifyIORef', newIORef, readIORef)
 import Effects.Optparse (MonadOptparse)
 import Effects.System.Environment (MonadEnv)
 import Effects.System.Environment qualified as SysEnv
 import Effects.System.Terminal (MonadTerminal (putStrLn))
 import Effects.Time (MonadTime (getMonotonicTime, getSystemZonedTime))
+import FileSystem.OsPath (combineFilePaths)
 import Optics.Core ((^.))
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty qualified as Tasty
@@ -367,7 +367,7 @@ testDateNoTimeStr = testCase "Date w/o time string fails" $ do
 
 assertException :: forall e a. (Exception e) => String -> IO a -> Assertion
 assertException expected io = do
-  tryCS @_ @e io >>= \case
+  try @_ @e io >>= \case
     Right _ -> assertFailure "Expected exception, received none"
     Left result -> do
       let result' = displayException result

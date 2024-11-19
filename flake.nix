@@ -19,7 +19,18 @@
     inputs.nix-hs-utils.follows = "nix-hs-utils";
     inputs.nixpkgs.follows = "nixpkgs";
   };
-
+  inputs.exception-utils = {
+    url = "github:tbidne/exception-utils";
+    inputs.flake-parts.follows = "flake-parts";
+    inputs.nix-hs-utils.follows = "nix-hs-utils";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
+  inputs.fs-utils = {
+    url = "github:tbidne/fs-utils";
+    inputs.flake-parts.follows = "flake-parts";
+    inputs.nix-hs-utils.follows = "nix-hs-utils";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
   inputs.monad-effects = {
     url = "github:tbidne/monad-effects";
     inputs.flake-parts.follows = "flake-parts";
@@ -28,6 +39,8 @@
 
     inputs.algebra-simple.follows = "algebra-simple";
     inputs.bounds.follows = "bounds";
+    inputs.exception-utils.follows = "exception-utils";
+    inputs.fs-utils.follows = "fs-utils";
   };
   outputs =
     inputs@{
@@ -49,10 +62,11 @@
               // nix-hs-utils.mkLibs inputs final [
                 "algebra-simple"
                 "bounds"
+                "exception-utils"
+                "fs-utils"
               ]
               // nix-hs-utils.mkRelLibs "${monad-effects}/lib" final [
                 "effects-env"
-                "effects-exceptions"
                 "effects-fs"
                 "effects-ioref"
                 "effects-optparse"
@@ -81,7 +95,7 @@
           apps = {
             format = nix-hs-utils.format compilerPkgs;
             lint = nix-hs-utils.lint compilerPkgs;
-            lintRefactor = nix-hs-utils.lintRefactor compilerPkgs;
+            lint-refactor = nix-hs-utils.lint-refactor compilerPkgs;
           };
         };
       systems = [

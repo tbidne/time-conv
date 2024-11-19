@@ -9,6 +9,7 @@ module TimeConv.Runner
 where
 
 import Control.Monad (when)
+import Control.Monad.Catch (MonadCatch, MonadThrow, throwM)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Maybe.Optics (_Just, _Nothing)
@@ -23,18 +24,17 @@ import Data.Time.Conversion.Types.Exception
 import Data.Time.Conversion.Types.TZDatabase (TZDatabase, _TZDatabaseText)
 import Data.Time.Conversion.Types.TimeReader (TimeReader)
 import Data.Time.Format qualified as Format
-import Effects.Exception (MonadCatch, MonadThrow, throwM)
 import Effects.FileSystem.FileReader (MonadFileReader, readFileUtf8ThrowM)
 import Effects.FileSystem.PathReader
   ( MonadPathReader (doesFileExist),
     OsPath,
     getXdgConfig,
   )
-import Effects.FileSystem.Utils (osp, (</>))
 import Effects.Optparse (MonadOptparse (execParser))
 import Effects.System.Terminal (MonadTerminal)
 import Effects.System.Terminal qualified as T
 import Effects.Time (MonadTime)
+import FileSystem.OsPath (osp, (</>))
 import Optics.Core
   ( A_Setter,
     Is,
