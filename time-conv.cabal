@@ -50,6 +50,7 @@ common common-lang
     NamedFieldPuns
     NumericUnderscores
     OverloadedLabels
+    OverloadedRecordDot
     OverloadedStrings
     PatternSynonyms
     RankNTypes
@@ -161,6 +162,7 @@ test-suite functional
   import:         common-lang
   type:           exitcode-stdio-1.0
   main-is:        Main.hs
+  other-modules:  Params
   build-depends:
     , base
     , effects-env       ^>=0.1

@@ -29,7 +29,9 @@ import Effects.System.Environment qualified as SysEnv
 import Effects.System.Terminal (MonadTerminal (putStrLn))
 import Effects.Time (MonadTime (getMonotonicTime, getSystemZonedTime))
 import FileSystem.OsPath (combineFilePaths)
-import Optics.Core ((^.))
+import Optics.Core (set', (^.))
+import Params (TestParams (MkTestParams, args, configEnabled, mCurrentTime))
+import Params qualified
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty qualified as Tasty
 import Test.Tasty.HUnit (Assertion, assertBool, assertFailure, testCase, (@=?))
@@ -68,19 +70,21 @@ formatTests =
 
 testFormatDefault :: TestTree
 testFormatDefault = testCase "Uses default parsing" $ do
-  result <- captureTimeConv ["08:30", "-o", "%H:%M"]
+  result <- captureTimeConvIO ["08:30", "-o", "%H:%M"]
   "08:30" @=? result
 
 testFormatCustom :: TestTree
 testFormatCustom = testCase "Uses custom parsing" $ do
-  result <- captureTimeConv ["-f", "%Y-%m-%d %H:%M", "-o", "%Y-%m-%d %H:%M", "2022-06-15 08:30"]
+  result <-
+    captureTimeConvIO
+      ["-f", "%Y-%m-%d %H:%M", "-o", "%Y-%m-%d %H:%M", "2022-06-15 08:30"]
   "2022-06-15 08:30" @=? result
 
 testFormatFails :: TestTree
 testFormatFails =
   testCase "Bad format fails" $
     assertException @ParseTimeException expected $
-      captureTimeConv args
+      captureTimeConvIO args
   where
     args = pureTZ <> ["-f", "%Y %H:%M", "08:30"]
     expected = "Could not parse time string '08:30' with format '%Y %H:%M'"
@@ -96,17 +100,19 @@ formatOutputTests =
 
 testFormatOutputCustom :: TestTree
 testFormatOutputCustom = testCase "Overrides input formatting" $ do
-  result <- captureTimeConv $ pureTZ ++ ["-o", "%H:%M %Z", "08:30"]
+  result <- captureTimeConvIO $ pureTZ ++ ["-o", "%H:%M %Z", "08:30"]
   "08:30 UTC" @=? result
 
 testFormatOutputCustomTZOffset :: TestTree
-testFormatOutputCustomTZOffset = testCase "Overrides input formatting tz offset" $ do
-  result <- captureTimeConv $ pureTZ ++ ["-o", "%H:%M %Z", "08:30"]
+testFormatOutputCustomTZOffset = testCase desc $ do
+  result <- captureTimeConvIO $ pureTZ ++ ["-o", "%H:%M %Z", "08:30"]
   "08:30 UTC" @=? result
+  where
+    desc = "Overrides input formatting tz offset"
 
 testFormatOutputRfc822 :: TestTree
 testFormatOutputRfc822 = testCase "Uses rfc822 output" $ do
-  result <- captureTimeConv $ pureTZ ++ ["-o", "rfc822", "08:30"]
+  result <- captureTimeConvIO $ pureTZ ++ ["-o", "rfc822", "08:30"]
   "Thu,  1 Jan 1970 08:30:00 UTC" @=? result
 
 srcTzTests :: TestTree
@@ -122,30 +128,42 @@ srcTzTests =
 
 testSrcTzDatabase :: TestTree
 testSrcTzDatabase = testCase "Uses source timezone from tz database" $ do
-  result <- captureTimeConv $ pureDestTZ ++ ["-f", "%H:%M", "-s", "Europe/Paris", "08:30"]
+  result <-
+    captureTimeConvIO $
+      pureDestTZ ++ ["-f", "%H:%M", "-s", "Europe/Paris", "08:30"]
   "Thu,  1 Jan 1970 07:30:00 UTC" @=? result
 
 testSrcTzDatabaseCase :: TestTree
-testSrcTzDatabaseCase = testCase "Uses source timezone from tz database with 'wrong' case" $ do
-  result <- captureTimeConv $ pureDestTZ ++ ["-f", "%H:%M", "-s", "aMeRiCa/new_yoRk", "08:30"]
+testSrcTzDatabaseCase = testCase desc $ do
+  result <-
+    captureTimeConvIO $
+      pureDestTZ ++ ["-f", "%H:%M", "-s", "aMeRiCa/new_yoRk", "08:30"]
   "Thu,  1 Jan 1970 13:30:00 UTC" @=? result
 
-  result2 <- captureTimeConv $ pureDestTZ ++ ["-f", "%H:%M", "-s", "etc/utc", "08:30"]
+  result2 <-
+    captureTimeConvIO $
+      pureDestTZ ++ ["-f", "%H:%M", "-s", "etc/utc", "08:30"]
   "Thu,  1 Jan 1970 08:30:00 UTC" @=? result2
+  where
+    desc = "Uses source timezone from tz database with 'wrong' case"
 
 testSrcTzFails :: TestTree
 testSrcTzFails = testCase "Bad source timezone fails" $ do
-  assertException @ParseTZDatabaseException expected $ captureTimeConv args
+  assertException @ParseTZDatabaseException expected $ captureTimeConvIO args
   where
     args = pureDestTZ <> ["-s", "Europe/Pariss", "08:30"]
-    expected = "Could not parse tz database name 'Europe/Pariss'. Wanted a name like America/New_York."
+    expected =
+      mconcat
+        [ "Could not parse tz database name 'Europe/Pariss'. ",
+          "Wanted a name like America/New_York."
+        ]
 
 testSrcTzDST :: TestTree
 testSrcTzDST = testCase "Correctly converts src w/ DST" $ do
-  result <- captureTimeConv $ pureDestTZ ++ argsDST
+  result <- captureTimeConvIO $ pureDestTZ ++ argsDST
   "Mon, 10 Apr 2023 12:30:00 UTC" @=? result
 
-  result2 <- captureTimeConv $ pureDestTZ ++ argsNoDST
+  result2 <- captureTimeConvIO $ pureDestTZ ++ argsNoDST
   "Tue, 10 Jan 2023 13:30:00 UTC" @=? result2
   where
     argsDST = withDate ["--date", "2023-04-10"]
@@ -161,29 +179,44 @@ testSrcTzDST = testCase "Correctly converts src w/ DST" $ do
 
 testSrcTzToday :: TestTree
 testSrcTzToday = testCase "Correctly converts src w/ --date today" $ do
-  resultUtcSrcDst <- captureTimeConvNoConfigMock currTimeSrcDst $ pureDestTZ ++ args
+  resultUtcSrcDst <- captureTimeConvParamsIO $ mkSrcParams pureDestTZ
   "Tue, 18 Apr 2023 23:30:00 UTC" @=? resultUtcSrcDst
 
-  resultNzstSrcDst <- captureTimeConvNoConfigMock currTimeSrcDst $ ["-d", "Pacific/Auckland"] ++ args
+  resultNzstSrcDst <-
+    captureTimeConvParamsIO $
+      mkSrcParams ["-d", "Pacific/Auckland"]
   "Wed, 19 Apr 2023 11:30:00 NZST" @=? resultNzstSrcDst
 
-  resultUtcDestDst <- captureTimeConvNoConfigMock currTimeDestDst $ pureDestTZ ++ args
+  resultUtcDestDst <- captureTimeConvParamsIO $ mkDestParams pureDestTZ
   "Sun, 19 Feb 2023 00:30:00 UTC" @=? resultUtcDestDst
 
-  resultNzstDestDst <- captureTimeConvNoConfigMock currTimeDestDst $ ["-d", "Pacific/Auckland"] ++ args
+  resultNzstDestDst <-
+    captureTimeConvParamsIO $
+      mkDestParams ["-d", "Pacific/Auckland"]
   "Sun, 19 Feb 2023 13:30:00 NZDT" @=? resultNzstDestDst
   where
+    mkSrcParams = mkParams currTimeSrcDst
+    mkDestParams = mkParams currTimeDestDst
+
+    mkParams :: String -> [String] -> TestParams
+    mkParams currTime dest =
+      MkTestParams
+        { args =
+            dest
+              ++ [ "-f",
+                   "%H:%M",
+                   "--date",
+                   "today",
+                   "-s",
+                   "America/New_York",
+                   "19:30"
+                 ],
+          configEnabled = False,
+          mCurrentTime = Just currTime
+        }
+
     currTimeSrcDst = "2023-04-18 19:30 -0400"
     currTimeDestDst = "2023-02-18 19:30 -0500"
-    args =
-      [ "-f",
-        "%H:%M",
-        "--date",
-        "today",
-        "-s",
-        "America/New_York",
-        "19:30"
-      ]
 
 destTzTests :: TestTree
 destTzTests =
@@ -196,47 +229,57 @@ destTzTests =
 
 testDestTzDatabase :: TestTree
 testDestTzDatabase = testCase "Uses dest timezone from tz database" $ do
-  result <- captureTimeConv $ pureSrcTZ ++ ["-f", "%H:%M", "-d", "Europe/Paris", "08:30"]
+  result <-
+    captureTimeConvIO $
+      pureSrcTZ ++ ["-f", "%H:%M", "-d", "Europe/Paris", "08:30"]
   "Thu,  1 Jan 1970 09:30:00 CET" @=? result
 
 testSrcDestTzDatabase :: TestTree
 testSrcDestTzDatabase = testCase "Uses src to dest" $ do
-  result <- captureTimeConv ["-s", "America/New_York", "-d", "Europe/Paris", "08:30"]
+  result <-
+    captureTimeConvIO
+      ["-s", "America/New_York", "-d", "Europe/Paris", "08:30"]
   "Thu,  1 Jan 1970 14:30:00 CET" @=? result
 
 testDestTzFails :: TestTree
 testDestTzFails = testCase "Bad dest timezone fails" $ do
-  assertException @ParseTZDatabaseException expected $ captureTimeConv args
+  assertException @ParseTZDatabaseException expected $ captureTimeConvIO args
   where
     args = pureSrcTZ <> ["-d", "Europe/Pariss", "08:30"]
-    expected = "Could not parse tz database name 'Europe/Pariss'. Wanted a name like America/New_York."
+    expected =
+      mconcat
+        [ "Could not parse tz database name 'Europe/Pariss'. ",
+          "Wanted a name like America/New_York."
+        ]
 
 testNoArgs :: TestTree
 testNoArgs = testCase "No args succeeds" $ do
-  result <- captureTimeConv []
+  result <- captureTimeConvIO []
   assertBool ("Should be non-empty: " <> T.unpack result) $ (not . T.null) result
 
 testNoTimeString :: TestTree
 testNoTimeString = testCase "No time string gets current time" $ do
-  resultsLocal <- captureTimeConvNoConfigMock currTime []
+  resultsLocal <- captureTimeConvParamsIO $ mkParams []
   "Tue, 18 Apr 2023 19:30:00 -0400" @=? resultsLocal
 
-  resultsUtc <- captureTimeConvNoConfigMock currTime ["-d", "etc/utc"]
+  resultsUtc <- captureTimeConvParamsIO $ mkParams ["-d", "etc/utc"]
   "Tue, 18 Apr 2023 23:30:00 UTC" @=? resultsUtc
 
-  resultsParis <- captureTimeConvNoConfigMock currTime ["-d", "europe/paris"]
+  resultsParis <- captureTimeConvParamsIO $ mkParams ["-d", "europe/paris"]
   "Wed, 19 Apr 2023 01:30:00 CEST" @=? resultsParis
   where
+    mkParams args = set' #mCurrentTime (Just currTime) (Params.fromArgs args)
+
     currTime = "2023-04-18 19:30 -0400"
 
 testToday :: TestTree
 testToday = testCase "Today arg succeeds" $ do
-  result <- captureTimeConv ["--date", "today", "16:30"]
+  result <- captureTimeConvIO ["--date", "today", "16:30"]
   assertBool ("Should be non-empty: " <> T.unpack result) $ (not . T.null) result
 
 testNoDateLiteral :: TestTree
 testNoDateLiteral = testCase "Disables --date literal" $ do
-  results <- captureTimeConv args
+  results <- captureTimeConvIO args
   "Thu,  1 Jan 1970 03:30:00 EST" @=? results
   where
     args =
@@ -252,7 +295,7 @@ testNoDateLiteral = testCase "Disables --date literal" $ do
 
 testNoDateToday :: TestTree
 testNoDateToday = testCase "Disables --date today" $ do
-  results <- captureTimeConv args
+  results <- captureTimeConvIO args
   "Thu,  1 Jan 1970 03:30:00 EST" @=? results
   where
     args =
@@ -278,76 +321,94 @@ tomlTests =
 
 testTomlToday :: TestTree
 testTomlToday = testCase "Uses toml 'today'" $ do
-  results <- captureTimeConvMock currTime args
+  results <- captureTimeConvParamsIO params
   dt <- Date.parseDateString results
   2021 @=? dt ^. #year
   where
-    args =
-      [ "-c",
-        "test" `combineFilePaths` "functional" `combineFilePaths` "today.toml",
-        "-s",
-        "Etc/Utc",
-        "--format-out",
-        "%Y-%m-%d",
-        "13:30"
-      ]
-    currTime = "2021-04-18 19:30 -0400"
+    params =
+      MkTestParams
+        { args =
+            [ "-c",
+              "test" `cfp` "functional" `cfp` "today.toml",
+              "-s",
+              "Etc/Utc",
+              "--format-out",
+              "%Y-%m-%d",
+              "13:30"
+            ],
+          mCurrentTime = Just "2021-04-18 19:30 -0400",
+          configEnabled = True
+        }
 
 testArgsOverridesTomlToday :: TestTree
 testArgsOverridesTomlToday = testCase "Args overrides toml's 'today'" $ do
-  results <- captureTimeConvMock currTime args
+  results <- captureTimeConvParamsIO params
   "Fri, 12 Jun 2020 09:30:00 -0400" @=? results
   where
-    args =
-      [ "-c",
-        "test" `combineFilePaths` "functional" `combineFilePaths` "today.toml",
-        "-s",
-        "Etc/Utc",
-        "--date",
-        "2020-06-12",
-        "13:30"
-      ]
-    currTime = "2021-04-18 19:30 -0400"
+    params =
+      MkTestParams
+        { args =
+            [ "-c",
+              "test" `cfp` "functional" `cfp` "today.toml",
+              "-s",
+              "Etc/Utc",
+              "--date",
+              "2020-06-12",
+              "13:30"
+            ],
+          mCurrentTime = Just "2021-04-18 19:30 -0400",
+          configEnabled = True
+        }
 
 testTomlAliases :: TestTree
 testTomlAliases = testCase "Config aliases succeed" $ do
-  resultsLA <- captureTimeConvM (withDest "la")
+  resultsLA <- captureTimeConvParamsIO (withDest "la")
   "Tue, 12 Jul 2022 01:30:00 PDT" @=? resultsLA
 
-  resultZagreb <- captureTimeConvM (withDest "zagreb")
+  resultZagreb <- captureTimeConvParamsIO (withDest "zagreb")
   "Tue, 12 Jul 2022 10:30:00 CEST" @=? resultZagreb
   where
     withDest d =
-      [ "-c",
-        "examples" `combineFilePaths` "config.toml",
-        "-s",
-        "Etc/Utc",
-        "-d",
-        d,
-        "--date",
-        "2022-07-12",
-        "08:30"
-      ]
+      MkTestParams
+        { args =
+            [ "-c",
+              "examples" `cfp` "config.toml",
+              "-s",
+              "Etc/Utc",
+              "-d",
+              d,
+              "--date",
+              "2022-07-12",
+              "08:30"
+            ],
+          configEnabled = True,
+          mCurrentTime = Nothing
+        }
 
 testTomlNoDate :: TestTree
 testTomlNoDate = testCase "Disables toml 'today'" $ do
-  results <- captureTimeConvM args
+  results <- captureTimeConvParamsIO params
   "Thu,  1 Jan 1970 03:30:00 EST" @=? results
   where
-    args =
-      [ "-c",
-        "examples" `combineFilePaths` "config.toml",
-        "-s",
-        "Etc/Utc",
-        "-d",
-        "America/New_York",
-        "--no-date",
-        "08:30"
-      ]
+    params =
+      MkTestParams
+        { args =
+            [ "-c",
+              "examples" `cfp` "config.toml",
+              "-s",
+              "Etc/Utc",
+              "-d",
+              "America/New_York",
+              "--no-date",
+              "08:30"
+            ],
+          configEnabled = True,
+          mCurrentTime = Nothing
+        }
 
 testSrcTzNoTimeStr :: TestTree
 testSrcTzNoTimeStr = testCase "Src w/o time string fails" $ do
-  assertException @SrcTZNoTimeStringException expected $ captureTimeConv args
+  assertException @SrcTZNoTimeStringException expected $ captureTimeConvIO args
   where
     expected = "The --src-tz option was specified without required time string"
     args =
@@ -357,7 +418,7 @@ testSrcTzNoTimeStr = testCase "Src w/o time string fails" $ do
 
 testDateNoTimeStr :: TestTree
 testDateNoTimeStr = testCase "Date w/o time string fails" $ do
-  assertException @DateNoTimeStringException expected $ captureTimeConv args
+  assertException @DateNoTimeStringException expected $ captureTimeConvIO args
   where
     expected = "The --date option was specified without required time string"
     args =
@@ -375,8 +436,54 @@ assertException expected io = do
         ("Encountered exception: " <> expected <> "\nReceived: " <> result')
         (startsWith expected result')
 
-captureTimeConv :: [String] -> IO Text
-captureTimeConv = captureTimeConvNoConfigM
+-- | Runs time-conv with default TestParams i.e.
+--
+-- - The given CLI args.
+-- - Toml config disabled.
+-- - No mocked time string.
+captureTimeConvIO :: [String] -> IO Text
+captureTimeConvIO = captureTimeConvParamsIO . Params.fromArgs
+
+-- | General function for capturing time-conv output given TestParams.
+captureTimeConvParamsIO :: TestParams -> IO Text
+captureTimeConvParamsIO params = case params.mCurrentTime of
+  Nothing -> captureTimeConvConfigM args'
+  Just timeString -> usingMockTimeIO timeString (captureTimeConvConfigM args')
+  where
+    args' =
+      if params.configEnabled
+        then params.args
+        else "--no-config" : params.args
+
+    -- Runs time-conv with the args, capturing terminal output.
+    -- Toml configuration is not disabled, so take care that one of the following
+    -- situations applies:
+    --
+    -- 1. Args includes @--config <path>@.
+    -- 2. Args includes @--no-config@.
+    -- 3. The XDG config dir is overridden to an expected path.
+    --
+    -- Otherwise, we may end up picking up a toml configuration at the real,
+    -- expected XDG location, possibly inteferring with tests.
+    --
+    -- The function is polymorphic so that we can run it both without mocked
+    -- time (IO) and with mocked time (MockTimeIO).
+    --
+    -- This function is intended to be used by captureTimeConvParamsIO only,
+    -- hence the @where@ declaration.
+    captureTimeConvConfigM ::
+      ( MonadEnv m,
+        MonadCatch m,
+        MonadFileReader m,
+        MonadIORef m,
+        MonadOptparse m,
+        MonadPathReader m,
+        MonadTime m
+      ) =>
+      -- \| Args.
+      [String] ->
+      m Text
+    captureTimeConvConfigM argList = SysEnv.withArgs argList $ runTermT runTimeConv
 
 newtype MockTimeIO a = MkMockTimeM (ReaderT String IO a)
   deriving
@@ -411,38 +518,6 @@ instance MonadTime MockTimeIO where
         "%Y-%m-%d %H:%M %z"
         str
   getMonotonicTime = pure 0
-
-captureTimeConvNoConfigMock :: String -> [String] -> IO Text
-captureTimeConvNoConfigMock timeStr = usingMockTimeIO timeStr . captureTimeConvNoConfigM
-
-captureTimeConvMock :: String -> [String] -> IO Text
-captureTimeConvMock timeStr = usingMockTimeIO timeStr . captureTimeConvM
-
-captureTimeConvNoConfigM ::
-  ( MonadEnv m,
-    MonadCatch m,
-    MonadFileReader m,
-    MonadIORef m,
-    MonadOptparse m,
-    MonadPathReader m,
-    MonadTime m
-  ) =>
-  [String] ->
-  m Text
-captureTimeConvNoConfigM = captureTimeConvM . (["--no-config"] ++)
-
-captureTimeConvM ::
-  ( MonadEnv m,
-    MonadCatch m,
-    MonadFileReader m,
-    MonadIORef m,
-    MonadOptparse m,
-    MonadPathReader m,
-    MonadTime m
-  ) =>
-  [String] ->
-  m Text
-captureTimeConvM argList = SysEnv.withArgs argList $ runTermT runTimeConv
 
 -- when we want to ensure that nothing depends on local time.
 pureTZ :: [String]
@@ -489,3 +564,6 @@ runTermT (MkTermT m) = do
   outputRef <- newIORef ""
   _ <- runReaderT m outputRef
   readIORef outputRef
+
+cfp :: FilePath -> FilePath -> FilePath
+cfp = combineFilePaths

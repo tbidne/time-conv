@@ -1,7 +1,7 @@
+---
 - ignore:
     name: "Redundant bracket"
     within:
-      
       - "Data.Time.Conversion.convertTime"
       - "Data.Time.Conversion.currentDate"
       - "Data.Time.Conversion.dateString"
@@ -11,3 +11,8 @@
       - "Data.Time.Conversion.readTimeString"
       - "Data.Time.Conversion.tzDatabaseToTZLabel"
       - "Data.Time.Conversion.tzString"
+
+- ignore:
+    name: "Avoid lambda"
+    within:
+      - "Params"
