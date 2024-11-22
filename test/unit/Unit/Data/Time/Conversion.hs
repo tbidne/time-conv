@@ -23,6 +23,8 @@ import Data.Time.Conversion.Types.TimeReader
 import Data.Time.Format qualified as Format
 import Data.Time.LocalTime (ZonedTime (ZonedTime))
 import Data.Time.LocalTime qualified as Time
+import Effectful (Eff, IOE, runEff)
+import Effectful.Time.Dynamic qualified as TM
 import Hedgehog (Property, PropertyName)
 import Hedgehog qualified as H
 import Hedgehog.Internal.Property ((===))
@@ -49,9 +51,9 @@ testDestSrcRoundtrips =
     H.property $ do
       tzdb <- TZDatabaseLabel <$> H.forAll G.tzLabel
 
-      currTime <- liftIO $ Conversion.readConvertTime Nothing Nothing
+      currTime <- runTimeEff $ Conversion.readConvertTime Nothing Nothing
       H.annotateShow currTime
-      currTimeDest <- liftIO $ Conversion.readConvertTime Nothing (Just tzdb)
+      currTimeDest <- runTimeEff $ Conversion.readConvertTime Nothing (Just tzdb)
       H.annotateShow currTimeDest
       let currTimeDestStr = fmt currTimeDest
           timeReader =
@@ -63,7 +65,7 @@ testDestSrcRoundtrips =
               }
 
       currTime' <-
-        liftIO (Conversion.readConvertTime (Just timeReader) Nothing)
+        runTimeEff (Conversion.readConvertTime (Just timeReader) Nothing)
           `catchSync` \ex -> do
             H.annotateShow ex
             H.failure
@@ -81,9 +83,9 @@ testDestSrcDateRoundtrips =
     H.property $ do
       tzdb <- TZDatabaseLabel <$> H.forAll G.tzLabel
 
-      currTime <- liftIO $ Conversion.readConvertTime Nothing Nothing
+      currTime <- runTimeEff $ Conversion.readConvertTime Nothing Nothing
       H.annotateShow currTime
-      currTimeDest <- liftIO $ Conversion.readConvertTime Nothing (Just tzdb)
+      currTimeDest <- runTimeEff $ Conversion.readConvertTime Nothing (Just tzdb)
       H.annotateShow currTime
       (currDateDestStr, currTimeDestStr) <-
         case T.split (== ' ') (T.pack $ fmt currTimeDest) of
@@ -116,7 +118,7 @@ testDestSrcDateRoundtrips =
               }
 
       currTime' <-
-        liftIO (Conversion.readConvertTime (Just timeReader) Nothing)
+        runTimeEff (Conversion.readConvertTime (Just timeReader) Nothing)
           `catchSync` \ex -> do
             H.annotateShow ex
             H.failure
@@ -152,6 +154,9 @@ addSecond (ZonedTime lt tz) = ZonedTime (Time.addLocalTime nominalSecond lt) tz
   where
     nominalSecond :: NominalDiffTime
     nominalSecond = 1
+
+runTimeEff :: (MonadIO m) => Eff [TM.Time, IOE] a -> m a
+runTimeEff = liftIO . runEff . TM.runTime
 
 #if MIN_VERSION_tasty_hedgehog(1, 2, 0)
 testPropertyCompat :: TestName -> PropertyName -> Property -> TestTree

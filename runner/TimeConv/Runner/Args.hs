@@ -33,7 +33,7 @@ import Data.Time.Conversion.Types.TimeReader
       ),
   )
 import Data.Version (Version (versionBranch))
-import Effects.Optparse (OsPath, osPath)
+import Effectful.Optparse.Static (OsPath, osPath)
 import Optics.Core (Getter, (^.))
 import Optics.Core qualified as O
 import Optics.TH (makeFieldLabelsNoPrefix)

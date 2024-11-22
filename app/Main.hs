@@ -14,7 +14,7 @@ import Data.Time.Conversion.Types.Exception
     ParseTimeException,
     SrcTZNoTimeStringException,
   )
-import TimeConv.Runner (runTimeConv)
+import TimeConv.Runner qualified as Runner
 
 -- | Executable entry-point.
 --
@@ -25,7 +25,7 @@ main = do
     proxies
     putStrLn
 
-  runTimeConv
+  Runner.runTimeConvIO
   where
     proxies =
       [ MkExceptionProxy $ Proxy @DateNoTimeStringException,

@@ -42,8 +42,7 @@ where
 
 import Control.Exception.Utils (catchSync)
 import Control.Monad.Catch
-  ( MonadCatch,
-    MonadThrow,
+  ( MonadThrow,
     throwM,
   )
 import Data.String (IsString)
@@ -92,7 +91,8 @@ import Data.Time.Zones (TZ)
 import Data.Time.Zones qualified as Zones
 import Data.Time.Zones.All (TZLabel (..))
 import Data.Time.Zones.All qualified as All
-import Effects.Time (MonadTime (getSystemZonedTime))
+import Effectful (Eff, (:>))
+import Effectful.Time.Dynamic (Time, getSystemZonedTime)
 import GHC.Stack (HasCallStack)
 import Optics.Core ((^.))
 
@@ -138,13 +138,13 @@ import Optics.Core ((^.))
 --
 -- @since 0.1
 readConvertTime ::
-  (HasCallStack, MonadCatch m, MonadTime m) =>
+  (HasCallStack, Time :> es) =>
   -- | Source time.
   Maybe TimeReader ->
   -- | Dest timezone.
   Maybe TZDatabase ->
   -- | Converted time.
-  m ZonedTime
+  Eff es ZonedTime
 readConvertTime mtimeReader destTZ =
   readTime mtimeReader >>= (`convertTime` destTZ)
 
@@ -180,11 +180,10 @@ readConvertTime mtimeReader destTZ =
 -- @since 0.1
 readTime ::
   ( HasCallStack,
-    MonadCatch m,
-    MonadTime m
+    Time :> es
   ) =>
   Maybe TimeReader ->
-  m ZonedTime
+  Eff es ZonedTime
 readTime (Just timeReader) = readTimeString timeReader
 readTime Nothing =
   getSystemZonedTime `catchSync` (throwM . MkLocalSystemTimeException)
@@ -215,12 +214,11 @@ readTime Nothing =
 -- @since 0.1
 convertTime ::
   ( HasCallStack,
-    MonadCatch m,
-    MonadTime m
+    Time :> es
   ) =>
   ZonedTime ->
   Maybe TZDatabase ->
-  m ZonedTime
+  Eff es ZonedTime
 convertTime inTime Nothing = do
   let inTimeUtc = Local.zonedTimeToUTC inTime
   currTZ <-
@@ -230,12 +228,12 @@ convertTime inTime Nothing = do
 convertTime inTime (Just tzdb) = convertZonedLabel inTime <$> tzDatabaseToTZLabel tzdb
 
 readTimeString ::
+  forall es.
   ( HasCallStack,
-    MonadCatch m,
-    MonadTime m
+    Time :> es
   ) =>
   TimeReader ->
-  m ZonedTime
+  Eff es ZonedTime
 readTimeString timeReader =
   case timeReader ^. #srcTZ of
     -- read in local timezone
@@ -265,13 +263,11 @@ readTimeString timeReader =
     throwParseEx f = throwM . MkParseTimeException f
 
     maybeAddDate ::
-      ( HasCallStack,
-        MonadCatch m,
-        MonadTime m
+      ( HasCallStack
       ) =>
       -- Maybe source timezone
       Maybe TZLabel ->
-      m (Text, TimeFormat)
+      Eff es (Text, TimeFormat)
     maybeAddDate mlabel = case timeReader ^. #date of
       Nothing -> pure (timeStr, format)
       Just (DateLiteral dateStr) -> do
@@ -284,11 +280,10 @@ readTimeString timeReader =
 
 currentDate ::
   ( HasCallStack,
-    MonadCatch m,
-    MonadTime m
+    Time :> es
   ) =>
   Maybe TZLabel ->
-  m String
+  Eff es String
 currentDate mlabel = do
   currTime <-
     getSystemZonedTime
@@ -326,12 +321,11 @@ tzString = "%z"
 -- @since 0.1
 readInLocalTimeZone ::
   ( HasCallStack,
-    MonadCatch m,
-    MonadTime m
+    Time :> es
   ) =>
   TimeFormat ->
   Text ->
-  m ZonedTime
+  Eff es ZonedTime
 readInLocalTimeZone format timeStr = do
   localTz <-
     getCurrentTimeZone
@@ -433,7 +427,7 @@ xs +-+ ys = xs <> " " <> ys
 
 infixr 5 +-+
 
-getCurrentTimeZone :: (HasCallStack, MonadTime m) => m TimeZone
+getCurrentTimeZone :: (HasCallStack, Time :> es) => Eff es TimeZone
 getCurrentTimeZone = do
   ZonedTime _ tz <- getSystemZonedTime
   pure tz

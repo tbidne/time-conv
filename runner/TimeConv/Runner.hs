@@ -4,12 +4,16 @@
 --
 -- @since 0.1
 module TimeConv.Runner
-  ( runTimeConv,
+  ( -- * Main
+    runTimeConv,
+
+    -- * Handlers
+    runTimeConvIO,
   )
 where
 
 import Control.Monad (when)
-import Control.Monad.Catch (MonadCatch, MonadThrow, throwM)
+import Control.Monad.Catch (throwM)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Maybe.Optics (_Just, _Nothing)
@@ -24,17 +28,25 @@ import Data.Time.Conversion.Types.Exception
 import Data.Time.Conversion.Types.TZDatabase (TZDatabase, _TZDatabaseText)
 import Data.Time.Conversion.Types.TimeReader (TimeReader)
 import Data.Time.Format qualified as Format
-import Effects.FileSystem.FileReader (MonadFileReader, readFileUtf8ThrowM)
-import Effects.FileSystem.PathReader
-  ( MonadPathReader (doesFileExist),
-    OsPath,
-    getXdgConfig,
+import Effectful (Eff, runEff, type (:>))
+import Effectful.FileSystem.FileReader.Static
+  ( FileReader,
+    readFileUtf8ThrowM,
+    runFileReader,
   )
-import Effects.Optparse (MonadOptparse (execParser))
-import Effects.System.Terminal (MonadTerminal)
-import Effects.System.Terminal qualified as T
-import Effects.Time (MonadTime)
+import Effectful.FileSystem.PathReader.Static
+  ( OsPath,
+    PathReader,
+    doesFileExist,
+    getXdgConfig,
+    runPathReader,
+  )
+import Effectful.Optparse.Static (Optparse, execParser, runOptparse)
+import Effectful.Terminal.Dynamic (Terminal, runTerminal)
+import Effectful.Terminal.Dynamic qualified as T
+import Effectful.Time.Dynamic (Time, runTime)
 import FileSystem.OsPath (osp, (</>))
+import GHC.Stack (HasCallStack)
 import Optics.Core
   ( A_Setter,
     Is,
@@ -53,18 +65,29 @@ import TOML qualified
 import TimeConv.Runner.Args (Args, argsToBuilder, parserInfo)
 import TimeConv.Runner.Toml (Toml)
 
+-- | Runs 'runTimeConv' in IO.
+runTimeConvIO :: (HasCallStack) => IO ()
+runTimeConvIO =
+  runEff
+    . runTerminal
+    . runTime
+    . runFileReader
+    . runPathReader
+    . runOptparse
+    $ runTimeConv
+
 -- | Runs time-conv with CLI args.
 --
 -- @since 0.1
 runTimeConv ::
-  ( MonadCatch m,
-    MonadFileReader m,
-    MonadOptparse m,
-    MonadPathReader m,
-    MonadTerminal m,
-    MonadTime m
+  ( HasCallStack,
+    FileReader :> es,
+    Optparse :> es,
+    PathReader :> es,
+    Terminal :> es,
+    Time :> es
   ) =>
-  m ()
+  Eff es ()
 runTimeConv = do
   args <- execParser parserInfo
   runWithArgs args
@@ -73,14 +96,14 @@ runTimeConv = do
 --
 -- @since 0.1
 runWithArgs ::
-  ( MonadCatch m,
-    MonadFileReader m,
-    MonadPathReader m,
-    MonadTerminal m,
-    MonadTime m
+  ( HasCallStack,
+    FileReader :> es,
+    PathReader :> es,
+    Terminal :> es,
+    Time :> es
   ) =>
   Args ->
-  m ()
+  Eff es ()
 runWithArgs args = do
   when (is (#timeString % _Nothing) args) $ do
     when (is (#srcTZ % _Just) args) $ throwM MkSrcTZNoTimeStringException
@@ -114,9 +137,9 @@ runWithArgs args = do
     locale = Format.defaultTimeLocale
 
 updateFromTomlFile ::
-  ( MonadFileReader m,
-    MonadPathReader m,
-    MonadThrow m
+  ( HasCallStack,
+    FileReader :> es,
+    PathReader :> es
   ) =>
   -- | Path to toml config file.
   Maybe OsPath ->
@@ -127,7 +150,7 @@ updateFromTomlFile ::
   -- | Dest TZ
   Maybe TZDatabase ->
   -- | Updated (TimeReader, DestTZ)
-  m (Maybe TimeReader, Maybe TZDatabase)
+  Eff es (Maybe TimeReader, Maybe TZDatabase)
 updateFromTomlFile mconfigPath mtimeReader noDate mdestTZ = do
   case mconfigPath of
     Nothing -> do

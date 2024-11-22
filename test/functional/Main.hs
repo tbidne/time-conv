@@ -7,9 +7,9 @@
 module Main (main) where
 
 import Control.Exception (Exception (displayException))
-import Control.Monad.Catch (MonadCatch, MonadThrow, try)
-import Control.Monad.IO.Class (MonadIO, liftIO)
-import Control.Monad.Reader (MonadReader, ReaderT (runReaderT), ask)
+import Control.Monad.Catch (try)
+import Control.Monad.IO.Class (liftIO)
+import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Conversion.Types.Date qualified as Date
@@ -20,15 +20,20 @@ import Data.Time.Conversion.Types.Exception
     SrcTZNoTimeStringException,
   )
 import Data.Time.Format qualified as Format
-import Effects.FileSystem.FileReader (MonadFileReader)
-import Effects.FileSystem.PathReader (MonadPathReader)
-import Effects.IORef (IORef, MonadIORef, modifyIORef', newIORef, readIORef)
-import Effects.Optparse (MonadOptparse)
-import Effects.System.Environment (MonadEnv)
-import Effects.System.Environment qualified as SysEnv
-import Effects.System.Terminal (MonadTerminal (putStrLn))
-import Effects.Time (MonadTime (getMonotonicTime, getSystemZonedTime))
+import Effectful (Eff, runEff, type (:>))
+import Effectful.Dispatch.Dynamic (interpret_)
+import Effectful.Environment.Static qualified as SysEnv
+import Effectful.FileSystem.FileReader.Static (runFileReader)
+import Effectful.FileSystem.PathReader.Static (runPathReader)
+import Effectful.Internal.Monad (IOE)
+import Effectful.Optparse.Static (runOptparse)
+import Effectful.Terminal.Dynamic (Terminal (PutStrLn))
+import Effectful.Time.Dynamic
+  ( Time (GetMonotonicTime, GetSystemZonedTime),
+    runTime,
+  )
 import FileSystem.OsPath (combineFilePaths)
+import GHC.Stack (HasCallStack)
 import Optics.Core (set', (^.))
 import Params (TestParams (MkTestParams, args, configEnabled, mCurrentTime))
 import Params qualified
@@ -446,9 +451,19 @@ captureTimeConvIO = captureTimeConvParamsIO . Params.fromArgs
 
 -- | General function for capturing time-conv output given TestParams.
 captureTimeConvParamsIO :: TestParams -> IO Text
-captureTimeConvParamsIO params = case params.mCurrentTime of
-  Nothing -> captureTimeConvConfigM args'
-  Just timeString -> usingMockTimeIO timeString (captureTimeConvConfigM args')
+captureTimeConvParamsIO params = do
+  termRef <- newIORef ""
+  case params.mCurrentTime of
+    Nothing ->
+      runEff
+        . runTime
+        $ captureTimeConvConfigM termRef args'
+    Just timeString ->
+      runEff
+        . runMockTime timeString
+        $ captureTimeConvConfigM termRef args'
+
+  readIORef termRef
   where
     args' =
       if params.configEnabled
@@ -471,53 +486,39 @@ captureTimeConvParamsIO params = case params.mCurrentTime of
     --
     -- This function is intended to be used by captureTimeConvParamsIO only,
     -- hence the @where@ declaration.
-    captureTimeConvConfigM ::
-      ( MonadEnv m,
-        MonadCatch m,
-        MonadFileReader m,
-        MonadIORef m,
-        MonadOptparse m,
-        MonadPathReader m,
-        MonadTime m
-      ) =>
-      -- \| Args.
-      [String] ->
-      m Text
-    captureTimeConvConfigM argList = SysEnv.withArgs argList $ runTermT runTimeConv
+    captureTimeConvConfigM :: IORef Text -> [String] -> Eff [Time, IOE] ()
+    captureTimeConvConfigM termRef argList =
+      SysEnv.runEnvironment
+        . SysEnv.withArgs argList
+        . runMockTerminal termRef
+        . runFileReader
+        . runPathReader
+        . runOptparse
+        $ runTimeConv
 
-newtype MockTimeIO a = MkMockTimeM (ReaderT String IO a)
-  deriving
-    ( Applicative,
-      Functor,
-      Monad,
-      MonadCatch,
-      MonadEnv,
-      MonadFileReader,
-      MonadIO,
-      MonadIORef,
-      MonadOptparse,
-      MonadPathReader,
-      MonadThrow
-    )
-    via (ReaderT String IO)
-  deriving (MonadReader String) via (ReaderT String IO)
+    runMockTerminal ::
+      (HasCallStack, IOE :> es) =>
+      IORef Text ->
+      Eff (Terminal : es) a ->
+      Eff es a
+    runMockTerminal termRef = interpret_ $ \case
+      PutStrLn s -> liftIO $ modifyIORef' termRef (T.pack s <>)
+      _ -> error "runMockTerminal: undefined"
 
-runMockTimeIO :: MockTimeIO a -> String -> IO a
-runMockTimeIO (MkMockTimeM rdr) = runReaderT rdr
-
-usingMockTimeIO :: String -> MockTimeIO a -> IO a
-usingMockTimeIO = flip runMockTimeIO
-
-instance MonadTime MockTimeIO where
-  getSystemZonedTime = do
-    str <- ask
-    liftIO $
-      Format.parseTimeM
-        True
-        Format.defaultTimeLocale
-        "%Y-%m-%d %H:%M %z"
-        str
-  getMonotonicTime = pure 0
+    runMockTime ::
+      (HasCallStack, IOE :> es) =>
+      String ->
+      Eff (Time : es) a ->
+      Eff es a
+    runMockTime timeString = interpret_ $ \case
+      GetSystemZonedTime ->
+        liftIO $
+          Format.parseTimeM
+            True
+            Format.defaultTimeLocale
+            "%Y-%m-%d %H:%M %z"
+            timeString
+      GetMonotonicTime -> pure 0
 
 -- when we want to ensure that nothing depends on local time.
 pureTZ :: [String]
@@ -535,35 +536,6 @@ startsWith (_ : _) [] = False
 startsWith (x : xs) (y : ys)
   | x == y = startsWith xs ys
   | otherwise = False
-
--- Adds a MonadTerminal instance that reads putStrLn into an IORef. Intended
--- to be added "on top" of some Monad that implements the rest of TimeConv's
--- dependencies e.g. IO or MockTimeIO.
-newtype TermT m a = MkTermT (ReaderT (IORef Text) m a)
-  deriving
-    ( Applicative,
-      Functor,
-      Monad,
-      MonadCatch,
-      MonadEnv,
-      MonadFileReader,
-      MonadIORef,
-      MonadOptparse,
-      MonadPathReader,
-      MonadThrow,
-      MonadTime
-    )
-    via (ReaderT (IORef Text) m)
-  deriving (MonadReader (IORef Text)) via (ReaderT (IORef Text) m)
-
-instance (MonadIORef m) => MonadTerminal (TermT m) where
-  putStrLn s = ask >>= \ref -> modifyIORef' ref (T.pack s <>)
-
-runTermT :: (MonadIORef m) => TermT m a -> m Text
-runTermT (MkTermT m) = do
-  outputRef <- newIORef ""
-  _ <- runReaderT m outputRef
-  readIORef outputRef
 
 cfp :: FilePath -> FilePath -> FilePath
 cfp = combineFilePaths

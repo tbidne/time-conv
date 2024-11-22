@@ -81,12 +81,13 @@ library
     , base             >=4.14.0.0 && <4.21
     , containers       >=0.6.3.1  && <0.8
     , deepseq          >=1.4.4.0  && <1.6
-    , effects-time     ^>=0.1
+    , effectful-core   >=2.5.0.0  && <2.6
     , exception-utils  ^>=0.1
     , exceptions       ^>=0.10.4
     , optics-core      ^>=0.4
     , text             >=1.2.3.2  && <2.2
     , time             >=1.9.3    && <1.15
+    , time-effectful   ^>=0.1
     , tz               ^>=0.1.3.3
 
   hs-source-dirs:  src
@@ -103,17 +104,18 @@ library time-conv-runner
   build-depends:
     , base
     , containers
-    , effects-fs            ^>=0.1
-    , effects-optparse      ^>=0.1
-    , effects-terminal      ^>=0.1
-    , effects-time
+    , effectful-core
     , exceptions
+    , fs-effectful          ^>=0.1
     , optics-core
     , optics-th             ^>=0.4
     , optparse-applicative  >=0.16.1.0 && <0.19
+    , optparse-effectful    ^>=0.1
+    , terminal-effectful    ^>=0.1
     , text
     , time
     , time-conv
+    , time-effectful
     , toml-reader           >=0.2.0.0  && <0.3
 
   hs-source-dirs:  runner
@@ -144,6 +146,7 @@ test-suite unit
   build-depends:
     , base
     , deepseq
+    , effectful-core
     , exception-utils
     , hedgehog         >=1.0.2   && <1.5
     , optics-core
@@ -153,6 +156,7 @@ test-suite unit
     , text
     , time
     , time-conv
+    , time-effectful
     , tz
 
   hs-source-dirs: test/unit
@@ -165,20 +169,19 @@ test-suite functional
   other-modules:  Params
   build-depends:
     , base
-    , effects-env       ^>=0.1
-    , effects-fs
-    , effects-ioref     ^>=0.1
-    , effects-optparse
-    , effects-terminal
-    , effects-time
+    , effectful-core
+    , environment-effectful  ^>=0.1
     , exceptions
-    , mtl               >=2.2.2 && <2.4
+    , fs-effectful
     , optics-core
+    , optparse-effectful
     , tasty
     , tasty-hunit
+    , terminal-effectful
     , text
     , time
     , time-conv
     , time-conv-runner
+    , time-effectful
 
   hs-source-dirs: test/functional
