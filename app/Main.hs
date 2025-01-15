@@ -5,7 +5,6 @@ module Main (main) where
 
 import Control.Exception.Annotation.Utils (ExceptionProxy (MkExceptionProxy))
 import Control.Exception.Annotation.Utils qualified as AnnUtils
-import Data.Proxy (Proxy (Proxy))
 import Data.Time.Conversion.Types.Exception
   ( DateNoTimeStringException,
     LocalSystemTimeException,
@@ -21,17 +20,15 @@ import TimeConv.Runner (runTimeConv)
 -- @since 0.1
 main :: IO ()
 main = do
-  AnnUtils.setUncaughtExceptionDisplayInnerMatch
-    proxies
-    putStrLn
+  AnnUtils.setIgnoreKnownCallStackHandler proxies
 
   runTimeConv
   where
     proxies =
-      [ MkExceptionProxy $ Proxy @DateNoTimeStringException,
-        MkExceptionProxy $ Proxy @LocalSystemTimeException,
-        MkExceptionProxy $ Proxy @LocalTimeZoneException,
-        MkExceptionProxy $ Proxy @ParseTimeException,
-        MkExceptionProxy $ Proxy @ParseTZDatabaseException,
-        MkExceptionProxy $ Proxy @SrcTZNoTimeStringException
+      [ MkExceptionProxy @DateNoTimeStringException,
+        MkExceptionProxy @LocalSystemTimeException,
+        MkExceptionProxy @LocalTimeZoneException,
+        MkExceptionProxy @ParseTimeException,
+        MkExceptionProxy @ParseTZDatabaseException,
+        MkExceptionProxy @SrcTZNoTimeStringException
       ]

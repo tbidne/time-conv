@@ -1,5 +1,4 @@
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 -- | CLI args for TimeConv.
@@ -34,9 +33,7 @@ import Data.Time.Conversion.Types.TimeReader
   )
 import Data.Version (Version (versionBranch))
 import Effects.Optparse (OsPath, osPath)
-import Optics.Core (Getter, (^.))
-import Optics.Core qualified as O
-import Optics.TH (makeFieldLabelsNoPrefix)
+import Optics.Core ((^.))
 import Options.Applicative
   ( Parser,
     ParserInfo
@@ -73,8 +70,6 @@ data Args = MkArgs
     timeString :: Maybe Text
   }
   deriving stock (Eq, Show)
-
-makeFieldLabelsNoPrefix ''Args
 
 -- | Optparse-Applicative info.
 --
@@ -124,25 +119,24 @@ parseArgs =
 --     3. Otherwise, default format of "%H:%M".
 --
 -- @since 0.1
-argsToBuilder :: Getter Args (Maybe TimeReader, Maybe TZDatabase, TimeFormat)
-argsToBuilder = O.to to
+argsToBuilder :: Args -> (Maybe TimeReader, Maybe TZDatabase, TimeFormat)
+argsToBuilder args = (mtimeReader, args.destTZ, formatOut)
   where
-    to args =
-      let mtimeReader = case args ^. #timeString of
-            Just str ->
-              Just $
-                MkTimeReader
-                  { format = args ^. #formatIn,
-                    srcTZ = args ^. #srcTZ,
-                    date =
-                      if args ^. #noDate
-                        then Nothing
-                        else args ^. #date,
-                    timeString = str
-                  }
-            Nothing -> Nothing
-          formatOut = fromMaybe TimeFmt.rfc822 (args ^. #formatOut)
-       in (mtimeReader, args ^. #destTZ, formatOut)
+    mtimeReader = case args.timeString of
+      Just str ->
+        Just $
+          MkTimeReader
+            { format = args.formatIn,
+              srcTZ = args.srcTZ,
+              date =
+                if args.noDate
+                  then Nothing
+                  else args.date,
+              timeString = str
+            }
+      Nothing -> Nothing
+
+    formatOut = fromMaybe TimeFmt.rfc822 args.formatOut
 
 parseConfig :: Parser (Maybe OsPath)
 parseConfig =

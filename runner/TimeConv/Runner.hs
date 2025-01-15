@@ -8,11 +8,9 @@ module TimeConv.Runner
   )
 where
 
-import Control.Monad (when)
 import Control.Monad.Catch (MonadCatch, MonadThrow, throwM)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
-import Data.Maybe.Optics (_Just, _Nothing)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Time.Conversion qualified as Conv
@@ -50,7 +48,18 @@ import Optics.Core
   )
 import Optics.Core.Extras (is)
 import TOML qualified
-import TimeConv.Runner.Args (Args, argsToBuilder, parserInfo)
+import TimeConv.Runner.Args
+  ( Args
+      ( config,
+        date,
+        noConfig,
+        noDate,
+        srcTZ,
+        timeString
+      ),
+    argsToBuilder,
+    parserInfo,
+  )
 import TimeConv.Runner.Toml (Toml)
 
 -- | Runs time-conv with CLI args.
@@ -82,24 +91,30 @@ runWithArgs ::
   Args ->
   m ()
 runWithArgs args = do
-  when (is (#timeString % _Nothing) args) $ do
-    when (is (#srcTZ % _Just) args) $ throwM MkSrcTZNoTimeStringException
-    when (is (#date % _Just) args) $ throwM MkDateNoTimeStringException
+  case args.timeString of
+    Just _ -> pure ()
+    Nothing -> do
+      case args.srcTZ of
+        Just _ -> throwM MkSrcTZNoTimeStringException
+        Nothing -> pure ()
+      case args.date of
+        Just _ -> throwM MkDateNoTimeStringException
+        Nothing -> pure ()
 
   -- Transform Args to TimeReader, DestTZ and FormatOut
-  let (mtimeReader, destTZ, formatOut) = args ^. argsToBuilder
+  let (mtimeReader, destTZ, formatOut) = argsToBuilder args
       formatStr = T.unpack $ formatOut ^. #unTimeFormat
 
   -- If the toml config exists, further transform TimeReader and DestTZ
   -- according to its config
   (mtimeReader', destTZ') <-
-    if args ^. #noConfig
+    if args.noConfig
       then pure (mtimeReader, destTZ)
       else
         updateFromTomlFile
-          (args ^. #config)
+          args.config
           mtimeReader
-          (args ^. #noDate)
+          args.noDate
           destTZ
 
   readAndHandle mtimeReader' destTZ' formatStr

@@ -4,7 +4,12 @@ version:            0.1
 license:            MIT
 license-file:       LICENSE
 tested-with:
-  GHC ==9.2.8 || ==9.4.8 || ==9.6.5 || ==9.8.2 || ==9.10.1
+  GHC ==9.2.8
+   || ==9.4.8
+   || ==9.6.5
+   || ==9.8.2
+   || ==9.10.1
+   || ==9.12.1
 
 copyright:          2022-2025 Thomas Bidne
 author:             Thomas Bidne
@@ -79,7 +84,7 @@ library
     Data.Time.Conversion.Types.TZDatabase
 
   build-depends:
-    , base             >=4.14.0.0 && <4.21
+    , base             >=4.14.0.0 && <4.22
     , containers       >=0.6.3.1  && <0.8
     , deepseq          >=1.4.4.0  && <1.6
     , effects-time     ^>=0.1
@@ -110,7 +115,6 @@ library time-conv-runner
     , effects-time
     , exceptions
     , optics-core
-    , optics-th             ^>=0.4
     , optparse-applicative  >=0.16.1.0 && <0.19
     , text
     , time
@@ -146,7 +150,7 @@ test-suite unit
     , base
     , deepseq
     , exception-utils
-    , hedgehog         >=1.0.2   && <1.5
+    , hedgehog         >=1.0.2   && <1.6
     , optics-core
     , tasty            >=1.1.0.3 && <1.6
     , tasty-hedgehog   >=1.0.1.0 && <1.5
