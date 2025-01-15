@@ -18,9 +18,10 @@ description:
 
 category:           Time, Shell scripting
 extra-source-files:
-  CHANGELOG.md
   examples/config.toml
   README.md
+
+extra-doc-files:    CHANGELOG.md
 
 source-repository head
   type:     git
